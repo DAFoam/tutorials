@@ -31,8 +31,9 @@ patches
 
         // How to construct: either from 'patches' or 'set'
         constructFrom patches;
-        patches (auto0 auto3);
+        patches ( "wing_.*" );
     }
+
     {
         // Name of new patch
         name inout;
@@ -45,23 +46,9 @@ patches
 
         // How to construct: either from 'patches' or 'set'
         constructFrom patches;
-        patches (auto2);
+        patches ( "farfield_.*" );
     }
 
-    {
-        // Name of new patch
-        name sym;
-
-        // Dictionary to construct new patch from
-        patchInfo
-        {
-            type symmetry;
-        }
-
-        // How to construct: either from 'patches' or 'set'
-        constructFrom patches;
-        patches (auto1);
-    }
 
 );
 
