@@ -120,12 +120,6 @@ elif args.opt == "slsqp":
         "MAXIT": 50,
         "IFILE": "opt_SLSQP.out",
     }
-elif args.opt == "ipopt":
-    optOptions = {
-        "tol": 1.0e-7,
-        "max_iter": 50,
-        "output_file": "opt_IPOPT.out",
-    }
 else:
     print("opt arg not valid!")
     exit(0)
