@@ -48,9 +48,9 @@ daOptions = {
     "flowCondition": "Incompressible",
     "primalMinResTol": 1.0e-8,
     "primalBC": {
-        "UIn": {"variable": "U", "patch": "inout", "value": [URef, 0.0, 0.0]},
-        "pIn": {"variable": "p", "patch": "inout", "value": [p0]},
-        "nuTildaIn": {"variable": "nuTilda", "patch": "inout", "value": [nuTilda0], "useWallFunction": True},
+        "U0": {"variable": "U", "patch": "inout", "value": [URef, 0.0, 0.0]},
+        "p0": {"variable": "p", "patch": "inout", "value": [p0]},
+        "nuTilda0": {"variable": "nuTilda", "patch": "inout", "value": [nuTilda0], "useWallFunction": True},
     },
     "objFunc": {
         "CD": {
