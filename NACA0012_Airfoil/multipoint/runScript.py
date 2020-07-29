@@ -50,7 +50,8 @@ daOptions = {
     "primalBC": {
         "U0": {"variable": "U", "patch": "inout", "value": [URef, 0.0, 0.0]},
         "p0": {"variable": "p", "patch": "inout", "value": [p0]},
-        "nuTilda0": {"variable": "nuTilda", "patch": "inout", "value": [nuTilda0], "useWallFunction": True},
+        "nuTilda0": {"variable": "nuTilda", "patch": "inout", "value": [nuTilda0]},
+        "useWallFunction": True,
     },
     "objFunc": {
         "CD": {
