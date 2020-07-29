@@ -48,7 +48,8 @@ daOptions = {
         "UIn": {"variable": "U", "patch": "inout", "value": [U0, 0.0, 0.0]},
         "pIn": {"variable": "p", "patch": "inout", "value": [p0]},
         "TIn": {"variable": "T", "patch": "inout", "value": [T0]},
-        "nuTildaIn": {"variable": "nuTilda", "patch": "inout", "value": [nuTilda0], "useWallFunction": True},
+        "nuTildaIn": {"variable": "nuTilda", "patch": "inout", "value": [nuTilda0]},
+        "useWallFunction": True,
     },
     # variable bounds for compressible flow conditions
     "primalVarBounds": {
