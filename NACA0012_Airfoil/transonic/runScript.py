@@ -132,7 +132,7 @@ else:
 def alpha(val, geo):
     aoa = val[0] * np.pi / 180.0
     inletU = [float(U0 * np.cos(aoa)), float(U0 * np.sin(aoa)), 0]
-    DASolver.setOption("primalBC", {"UIn": {"variable": "U", "patch": "inout", "value": inletU}})
+    DASolver.setOption("primalBC", {"U0": {"variable": "U", "patch": "inout", "value": inletU}})
     DASolver.updateDAOption()
 
 
