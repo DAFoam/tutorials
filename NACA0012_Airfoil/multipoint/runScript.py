@@ -198,7 +198,7 @@ DVCon.addLinearConstraintsShape(indSetA, indSetB, factorA=1.0, factorB=1.0, lowe
 def setMultiPointCondition(xDV, index):
     aoa = xDV["mp%d_alpha" % index].real * np.pi / 180.0
     inletU = [float(U0[index] * np.cos(aoa)), float(U0[index] * np.sin(aoa)), 0]
-    DASolver.setOption("primalBC", {"UIn": {"variable": "U", "patch": "inout", "value": inletU}})
+    DASolver.setOption("primalBC", {"U0": {"variable": "U", "patch": "inout", "value": inletU}})
     DASolver.updateDAOption()
     return
 

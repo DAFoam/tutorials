@@ -45,10 +45,10 @@ daOptions = {
     "flowCondition": "Compressible",
     "primalMinResTol": 1.0e-8,
     "primalBC": {
-        "UIn": {"variable": "U", "patch": "inout", "value": [U0, 0.0, 0.0]},
-        "pIn": {"variable": "p", "patch": "inout", "value": [p0]},
-        "TIn": {"variable": "T", "patch": "inout", "value": [T0]},
-        "nuTildaIn": {"variable": "nuTilda", "patch": "inout", "value": [nuTilda0]},
+        "U0": {"variable": "U", "patch": "inout", "value": [U0, 0.0, 0.0]},
+        "p0": {"variable": "p", "patch": "inout", "value": [p0]},
+        "T0": {"variable": "T", "patch": "inout", "value": [T0]},
+        "nuTilda0": {"variable": "nuTilda", "patch": "inout", "value": [nuTilda0]},
         "useWallFunction": True,
     },
     # variable bounds for compressible flow conditions
@@ -147,7 +147,7 @@ def twist(val, geo):
 def alpha(val, geo):
     aoa = val[0] * np.pi / 180.0
     inletU = [float(U0 * np.cos(aoa)), float(U0 * np.sin(aoa)), 0]
-    DASolver.setOption("primalBC", {"UIn": {"variable": "U", "patch": "inout", "value": inletU}})
+    DASolver.setOption("primalBC", {"U0": {"variable": "U", "patch": "inout", "value": inletU}})
     DASolver.updateDAOption()
 
 
