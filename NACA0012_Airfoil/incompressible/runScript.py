@@ -42,9 +42,9 @@ daOptions = {
     "turbulenceModel": "SpalartAllmaras",
     "primalMinResTol": 1.0e-8,
     "primalBC": {
-        "U0": {"variable": "U", "patch": "inout", "value": [U0, 0.0, 0.0]},
-        "p0": {"variable": "p", "patch": "inout", "value": [p0]},
-        "nuTilda0": {"variable": "nuTilda", "patch": "inout", "value": [nuTilda0]},
+        "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
+        "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
+        "nuTilda0": {"variable": "nuTilda", "patches": ["inout"], "value": [nuTilda0]},
         "useWallFunction": True,
     },
     "objFunc": {
@@ -114,7 +114,7 @@ else:
 def alpha(val, geo):
     aoa = val[0] * np.pi / 180.0
     inletU = [float(U0 * np.cos(aoa)), float(U0 * np.sin(aoa)), 0]
-    DASolver.setOption("primalBC", {"U0": {"variable": "U", "patch": "inout", "value": inletU}})
+    DASolver.setOption("primalBC", {"U0": {"variable": "U", "patches": ["inout"], "value": inletU}})
     DASolver.updateDAOption()
 
 
@@ -130,7 +130,7 @@ DVGeo.addGeoDVLocal("shapey", lower=-1.0, upper=1.0, axis="y", scale=1.0, pointS
 daOptions["designVar"]["shapey"] = {"designVarType": "FFD"}
 # angle of attack
 DVGeo.addGeoDVGlobal("alpha", value=[alpha0], func=alpha, lower=0.0, upper=10.0, scale=1.0)
-daOptions["designVar"]["alpha"] = {"designVarType": "AOA", "patch": "inout", "flowAxis": "x", "normalAxis": "y"}
+daOptions["designVar"]["alpha"] = {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "y"}
 
 # =============================================================================
 # DAFoam initialization
