@@ -48,9 +48,9 @@ daOptions = {
     "flowCondition": "Incompressible",
     "primalMinResTol": 1.0e-8,
     "primalBC": {
-        "U0": {"variable": "U", "patch": "inout", "value": [URef, 0.0, 0.0]},
-        "p0": {"variable": "p", "patch": "inout", "value": [p0]},
-        "nuTilda0": {"variable": "nuTilda", "patch": "inout", "value": [nuTilda0]},
+        "U0": {"variable": "U", "patches": ["inout"], "value": [URef, 0.0, 0.0]},
+        "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
+        "nuTilda0": {"variable": "nuTilda", "patches": ["inout"], "value": [nuTilda0]},
         "useWallFunction": True,
     },
     "objFunc": {
@@ -139,7 +139,7 @@ for i in range(nMultiPoints):
     # add alpha for designVar
     daOptions["designVar"]["mp%d_alpha" % i] = {
         "designVarType": "AOA",
-        "patch": "inout",
+        "patches": ["inout"],
         "flowAxis": "x",
         "normalAxis": "y",
     }
