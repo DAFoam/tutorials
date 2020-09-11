@@ -13,7 +13,7 @@ do
             rm -rf constant/triSurface/*eMesh*
             rm -rf constant/polyMesh/
             rm -rf *.bin *.info *.dat *.xyz *.stl
-            rm -rf processor*
+            rm -rf processor* 0.0000*
             rm -rf {1..9}*
             exit
             ;;
