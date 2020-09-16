@@ -44,8 +44,6 @@ daOptions = {
     "multiPoint": True,
     "nMultiPoints": nMultiPoints,
     "solverName": "DASimpleFoam",
-    "turbulenceModel": "SpalartAllmaras",
-    "flowCondition": "Incompressible",
     "primalMinResTol": 1.0e-8,
     "primalBC": {
         "U0": {"variable": "U", "patches": ["inout"], "value": [URef, 0.0, 0.0]},
@@ -293,17 +291,21 @@ if args.task == "opt":
     if gcomm.rank == 0:
         print(sol)
 
-elif args.task == "run":
+elif args.task == "runPrimal":
 
-    optFuncs.run()
+    optFuncs.runPrimal()
+
+elif args.task == "runAdjoint":
+
+    optFuncs.runAdjoint()
 
 elif args.task == "solveCL":
 
     optFuncs.solveCL(CL_target, "alpha", "CL")
 
-elif args.task == "testSensShape":
+elif args.task == "verifySens":
 
-    optFuncs.testSensShape()
+    optFuncs.verifySens()
 
 else:
     print("task arg not found!")
