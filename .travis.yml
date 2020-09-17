@@ -1,0 +1,32 @@
+os: linux
+dist: bionic
+language: generic
+
+services:
+    - docker
+
+env:
+  global:
+    - REPO_NAME=tutorials
+    - DOCKER_WORKING_DIR=/home/dafoamuser/$REPO_NAME
+    - DOCKER_MOUNT_DIR=/home/dafoamuser/mount/$REPO_NAME
+    - DOCKER_TAG=latest
+
+before_install:
+    - docker pull dafoam/opt-packages:$DOCKER_TAG
+    # run Docker, key is we mount the current Travis directory into Docker to access content of repo
+    - docker run -it -d -u dafoamuser --name regtest
+        --mount "type=bind,src=$(pwd),target=$DOCKER_MOUNT_DIR"
+        dafoam/opt-packages:$DOCKER_TAG
+        /bin/bash
+
+install:
+  # We thrown away the existing repo in Docker, and copy the new one in-place
+  - docker exec -it regtest /bin/bash -c "cp -r $DOCKER_MOUNT_DIR $DOCKER_WORKING_DIR"
+  - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR && wget https://github.com/mdolab/dafoam/archive/master.tar.gz && tar -xvf dafoam-master.tar.gz && cd dafoam-master && ./Allmake && pip install ."
+
+jobs:
+  include:
+    - stage: runTests
+      script:
+        - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/NACA0012/incompressible && ./preProcessing && mpirun -np 2 python runScript.py --task=testAPI"
