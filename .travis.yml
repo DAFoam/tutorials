@@ -23,7 +23,7 @@ before_install:
 install:
   # We thrown away the existing repo in Docker, and copy the new one in-place
   - docker exec -it regtest /bin/bash -c "cp -r $DOCKER_MOUNT_DIR $DOCKER_WORKING_DIR"
-  - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR && wget https://github.com/mdolab/dafoam/archive/master.tar.gz && tar -xvf dafoam-master.tar.gz && cd dafoam-master && ./Allmake && pip install ."
+  - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR && wget https://github.com/mdolab/dafoam/archive/master.tar.gz && tar -xvf master.tar.gz && cd dafoam-master && ./Allmake && pip install ."
 
 jobs:
   include:
