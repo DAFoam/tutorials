@@ -293,19 +293,16 @@ if args.task == "opt":
 
 elif args.task == "runPrimal":
 
-    optFuncs.runPrimal()
+    optFuncs.runPrimal(objFun=optFuncs.calcObjFuncValuesMP)
 
 elif args.task == "runAdjoint":
 
-    optFuncs.runAdjoint()
+    optFuncs.runAdjoint(objFun=optFuncs.calcObjFuncValuesMP, sens=optFuncs.calcObjFuncSensMP)
 
-elif args.task == "solveCL":
+elif args.task == "testAPI":
 
-    optFuncs.solveCL(CL_target, "alpha", "CL")
-
-elif args.task == "verifySens":
-
-    optFuncs.verifySens()
+    DASolver.setOption("primalMinResTol", 1e-1)
+    optFuncs.runPrimal(objFun=optFuncs.calcObjFuncValuesMP)
 
 else:
     print("task arg not found!")
