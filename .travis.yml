@@ -23,10 +23,21 @@ before_install:
 install:
   # We thrown away the existing repo in Docker, and copy the new one in-place
   - docker exec -it regtest /bin/bash -c "cp -r $DOCKER_MOUNT_DIR $DOCKER_WORKING_DIR"
-  - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR && wget https://github.com/mdolab/dafoam/archive/master.tar.gz && tar -xvf master.tar.gz && cd dafoam-master && ./Allmake && pip install ."
+  # Download the latest version of DAFoam
+  - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR && wget https://github.com/mdolab/dafoam/archive/master.tar.gz && tar -xvf master.tar.gz"
 
 jobs:
   include:
-    - stage: runTests
+    - stage: runTests # test incompressible tutorials
       script:
+        # first compile DAFoam
+        - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/dafoam-master && ./Allmake incompressible && pip install ."
+        # run the tutorials
         - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/NACA0012/incompressible && ./preProcessing && mpirun -np 2 python runScript.py --task=testAPI"
+
+    - stage: runTests # test compressible tutorials
+      script:
+        # first compile DAFoam
+        - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/dafoam-master && ./Allmake compressible && pip install ."
+        # run the tutorials
+        - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/NACA0012/subsonic && ./preProcessing && mpirun -np 2 python runScript.py --task=testAPI"
