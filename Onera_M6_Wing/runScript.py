@@ -247,6 +247,11 @@ elif args.task == "verifySens":
 
     optFuncs.verifySens()
 
+elif args.task == "testAPI":
+
+    DASolver.setOption("primalMinResTol", 1e-1)
+    optFuncs.runPrimal()
+
 else:
     print("task arg not found!")
     exit(0)
