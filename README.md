@@ -1,3 +1,5 @@
 # DAFoam Tutorials
 
-Refer to the instructions on [DAFoam Documentation v2.0](https://dafoam.github.io).
+This tutorial uses DAFoam v2.1.0.
+
+Refer to the instructions on [DAFoam Documentation](http://dafoam.github.io).
