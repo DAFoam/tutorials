@@ -1,0 +1,134 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  plus                                  |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      createPatchDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// Do a synchronisation of coupled points after creation of any patches.
+// Note: this does not work with points that are on multiple coupled patches
+//       with transformations (i.e. cyclics).
+pointSync false;
+
+// Patches to create.
+patches
+(
+    {
+        // Name of new patch
+        name blade;
+
+        // Dictionary to construct new patch from
+        patchInfo
+        {
+            type wall;
+        }
+
+        // How to construct: either from 'patches' or 'set'
+        constructFrom patches;
+        patches (BLADE);
+    }
+
+    {
+        // Name of new patch
+        name shroud;
+
+        // Dictionary to construct new patch from
+        patchInfo
+        {
+            type wall;
+        }
+
+        // How to construct: either from 'patches' or 'set'
+        constructFrom patches;
+        patches (SHROUD);
+    }
+
+    {
+        // Name of new patch
+        name hub;
+
+        // Dictionary to construct new patch from
+        patchInfo
+        {
+            type wall;
+        }
+
+        // How to construct: either from 'patches' or 'set'
+        constructFrom patches;
+        patches (HUB);
+    }
+
+    {
+        // Name of new patch
+        name inlet;
+
+        // Dictionary to construct new patch from
+        patchInfo
+        {
+            type patch;
+        }
+
+        // How to construct: either from 'patches' or 'set'
+        constructFrom patches;
+        patches (INLET);
+    }
+
+    {
+        // Name of new patch
+        name outlet;
+
+        // Dictionary to construct new patch from
+        patchInfo
+        {
+            type patch;
+        }
+
+        // How to construct: either from 'patches' or 'set'
+        constructFrom patches;
+        patches (OUTLET);
+    }
+
+    {
+        //- Master side patch
+        name            per1;
+        patchInfo
+        {
+            type            cyclic;
+            matchTolerance  0.0001;
+            neighbourPatch  per2;
+            transform       rotational;
+            rotationAxis    (0 0 1);
+            rotationCentre  (0 0 0);
+        }
+        constructFrom patches;
+        patches (PER1);
+    }
+
+    {
+        //- Slave side patch
+        name            per2;
+        patchInfo
+        {
+            type            cyclic;
+            matchTolerance  0.0001;
+            neighbourPatch  per1;
+            transform       rotational;
+            rotationAxis    (0 0 1);
+            rotationCentre  (0 0 0);
+        }
+        constructFrom patches;
+        patches (PER2);
+    }
+
+);
+
+// ************************************************************************* //
