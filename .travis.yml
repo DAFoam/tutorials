@@ -35,6 +35,7 @@ jobs:
         # run the tutorials
         - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/NACA0012_Airfoil/incompressible && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
         - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/NACA0012_Airfoil/multipoint && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
+        - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/UBend && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
 
     - stage: runTests # test compressible tutorials
       script:
@@ -44,4 +45,14 @@ jobs:
         - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/NACA0012_Airfoil/subsonic && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
         - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/NACA0012_Airfoil/transonic && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
         - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/Onera_M6_Wing && ./preProcessing_pyHyp.sh && mpirun -np 2 python runScript.py --task=testAPI"
-        - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/Onera_M6_Wing && echo y | ./Allclean.sh && ./preProcessing_snappyHexMesh.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"  
+        - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/Onera_M6_Wing && echo y | ./Allclean.sh && ./preProcessing_snappyHexMesh.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
+        - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/Rotor37_Compressor && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
+        - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/NREL6_Wind_Turbine && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
+        - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/Prowim_Wing_Propeller && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1" 
+
+    - stage: runTests # test solid tutorials
+      script:
+        # first compile DAFoam
+        - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/dafoam-master && ./Allmake solid && pip install ."
+        # run the tutorials
+        - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/PlateHole_Structure && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"

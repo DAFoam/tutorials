@@ -40,7 +40,7 @@ rho0 = 1.0  # density for normalizing CD and CL
 # Set the parameters for optimization
 daOptions = {
     "designSurfaces": ["wing"],
-    "solverName": "DARhoSimpleCFoam",
+    "solverName": "DARhoSimpleFoam",
     "primalMinResTol": 1.0e-8,
     "primalBC": {
         "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
@@ -248,7 +248,8 @@ elif args.task == "verifySens":
 
 elif args.task == "testAPI":
 
-    DASolver.setOption("primalMinResTol", 1e-1)
+    DASolver.setOption("primalMinResTol", 1e-2)
+    DASolver.updateDAOption()
     optFuncs.runPrimal()
 
 else:
