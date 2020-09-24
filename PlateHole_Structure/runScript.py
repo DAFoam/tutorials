@@ -33,8 +33,6 @@ vms0 = 2.9e4
 daOptions = {
     "maxTractionBCIters": 20,
     "solverName": "DASolidDisplacementFoam",
-    "flowCondition": "Solid",
-    "designSurfaceFamily": "designSurface",
     "designSurfaces": ["hole", "wallx", "wally"],
     "primalMinResTol": 1e-10,
     "primalMinResTolDiff": 1e10,
@@ -63,7 +61,7 @@ daOptions = {
     },
     "normalizeStates": {"D": 1.0e-7},
     "adjPartDerivFDStep": {"State": 1e-5, "FFD": 1e-3},
-    "adjEqnOption": {"gmresRelTol": 1.0e-15, "gmresAbsTol": 1.0e-15, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
+    "adjEqnOption": {"gmresRelTol": 1.0e-10, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
     # Design variable setup
     "designVar": {"shapey": {"designVarType": "FFD"}, "shapex": {"designVarType": "FFD"}},
 }
@@ -213,9 +211,22 @@ if args.task == "opt":
     if gcomm.rank == 0:
         print(sol)
 
-elif args.task == "testSensShape":
+elif args.task == "runPrimal":
 
-    optFuncs.testSensShape()
+    optFuncs.runPrimal()
+
+elif args.task == "runAdjoint":
+
+    optFuncs.runAdjoint()
+
+elif args.task == "verifySens":
+
+    optFuncs.verifySens()
+
+elif args.task == "testAPI":
+
+    DASolver.setOption("primalMinResTol", 1e-1)
+    optFuncs.runPrimal()
 
 else:
     print("task arg not found!")

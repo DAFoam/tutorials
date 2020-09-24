@@ -31,9 +31,6 @@ gcomm = MPI.COMM_WORLD
 # Set the parameters for optimization
 daOptions = {
     "solverName": "DATurboFoam",
-    "flowCondition": "Compressible",
-    "turbulenceModel": "SpalartAllmaras",
-    "designSurfaceFamily": "designSurface",
     "designSurfaces": ["blade"],
     "primalMinResTol": 1e-8,
     "primalVarBounds": {
@@ -168,13 +165,26 @@ if args.task == "opt":
     if gcomm.rank == 0:
         print(sol)
 
-elif args.task == "run":
+elif args.task == "runPrimal":
 
-    optFuncs.run()
+    optFuncs.runPrimal()
 
-elif args.task == "testSensShape":
+elif args.task == "runAdjoint":
 
-    optFuncs.testSensShape()
+    optFuncs.runAdjoint()
+
+elif args.task == "solveCL":
+
+    optFuncs.solveCL(CL_target, "alpha", "CL")
+
+elif args.task == "verifySens":
+
+    optFuncs.verifySens()
+
+elif args.task == "testAPI":
+
+    DASolver.setOption("primalMinResTol", 1e-1)
+    optFuncs.runPrimal()
 
 else:
     print("task arg not found!")

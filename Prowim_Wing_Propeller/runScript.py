@@ -41,8 +41,6 @@ rho0 = 1.0  # density for normalizing CD and CL
 daOptions = {
     "designSurfaces": ["wing"],
     "solverName": "DARhoSimpleCFoam",
-    "turbulenceModel": "SpalartAllmaras",
-    "flowCondition": "Compressible",
     "primalMinResTol": 1.0e-8,
     "primalBC": {
         "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
@@ -232,17 +230,26 @@ if args.task == "opt":
     if gcomm.rank == 0:
         print(sol)
 
-elif args.task == "run":
+elif args.task == "runPrimal":
 
-    optFuncs.run()
+    optFuncs.runPrimal()
+
+elif args.task == "runAdjoint":
+
+    optFuncs.runAdjoint()
 
 elif args.task == "solveCL":
 
     optFuncs.solveCL(CL_target, "alpha", "CL")
 
-elif args.task == "testSensShape":
+elif args.task == "verifySens":
 
-    optFuncs.testSensShape()
+    optFuncs.verifySens()
+
+elif args.task == "testAPI":
+
+    DASolver.setOption("primalMinResTol", 1e-1)
+    optFuncs.runPrimal()
 
 else:
     print("task arg not found!")

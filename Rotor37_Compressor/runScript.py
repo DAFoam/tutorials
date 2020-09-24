@@ -34,9 +34,6 @@ MFR_target = 0.7
 # Set the parameters for optimization
 daOptions = {
     "solverName": "DATurboFoam",
-    "flowCondition": "Compressible",
-    "turbulenceModel": "SpalartAllmaras",
-    "designSurfaceFamily": "designSurface",
     "designSurfaces": ["blade"],
     "primalMinResTol": 1e-8,
     "primalVarBounds": {
@@ -95,7 +92,7 @@ daOptions = {
     },
     "normalizeStates": {"U": 100.0, "p": 100000.0, "nuTilda": 1e-3, "phi": 1.0, "T": 300.0},
     "adjPartDerivFDStep": {"State": 1e-6, "FFD": 1e-3},
-    "adjEqnOption": {"gmresRelTol": 1.0e-10, "gmresAbsTol": 1.0e-15, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
+    "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
     "transonicPCOption": 1,
     # Design variable setup
     "designVar": {"shapey": {"designVarType": "FFD"}, "shapez": {"designVarType": "FFD"}},
@@ -201,17 +198,22 @@ if args.task == "opt":
     if gcomm.rank == 0:
         print(sol)
 
-elif args.task == "run":
+elif args.task == "runPrimal":
 
-    optFuncs.run()
+    optFuncs.runPrimal()
 
-elif args.task == "solveCL":
+elif args.task == "runAdjoint":
 
-    optFuncs.solveCL(CL_target, "alpha", "CL")
+    optFuncs.runAdjoint()
 
-elif args.task == "testSensShape":
+elif args.task == "verifySens":
 
-    optFuncs.testSensShape()
+    optFuncs.verifySens()
+
+elif args.task == "testAPI":
+
+    DASolver.setOption("primalMinResTol", 1e-1)
+    optFuncs.runPrimal()
 
 else:
     print("task arg not found!")
