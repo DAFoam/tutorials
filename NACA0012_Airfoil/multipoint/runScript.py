@@ -301,7 +301,8 @@ elif args.task == "runAdjoint":
 
 elif args.task == "testAPI":
 
-    DASolver.setOption("primalMinResTol", 1e-1)
+    DASolver.setOption("primalMinResTol", 1e-2)
+    DASolver.updateDAOption()
     optFuncs.runPrimal(objFun=optFuncs.calcObjFuncValuesMP)
 
 else:

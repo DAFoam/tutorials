@@ -36,6 +36,8 @@ divSchemes
     div(phi,nuTilda)                                    bounded Gauss upwind;
     div(phi,K)                                          bounded Gauss upwind;
     div(phi,Ekp)                                        bounded Gauss upwind;
+    div((p*(U-URel)))                                   Gauss linear;
+    div((-devRhoReff.T()&U))                            Gauss linear;
 }
 
 interpolationSchemes

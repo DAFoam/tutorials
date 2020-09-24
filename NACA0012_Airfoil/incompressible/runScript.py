@@ -227,7 +227,8 @@ elif args.task == "verifySens":
 
 elif args.task == "testAPI":
 
-    DASolver.setOption("primalMinResTol", 1e-1)
+    DASolver.setOption("primalMinResTol", 1e-2)
+    DASolver.updateDAOption()
     optFuncs.runPrimal()
 
 else:
