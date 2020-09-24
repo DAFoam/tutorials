@@ -27,37 +27,39 @@ parser.add_argument("--task", help="type of run to do", type=str, default="opt")
 args = parser.parse_args()
 gcomm = MPI.COMM_WORLD
 
-HFL_target = 100.0
+HFL0 = 241.3
+HFL_weight = -0.5
+CPL0 = 40.26
+CPL_weight = 0.5
 
 # Set the parameters for optimization
 daOptions = {
     "solverName": "DASimpleTFoam",
     "designSurfaces": ["ubend", "ubendup"],
     "primalMinResTol": 1e-8,
+    "primalMinResTolDiff": 1e5,
     "objFunc": {
-        "CPL": {
+        "obj": {
             "part1": {
                 "type": "totalPressure",
                 "source": "patchToFace",
                 "patches": ["inlet"],
-                "scale": 1.0,
+                "scale": 1.0 / CPL0 * CPL_weight,
                 "addToAdjoint": True,
             },
             "part2": {
                 "type": "totalPressure",
                 "source": "patchToFace",
                 "patches": ["outlet"],
-                "scale": -1.0,
+                "scale": -1.0 / CPL0 * CPL_weight,
                 "addToAdjoint": True,
             },
-        },
-        "HFL": {
-            "part1": {
+            "part3": {
                 "type": "wallHeatFlux",
                 "source": "patchToFace",
                 "patches": ["ubendup"],
-                "scale": 1.0,
-                "addToAdjoint": False,
+                "scale": 1.0 / HFL0 * HFL_weight,
+                "addToAdjoint": True,
             }
         },
     },
@@ -172,7 +174,7 @@ if args.task == "opt":
     # Create a linear constraint so that the curvature at the symmetry plane is zero
     indSetA = []
     indSetB = []
-    for i in xrange(7, 16, 1):
+    for i in range(7, 16, 1):
         indSetA.append(pts[i, 0, 0])
         indSetB.append(pts[i, 0, 1])
     DVCon.addLinearConstraintsShape(
@@ -181,7 +183,7 @@ if args.task == "opt":
 
     indSetA = []
     indSetB = []
-    for i in xrange(7, 16, 1):
+    for i in range(7, 16, 1):
         indSetA.append(pts[i, -1, 0])
         indSetB.append(pts[i, -1, 1])
     DVCon.addLinearConstraintsShape(
@@ -190,7 +192,7 @@ if args.task == "opt":
 
     indSetA = []
     indSetB = []
-    for i in xrange(7, 16, 1):
+    for i in range(7, 16, 1):
         indSetA.append(pts[i, 0, 0])
         indSetB.append(pts[i, 0, 1])
     DVCon.addLinearConstraintsShape(
@@ -280,9 +282,9 @@ if args.task == "opt":
     DVCon.addConstraintsPyOpt(optProb)
 
     # Add objective
-    optProb.addObj("CPL", scale=1)
+    optProb.addObj("obj", scale=1)
     # Add physical constraints
-    optProb.addCon("HFL", lower=HFL_target, upper=HFL_target, scale=1)
+    #optProb.addCon("HFL", lower=HFL_target, upper=HFL_target, scale=1)
 
     if gcomm.rank == 0:
         print(optProb)

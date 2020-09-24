@@ -33,11 +33,11 @@ boundaryField
 
     ubend
     {
-        type            buoyantPressure;
+        type            zeroGradient;
     }
     ubendup
     {
-        type            buoyantPressure;
+        type            zeroGradient;
     }
     sym
     {
