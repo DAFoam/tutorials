@@ -35,7 +35,7 @@ jobs:
         # run the tutorials
         - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/NACA0012_Airfoil/incompressible && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
         - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/NACA0012_Airfoil/multipoint && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
-        - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/UBend && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
+        - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/UBend_Channel && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
 
     - stage: runTests # test compressible tutorials
       script:
