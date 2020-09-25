@@ -32,7 +32,7 @@ U0 = 100.0
 p0 = 101325.0
 nuTilda0 = 4.5e-5
 T0 = 300.0
-CL_target = 0.6
+CL_target = 0.5
 alpha0 = 3.0
 A0 = 0.1536
 rho0 = 1.0  # density for normalizing CD and CL
@@ -66,10 +66,10 @@ daOptions = {
             "source": "cylinderAnnulusToCell",
             "p1": [-0.23, 0.0, 0.3],  # p1 and p2 define the axis and width
             "p2": [-0.17, 0.0, 0.3],  # p2-p1 should be streamwise
-            "innerRadius": 0.03,
+            "innerRadius": 0.001,
             "outerRadius": 0.12,
             "rotDir": "left",
-            "scale": 50.0,
+            "scale": 45000.0,
             "POD": 0.85,
         },
     },
