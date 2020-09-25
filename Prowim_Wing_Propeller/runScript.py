@@ -60,6 +60,19 @@ daOptions = {
         "rhoUpperBound": 5.0,
         "rhoLowerBound": 0.2,
     },
+    "fvSource": {
+        "disk1": {
+            "type": "actuatorDisk",
+            "source": "cylinderAnnulusToCell",
+            "p1": [-0.23, 0.0, 0.3],  # p1 and p2 define the axis and width
+            "p2": [-0.17, 0.0, 0.3],  # p2-p1 should be streamwise
+            "innerRadius": 0.03,
+            "outerRadius": 0.12,
+            "rotDir": "left",
+            "scale": 50.0,
+            "POD": 0.85,
+        },
+    },
     "objFunc": {
         "CD": {
             "part1": {
