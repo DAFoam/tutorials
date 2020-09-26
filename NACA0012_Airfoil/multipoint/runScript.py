@@ -83,8 +83,8 @@ daOptions = {
     },
     "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
     "normalizeStates": {
-        "U": U0,
-        "p": U0 * U0 / 2.0,
+        "U": URef,
+        "p": URef * URef / 2.0,
         "nuTilda": nuTilda0 * 10.0,
         "k": k0 * 10.0,
         "epsilon": epsilon0,
