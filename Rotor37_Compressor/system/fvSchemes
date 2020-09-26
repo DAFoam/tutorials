@@ -37,6 +37,9 @@ divSchemes
     div(pc)                                             Gauss upwind;
     div(((rho*nuEff)*dev2(T(grad(U)))))                 Gauss linear;
     div(phi,nuTilda)                                    Gauss upwind;
+    div(phi,k)                                          Gauss upwind;
+    div(phi,omega)                                      Gauss upwind;
+    div(phi,epsilon)                                    Gauss upwind;
 }
 
 interpolationSchemes
@@ -52,13 +55,6 @@ laplacianSchemes
 snGradSchemes
 {
     default                                             corrected;
-}
-
-fluxRequired
-{
-    default                                             no;
-    p;
-    Phi;
 }
 
 wallDist

@@ -15,7 +15,6 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-application     DATurboFoam;
 startFrom       startTime;
 startTime       0;
 stopAt          endTime;

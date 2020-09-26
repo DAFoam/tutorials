@@ -59,7 +59,7 @@ daOptions = {
     "normalizeStates": {"U": 10.0, "p": 100000.0, "nuTilda": 1e-3, "phi": 1.0, "T": 300.0},
     "adjPartDerivFDStep": {"State": 1e-6, "FFD": 1e-3},
     "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
-    "transonicPCOption": 1,
+    "adjPCLag": 5,
     # Design variable setup
     "designVar": {"shapex0": {"designVarType": "FFD"}, "shapex1": {"designVarType": "FFD"}},
 }
