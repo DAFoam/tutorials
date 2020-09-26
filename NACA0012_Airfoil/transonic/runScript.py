@@ -31,6 +31,9 @@ gcomm = MPI.COMM_WORLD
 U0 = 238.0
 p0 = 101325.0
 nuTilda0 = 4.5e-5
+k0 = 8.5
+epsilon0 = 4.3e4
+omega0 = 5.6e4
 T0 = 300.0
 A0 = 0.1
 rho0 = 1.0  # density for normalizing CD and CL
@@ -47,6 +50,9 @@ daOptions = {
         "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
         "T0": {"variable": "T", "patches": ["inout"], "value": [T0]},
         "nuTilda0": {"variable": "nuTilda", "patches": ["inout"], "value": [nuTilda0]},
+        "k0": {"variable": "k", "patches": ["inout"], "value": [k0]},
+        "omega0": {"variable": "omega", "patches": ["inout"], "value": [omega0]},
+        "epsilon0": {"variable": "epsilon", "patches": ["inout"], "value": [epsilon0]},
         "useWallFunction": True,
     },
     # variable bounds for compressible flow conditions
@@ -83,11 +89,20 @@ daOptions = {
             }
         },
     },
-    "adjEqnOption": {"pcFillLevel": 1, "jacMatReOrdering": "rcm"},
+    "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
     # transonic preconditioner to speed up the adjoint convergence
     "transonicPCOption": 1,
-    "normalizeStates": {"U": U0, "p": p0, "nuTilda": nuTilda0 * 10.0, "phi": 1.0, "T": T0},
+    "normalizeStates": {
+        "U": U0,
+        "p": p0,
+        "nuTilda": nuTilda0 * 10.0,
+        "k": k0,
+        "epsilon": epsilon0 * 0.01,
+        "omega": omega0 * 0.01,
+        "phi": 1.0,
+    },
     "adjPartDerivFDStep": {"State": 1e-7, "FFD": 1e-3},
+    "adjPCLag": 10,  # recompute preconditioner every 10 adjoint solutions
     "designVar": {},
 }
 
