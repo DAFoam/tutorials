@@ -34,6 +34,8 @@ jobs:
         - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/dafoam-master && ./Allmake incompressible && pip install ."
         # run the tutorials
         - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/NACA0012_Airfoil/incompressible && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
+        - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/NACA0012_Airfoil/incompressible && echo y | ./Allclean.sh && sed -i 's/SpalartAllmaras/kOmegaSST/g' constant/turbulenceProperties && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
+        - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/NACA0012_Airfoil/incompressible && echo y | ./Allclean.sh && sed -i 's/kOmegaSST/kEpsilon/g' constant/turbulenceProperties && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
         - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/NACA0012_Airfoil/multipoint && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
         - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/UBend_Channel && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
         - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/JBC_Hull && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
@@ -44,6 +46,8 @@ jobs:
         - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/dafoam-master && ./Allmake compressible && pip install ."
         # run the tutorials
         - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/NACA0012_Airfoil/subsonic && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
+        - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/NACA0012_Airfoil/subsonic && echo y | ./Allclean.sh && sed -i 's/SpalartAllmaras/kOmegaSST/g' constant/turbulenceProperties && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
+        - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/NACA0012_Airfoil/subsonic && echo y | ./Allclean.sh && sed -i 's/kOmegaSST/kEpsilon/g' constant/turbulenceProperties && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
         - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/NACA0012_Airfoil/transonic && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
         - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/Onera_M6_Wing && ./preProcessing_pyHyp.sh && mpirun -np 2 python runScript.py --task=testAPI"
         - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/Onera_M6_Wing && echo y | ./Allclean.sh && ./preProcessing_snappyHexMesh.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
