@@ -36,6 +36,9 @@ CL_target = [0.3, 0.7, 0.5]
 alpha0 = [3.008097, 7.622412, 5.139186]
 p0 = 0.0
 nuTilda0 = 4.5e-5
+k0 = 0.015
+epsilon0 = 0.14
+omega0 = 100.0
 A0 = 0.1
 
 # Set the parameters for optimization
@@ -49,6 +52,9 @@ daOptions = {
         "U0": {"variable": "U", "patches": ["inout"], "value": [URef, 0.0, 0.0]},
         "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
         "nuTilda0": {"variable": "nuTilda", "patches": ["inout"], "value": [nuTilda0]},
+        "k0": {"variable": "k", "patches": ["inout"], "value": [k0]},
+        "omega0": {"variable": "omega", "patches": ["inout"], "value": [omega0]},
+        "epsilon0": {"variable": "epsilon", "patches": ["inout"], "value": [epsilon0]},
         "useWallFunction": True,
     },
     "objFunc": {
@@ -75,9 +81,18 @@ daOptions = {
             }
         },
     },
-    "adjEqnOption": {"pcFillLevel": 1, "jacMatReOrdering": "rcm"},
-    "normalizeStates": {"U": URef, "p": URef * URef / 2.0, "nuTilda": nuTilda0 * 10.0, "phi": 1.0},
+    "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
+    "normalizeStates": {
+        "U": U0,
+        "p": U0 * U0 / 2.0,
+        "nuTilda": nuTilda0 * 10.0,
+        "k": k0 * 10.0,
+        "epsilon": epsilon0,
+        "omega": omega0,
+        "phi": 1.0,
+    },
     "adjPartDerivFDStep": {"State": 1e-7, "FFD": 1e-3},
+    "adjPCLag": 20,  # recompute preconditioner every 20 adjoint solutions
     "designVar": {},
 }
 
