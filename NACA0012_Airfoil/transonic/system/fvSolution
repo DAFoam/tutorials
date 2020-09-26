@@ -45,7 +45,6 @@ solvers
         nSweeps                        1;
     }
 }
-}
 
 relaxationFactors
 {
