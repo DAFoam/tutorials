@@ -35,6 +35,9 @@ divSchemes
     div(phid,p)                                         Gauss limitedLinear 1.0;
     div(((rho*nuEff)*dev2(T(grad(U)))))                 Gauss linear;
     div(phi,nuTilda)                                    Gauss upwind;
+    div(phi,k)                                          Gauss upwind;
+    div(phi,omega)                                      Gauss upwind;
+    div(phi,epsilon)                                    Gauss upwind;
     div(phi,K)                                          Gauss upwind;
     div(phi,Ekp)                                        Gauss upwind;
     div(pc)                                             Gauss upwind;
@@ -53,14 +56,6 @@ laplacianSchemes
 snGradSchemes
 {
     default                                             corrected;
-}
-
-fluxRequired
-{
-    default                                             no;
-    p;
-    p_rgh;
-    Phi;
 }
 
 wallDist

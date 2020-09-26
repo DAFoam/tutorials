@@ -94,6 +94,7 @@ daOptions = {
     "adjPartDerivFDStep": {"State": 1e-6, "FFD": 1e-3},
     "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
     "transonicPCOption": 1,
+    "adjPCLag": 1,
     # Design variable setup
     "designVar": {"shapey": {"designVarType": "FFD"}, "shapez": {"designVarType": "FFD"}},
     "decomposeParDict": {"preservePatches": ["per1", "per2"]},

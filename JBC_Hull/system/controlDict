@@ -15,8 +15,6 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-
-application     simpleDAFoam;
 startFrom       startTime;
 startTime       0;
 stopAt          endTime;

@@ -62,6 +62,7 @@ daOptions = {
     "normalizeStates": {"D": 1.0e-7},
     "adjPartDerivFDStep": {"State": 1e-5, "FFD": 1e-3},
     "adjEqnOption": {"gmresRelTol": 1.0e-10, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
+    "adjPCLag": 20,
     # Design variable setup
     "designVar": {"shapey": {"designVarType": "FFD"}, "shapex": {"designVarType": "FFD"}},
 }

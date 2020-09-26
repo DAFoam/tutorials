@@ -15,8 +15,6 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-
-application     rhoSimpleDAFoam;
 startFrom       startTime;
 startTime       0;
 stopAt          endTime;

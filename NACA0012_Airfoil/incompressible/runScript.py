@@ -86,7 +86,7 @@ daOptions = {
         "phi": 1.0,
     },
     "adjPartDerivFDStep": {"State": 1e-7, "FFD": 1e-3},
-    "adjPCLag": 20,  # recompute preconditioner every 20 adjoint solutions
+    "adjPCLag": 20,
     "designVar": {},
 }
 

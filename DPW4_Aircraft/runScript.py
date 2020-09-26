@@ -101,11 +101,12 @@ daOptions = {
             }
         },
     },
-    "adjEqnOption": {"pcFillLevel": 1, "jacMatReOrdering": "rcm"},
+    "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
     # transonic preconditioner to speed up the adjoint convergence
     "transonicPCOption": 1,
     "normalizeStates": {"U": U0, "p": p0, "nuTilda": nuTilda0 * 10.0, "phi": 1.0, "T": T0},
     "adjPartDerivFDStep": {"State": 1e-6, "FFD": 1e-3},
+    "adjPCLag": 1,
     "designVar": {},
 }
 
