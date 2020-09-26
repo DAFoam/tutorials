@@ -15,12 +15,6 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-libs
-(
-    "libDummyTurbulenceModelIncompressible.so" 
-);
-
-application     simpleDAFoam;
 startFrom       startTime;
 startTime       0;
 stopAt          endTime;
