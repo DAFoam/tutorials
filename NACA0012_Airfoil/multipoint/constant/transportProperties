@@ -17,7 +17,7 @@ FoamFile
 
 transportModel Newtonian;
 
-nu 0.0000150000000000;
+nu 1.5e-5;
 Pr 0.7;
 Prt 1.0;
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
