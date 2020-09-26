@@ -72,6 +72,7 @@ daOptions = {
     "adjEqnOption": {"pcFillLevel": 1, "jacMatReOrdering": "rcm"},
     "normalizeStates": {"U": U0, "p": U0 * U0 / 2.0, "nuTilda": nuTilda0 * 10.0, "phi": 1.0},
     "adjPartDerivFDStep": {"State": 1e-7, "FFD": 1e-3},
+    "adjPCLag": 20, # recompute preconditioner every 20 adjoint solutions
     "designVar": {},
 }
 

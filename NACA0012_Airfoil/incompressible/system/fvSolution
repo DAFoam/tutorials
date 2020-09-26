@@ -94,6 +94,9 @@ relaxationFactors
         U                              0.70;
         T                              0.70;
         nuTilda                        0.70;
+        k                              0.70;
+        epsilon                        0.70;
+        omega                          0.70;
     }
 
 }

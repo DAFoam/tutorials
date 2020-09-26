@@ -21,7 +21,6 @@ RAS
     RASModel             SpalartAllmaras;
     turbulence           on;
     printCoeffs          off;
-    nuTildaMin           1e-16;
 } 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
