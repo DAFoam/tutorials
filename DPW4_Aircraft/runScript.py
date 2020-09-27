@@ -41,7 +41,7 @@ nuTilda0 = 4.5e-5
 
 CL_target = 0.5
 CMY_target = 0.0
-alpha0 = 2.631143
+alpha0 = 2.131143
 
 # Set the parameters for optimization
 daOptions = {
