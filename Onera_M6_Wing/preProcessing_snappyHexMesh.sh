@@ -17,7 +17,7 @@ else
   wget https://github.com/dafoam/files/releases/download/v1.0.0/m6_triSurface.tar.gz
 fi
 tar -xvf m6_triSurface.tar.gz
-mv m6_triSurface/* constant/triSurface/
+mv m6_triSurface constant/triSurface
 echo "Running snappyHexMesh mesh.."
 blockMesh &> logMeshGeneration.txt
 surfaceFeatureExtract >> logMeshGeneration.txt
