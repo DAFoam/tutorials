@@ -41,13 +41,13 @@ nuTilda0 = 4.5e-5
 
 CL_target = 0.5
 CMY_target = 0.0
-alpha0 = 2.131143
+alpha0 = 2.5027
 
 # Set the parameters for optimization
 daOptions = {
     "designSurfaces": ["wing", "tail", "body"],
     "solverName": "DARhoSimpleCFoam",
-    "primalMinResTol": 1.0e-8,
+    "primalMinResTol": 1.0e-9,
     "primalBC": {
         "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
         "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
@@ -106,7 +106,7 @@ daOptions = {
     "transonicPCOption": 1,
     "normalizeStates": {"U": U0, "p": p0, "nuTilda": nuTilda0 * 10.0, "phi": 1.0, "T": T0},
     "adjPartDerivFDStep": {"State": 1e-6, "FFD": 1e-3},
-    "adjPCLag": 1,
+    "adjPCLag": 5,
     "designVar": {},
 }
 
@@ -114,7 +114,7 @@ daOptions = {
 meshOptions = {
     "gridFile": os.getcwd(),
     "fileType": "openfoam",
-    "userotations": False,
+    "useRotations": False,
     # point and normal for the symmetry plane
     "symmetryPlanes": [[[0.0, 0.0, 0.0], [0.0, 1.0, 0.0]]],
 }
