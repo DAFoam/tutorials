@@ -54,7 +54,7 @@ jobs:
         - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/Rotor37_Compressor && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
         - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/NREL6_Wind_Turbine && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
         - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/Prowim_Wing_Propeller && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1"
-        - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/DPW4_Aircraft && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1" 
+        - docker exec -it regtest /bin/bash -c ". /home/dafoamuser/setupDAFoam.sh && cd $DOCKER_WORKING_DIR/DPW4_Aircraft &&  sed -i 's/snappyHexMesh -overwrite >> log.meshGeneration/snappyHexMesh -overwrite/g' preProcessing.sh && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1" 
 
     - stage: runTests # test solid tutorials
       script:
