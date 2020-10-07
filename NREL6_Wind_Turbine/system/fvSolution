@@ -50,12 +50,11 @@ relaxationFactors
 {
     fields
     {
-        "(p|rho)"                      1.0;
+        "(p|rho)"                      0.7;
     }
     equations
     {
-        p                              1.0;
-        "(U|T|e|h|nuTilda|k|epsilon|omega)" 0.80;
+        "(U|T|e|h|nuTilda|k|epsilon|omega)" 0.30;
     }
 }
 
