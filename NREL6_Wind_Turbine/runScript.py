@@ -32,7 +32,8 @@ gcomm = MPI.COMM_WORLD
 daOptions = {
     "solverName": "DATurboFoam",
     "designSurfaces": ["blade"],
-    "primalMinResTol": 1e-8,
+    "primalMinResTolDiff": 1e4,
+    "primalMinResTol": 1e-9,
     "primalVarBounds": {
         "UUpperBound": 800.0,
         "ULowerBound": -800.0,
@@ -59,7 +60,8 @@ daOptions = {
     "normalizeStates": {"U": 10.0, "p": 100000.0, "nuTilda": 1e-3, "phi": 1.0, "T": 300.0},
     "adjPartDerivFDStep": {"State": 1e-6, "FFD": 1e-3},
     "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 2, "jacMatReOrdering": "rcm"},
-    "adjPCLag": 5,
+    "adjPCLag": 4,
+    "checkMeshThreshold": {"maxNonOrth": 70.0, "maxSkewness": 6.0, "maxAspectRatio": 1000.0},
     # Design variable setup
     "designVar": {"shapex0": {"designVarType": "FFD"}, "shapex1": {"designVarType": "FFD"}},
 }

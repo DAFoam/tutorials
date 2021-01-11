@@ -20,7 +20,7 @@ thermoType
     mixture               pureMixture;
     specie                specie;
     equationOfState       perfectGas;
-    energy                sensibleEnthalpy;
+    energy                sensibleInternalEnergy;
     thermo                hConst;
     type                  hePsiThermo;
     transport             const;
