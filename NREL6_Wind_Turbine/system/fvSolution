@@ -18,6 +18,7 @@ FoamFile
 SIMPLE
 {
     nNonOrthogonalCorrectors           0;
+    transonic false;
 }
 
 solvers

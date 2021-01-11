@@ -49,7 +49,7 @@ FoamFile
         }
         {
             file "bladete.eMesh";
-            level 10;
+            level 11;
         }
         );
         refinementSurfaces
@@ -99,7 +99,7 @@ FoamFile
         layers
         {
             "blade.*"
-            {nSurfaceLayers 5;}
+            {nSurfaceLayers 3;}
         }
 
         relativeSizes true;
@@ -136,7 +136,7 @@ FoamFile
         minVol 1.00E-13;
         minTetQuality 1e-30;
         minArea -1.0;
-        minTwist 0.02;
+        minTwist 0.03;
         minDeterminant 0.01;
         minFaceWeight 0.03;
         minVolRatio 0.01;
