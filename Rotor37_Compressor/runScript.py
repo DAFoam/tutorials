@@ -92,7 +92,8 @@ daOptions = {
     },
     "normalizeStates": {"U": 100.0, "p": 100000.0, "nuTilda": 1e-3, "phi": 1.0, "T": 300.0},
     "adjPartDerivFDStep": {"State": 1e-6, "FFD": 1e-3},
-    "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
+    "adjEqnOption": {"gmresRelTol": 1.0e-5, "pcFillLevel": 1, "jacMatReOrdering": "rcm", "gmresMaxIters": 2000},
+    "checkMeshThreshold": {"maxAspectRatio": 2000.0, "maxNonOrth": 75.0, "maxSkewness": 6.0},
     "transonicPCOption": 1,
     "adjPCLag": 1,
     # Design variable setup
@@ -141,8 +142,8 @@ DVGeo = DVGeometry(FFDFile)
 pts = DVGeo.getLocalIndex(0)
 indexList = pts[1:4, :, :].flatten()
 PS = geo_utils.PointSelect("list", indexList)
-DVGeo.addGeoDVLocal("shapey", lower=-1.0, upper=1.0, axis="y", scale=1.0, pointSelect=PS)
-DVGeo.addGeoDVLocal("shapez", lower=-1.0, upper=1.0, axis="z", scale=1.0, pointSelect=PS)
+DVGeo.addGeoDVLocal("shapey", lower=-0.01, upper=0.01, axis="y", scale=1.0, pointSelect=PS)
+DVGeo.addGeoDVLocal("shapez", lower=-0.01, upper=0.01, axis="z", scale=1.0, pointSelect=PS)
 
 
 # =============================================================================
