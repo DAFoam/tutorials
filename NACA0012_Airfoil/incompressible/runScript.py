@@ -103,18 +103,31 @@ if args.opt == "snopt":
     optOptions = {
         "Major feasibility tolerance": 1.0e-7,
         "Major optimality tolerance": 1.0e-7,
-        "Function precision": 1.0e-7,
+        "Minor feasibility tolerance": 1.0e-7,
         "Verify level": -1,
+        "Function precision": 1.0e-7,
         "Major iterations limit": 50,
         "Nonderivative linesearch": None,
-        "Print file": "opt_SNOPT_print.out",
-        "Summary file": "opt_SNOPT_summary.out",
+        "Print file": "opt_SNOPT_print.txt",
+        "Summary file": "opt_SNOPT_summary.txt",
+    }
+elif args.opt == "ipopt":
+    optOptions = {
+        "tol": 1.0e-7,
+        "constr_viol_tol": 1.0e-7,
+        "max_iter": 50,
+        "output_file": "opt_IPOPT.txt",
+        "mu_strategy": "adaptive",
+        "limited_memory_max_history": 10,
+        "nlp_scaling_method": "none",
+        "alpha_for_y": "full",
+        "recalc_y": "yes",
     }
 elif args.opt == "slsqp":
     optOptions = {
         "ACC": 1.0e-7,
         "MAXIT": 50,
-        "IFILE": "opt_SLSQP.out",
+        "IFILE": "opt_SLSQP.txt",
     }
 else:
     print("opt arg not valid!")
