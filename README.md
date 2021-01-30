@@ -1,6 +1,6 @@
 # DAFoam Tutorials
 
-This tutorial uses DAFoam v2.1.1.
+This tutorial uses the latest version of [DAFoam](https://github.com/mdolab/dafoam)
 
 Go to one of tutorial folders and run the optimization using the following command:
 
