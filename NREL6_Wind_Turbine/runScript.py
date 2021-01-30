@@ -35,14 +35,14 @@ daOptions = {
     "primalMinResTolDiff": 1e4,
     "primalMinResTol": 1e-9,
     "primalVarBounds": {
-        "UUpperBound": 800.0,
-        "ULowerBound": -800.0,
-        "pUpperBound": 1000000.0,
-        "pLowerBound": 20000.0,
-        "hUpperBound": 500000.0,
-        "hLowerBound": 50000.0,
-        "rhoUpperBound": 10.0,
-        "rhoLowerBound": 0.2,
+        "UMax": 800.0,
+        "UMin": -800.0,
+        "pMax": 1000000.0,
+        "pMin": 20000.0,
+        "hMax": 500000.0,
+        "hMin": 50000.0,
+        "rhoMax": 10.0,
+        "rhoMin": 0.2,
     },
     "objFunc": {
         "CMX": {
