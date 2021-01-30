@@ -21,6 +21,7 @@ case $argm in
     cd NACA0012_Airfoil/multipoint && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1
     cd JBC_Hull && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1
     cd UBend_Channel && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1
+    ;;
   "compressible")
     echo "Running compressible tests"
     cd NACA0012_Airfoil/subsonic && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1
@@ -32,7 +33,9 @@ case $argm in
     cd NREL6_Wind_Turbine && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1
     cd Prowim_Wing_Propeller && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1
     cd DPW4_Aircraft && sed -i 's/snappyHexMesh -overwrite >> log.meshGeneration/snappyHexMesh -overwrite/g' preProcessing.sh && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1
-    cd DPW4_Aircraft && echo y | ./Allclean.sh && ./preProcessing.sh && mpirun -np 2 python runScript2FFDs.py --task=testAPI || exit 1 
+    cd DPW4_Aircraft && echo y | ./Allclean.sh && ./preProcessing.sh && mpirun -np 2 python runScript2FFDs.py --task=testAPI || exit 1
+    ;;
   "solid")
     echo "Running solid tests"
     cd Plate_Hole && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1
+    ;;
