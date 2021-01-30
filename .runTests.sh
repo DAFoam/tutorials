@@ -39,3 +39,9 @@ case $argm in
     echo "Running solid tests"
     cd Plate_Hole && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI || exit 1
     ;;
+  *)
+    echo "Argument not valid! Options are: incompressible, compressible, or solid"
+    echo "Example: ./Allrun incompressible"
+    exit 1
+    ;;
+esac
