@@ -63,14 +63,17 @@ daOptions = {
     "fvSource": {
         "disk1": {
             "type": "actuatorDisk",
-            "source": "cylinderAnnulusToCell",
-            "p1": [-0.23, 0.0, 0.3],  # p1 and p2 define the axis and width
-            "p2": [-0.17, 0.0, 0.3],  # p2-p1 should be streamwise
-            "innerRadius": 0.001,
+            "source": "cylinderAnnulusSmooth",
+            "center": [-0.2, 0.0, 0.3],
+            "direction": [1.0, 0.0, 0.0],
+            "innerRadius": 0.01,
             "outerRadius": 0.12,
             "rotDir": "left",
-            "scale": 45000.0,
+            "scale": 30000.0,
             "POD": 0.85,
+            "eps": 0.04,  # eps should be of cell size
+            "expM": 1.0,
+            "expN": 0.5,
         },
     },
     "objFunc": {
