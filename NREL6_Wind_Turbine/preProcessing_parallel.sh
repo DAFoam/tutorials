@@ -32,8 +32,8 @@ rm -rf 1 2 3
 rm -rf constant/polyMesh/*
 blockMesh &> logMeshGeneration.txt
 decomposePar >> logMeshGeneration.txt
-ibrun -np $1 snappyHexMesh -parallel >> logMeshGeneration.txt
-ibrun -np $1 checkMesh -parallel >> logMeshGeneration.txt
+mpirun -np $1 snappyHexMesh -parallel >> logMeshGeneration.txt
+mpirun -np $1 checkMesh -parallel >> logMeshGeneration.txt
 reconstructParMesh -latestTime >> logMeshGeneration.txt
 rm -rf constant/polyMesh/*
 mv 3/polyMesh/* constant/polyMesh/
