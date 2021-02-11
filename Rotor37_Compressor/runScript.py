@@ -197,7 +197,7 @@ if args.task == "opt":
     DVCon.addConstraintsPyOpt(optProb)
 
     # Add objective
-    optProb.addObj("CMZ", scale=-1)
+    optProb.addObj("CMZ", scale=1)
     # Add physical constraints
     optProb.addCon("TPR", lower=TPR_target, upper=TPR_target, scale=1)
     optProb.addCon("MFR", lower=MFR_target, upper=MFR_target, scale=1)
