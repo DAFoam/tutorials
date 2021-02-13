@@ -21,6 +21,7 @@ case $argm in
     cd NACA0012_Airfoil/multipoint && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
     cd JBC_Hull && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
     cd UBend_Channel && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
+    cd pitzDaily && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI --opt=ipopt && cd - || exit 1
     ;;
   "compressible")
     echo "Running compressible tests"
