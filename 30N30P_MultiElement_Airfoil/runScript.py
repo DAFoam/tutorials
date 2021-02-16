@@ -33,7 +33,7 @@ nuTilda0 = 4.5e-5
 T0 = 300.0
 A0 = 0.1
 rho0 = 1.0  # density for normalizing CD and CL
-CL_target = 3.42
+CL_target = 3.416
 alpha0 = 8.0
 
 # Set the parameters for optimization
@@ -251,14 +251,14 @@ DVCon.setSurface(DASolver.getTriangulatedMeshSurface(groupName=DASolver.getOptio
 leListMain = [[0.048, -0.014, 1e-6], [0.048, -0.014, 0.1 - 1e-6]]
 teListMain = [[0.698, -0.014, 1e-6], [0.698, -0.014, 0.1 - 1e-6]]
 # volume constraint
-DVCon.addVolumeConstraint(leListMain, teListMain, nSpan=2, nChord=10, lower=1.0, upper=3, scaled=True)
+DVCon.addVolumeConstraint(leListMain, teListMain, nSpan=2, nChord=10, lower=1.0, upper=1.0, scaled=True)
 # thickness constraint
 DVCon.addThicknessConstraints2D(leListMain, teListMain, nSpan=2, nChord=10, lower=0.8, upper=3.0, scaled=True)
 # NOTE: we need to add thickness and vol constraints for the tailing of the main airfoil
 leListMainTrailing = [[0.702, 0.0328, 1e-6], [0.702, 0.0328, 0.1 - 1e-6]]
 teListMainTrailing = [[0.854, 0.0328, 1e-6], [0.854, 0.0328, 0.1 - 1e-6]]
 # volume constraint
-DVCon.addVolumeConstraint(leListMainTrailing, teListMainTrailing, nSpan=2, nChord=10, lower=1.0, upper=3, scaled=True)
+DVCon.addVolumeConstraint(leListMainTrailing, teListMainTrailing, nSpan=2, nChord=10, lower=1.0, upper=1.0, scaled=True)
 # thickness constraint
 DVCon.addThicknessConstraints2D(
     leListMainTrailing, teListMainTrailing, nSpan=2, nChord=10, lower=0.8, upper=3.0, scaled=True
@@ -281,7 +281,17 @@ for i in [0, nFFDs_x - 1]:
         indSetB.append(ptsMain[i, 1, k])
 DVCon.addLinearConstraintsShape(indSetA, indSetB, factorA=1.0, factorB=1.0, lower=0.0, upper=0.0)
 
-# DVCon.writeTecplot("DVConstraints.dat")
+# clearance constraint for slat and main to avoid skewed mesh and overlap
+leListClearance1 = [[0.028, -0.015, 1e-6], [0.028, -0.015, 0.1 - 1e-6]]
+teListClearance1 = [[0.030, -0.002, 1e-6], [0.030, -0.002, 0.1 - 1e-6]]
+DVCon.addThicknessConstraints2D(leListClearance1, teListClearance1, nSpan=2, nChord=2, lower=0.8, upper=3.0, scaled=True)
+
+# clearance constraint for flap and main to avoid skewed mesh and overlap
+leListClearance2 = [[0.870, 0.0196, 1e-6], [0.870, 0.0196, 0.1 - 1e-6]]
+teListClearance2 = [[0.876, 0.0237, 1e-6], [0.876, 0.0237, 0.1 - 1e-6]]
+DVCon.addThicknessConstraints2D(leListClearance2, teListClearance2, nSpan=2, nChord=2, lower=0.8, upper=3.0, scaled=True)
+
+#DVCon.writeTecplot("DVConstraints.dat")
 
 # =============================================================================
 # Initialize optFuncs for optimization
