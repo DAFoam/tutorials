@@ -28,7 +28,7 @@ case $argm in
     cd NACA0012_Airfoil/subsonic && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
     cd NACA0012_Airfoil/subsonic && echo y | ./Allclean.sh && sed -i 's/SpalartAllmaras/kOmegaSST/g' constant/turbulenceProperties && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
     cd NACA0012_Airfoil/subsonic && echo y | ./Allclean.sh && sed -i 's/kOmegaSST/kEpsilon/g' constant/turbulenceProperties && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
-    cd 30P30N_MultiElement_Airfoil && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
+    cd 30N30P_MultiElement_Airfoil && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
     cd Onera_M6_Wing && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
     cd Onera_M6_Wing && echo y | ./Allclean.sh && ./preProcessing_snappyHexMesh.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
     cd Rotor37_Compressor && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
