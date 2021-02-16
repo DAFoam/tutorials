@@ -77,7 +77,7 @@ def returnBlockPoints(corners, nx, ny, nz):
 nBlocks = 3
 corners = np.zeros([nBlocks, 8, 3])
 
-nx = [10, 5, 5]
+nx = [5, 10, 5]
 ny = [2, 2, 2]
 nz = [2, 2, 2]
 

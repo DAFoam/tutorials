@@ -41,6 +41,7 @@ alpha0 = 8.0
 daOptions = {
     "designSurfaces": ["main", "slat", "flap"],
     "solverName": "DARhoSimpleFoam",
+    "adjJacobianOption": "JacobianFree",
     "primalMinResTol": 1.0e-8,
     "primalBC": {
         "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
@@ -91,8 +92,8 @@ daOptions = {
         "nuTilda": nuTilda0 * 10.0,
         "phi": 1.0,
     },
-    "adjPartDerivFDStep": {"State": 1e-7, "FFD": 1e-3},
-    "adjPCLag": 5,
+    "adjPartDerivFDStep": {"State": 1e-6, "FFD": 1e-3},
+    "adjPCLag": 10,
     "checkMeshThreshold": {"maxAspectRatio": 2000.0, "maxNonOrth": 75.0, "maxSkewness": 6.0},
     "designVar": {},
 }
@@ -114,7 +115,7 @@ if args.opt == "snopt":
         "Minor feasibility tolerance": 1.0e-7,
         "Verify level": -1,
         "Function precision": 1.0e-7,
-        "Major iterations limit": 50,
+        "Major iterations limit": 100,
         "Nonderivative linesearch": None,
         "Print file": "opt_SNOPT_print.txt",
         "Summary file": "opt_SNOPT_summary.txt",
