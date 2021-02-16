@@ -33,6 +33,7 @@ nuTilda0 = 4.5e-5
 T0 = 300.0
 A0 = 0.1
 rho0 = 1.0  # density for normalizing CD and CL
+CD_target = 0.1887
 CL_target = 3.416
 alpha0 = 8.0
 
@@ -189,8 +190,8 @@ def translateflap(val, geo):
 DVGeo = DVGeometry("./FFD/airfoilFFD.xyz")
 # Add reference axis for twist
 # Slat refAxis
-xSlat = [-0.027, -0.027]
-ySlat = [-0.109, -0.109]
+xSlat = [0.0169, 0.0169]
+ySlat = [0.0034, 0.0034]
 zSlat = [0.0, 0.1]
 cSlat = pySpline.Curve(x=xSlat, y=ySlat, z=zSlat, k=2)
 DVGeo.addRefAxis("slatAxis", curve=cSlat, axis="z", volumes=[0])
@@ -207,7 +208,7 @@ DVGeo.addGeoDVGlobal("twistslat", [twistslat0], twistslat, lower=-10.0, upper=10
 daOptions["designVar"]["twistslat"] = {"designVarType": "FFD"}
 # translate slat
 translateslat0 = np.zeros(2)
-DVGeo.addGeoDVGlobal("translateslat", translateslat0, translateslat, lower=-0.1, upper=0.1, scale=1.0)
+DVGeo.addGeoDVGlobal("translateslat", translateslat0, translateslat, lower=[-0.1, 0.0], upper=[0.0, 0.1], scale=1.0)
 daOptions["designVar"]["translateslat"] = {"designVarType": "FFD"}
 # shape main
 iVol = 1
@@ -222,7 +223,7 @@ DVGeo.addGeoDVGlobal("twistflap", [twistflap0], twistflap, lower=-10.0, upper=10
 daOptions["designVar"]["twistflap"] = {"designVarType": "FFD"}
 # translate flap
 translateflap0 = np.zeros(2)
-DVGeo.addGeoDVGlobal("translateflap", translateflap0, translateflap, lower=-0.1, upper=0.1, scale=1.0)
+DVGeo.addGeoDVGlobal("translateflap", translateflap0, translateflap, lower=[0.0, -0.1], upper=[0.1, 0.0], scale=1.0)
 daOptions["designVar"]["translateflap"] = {"designVarType": "FFD"}
 # alpha
 DVGeo.addGeoDVGlobal("alpha", [alpha0], alpha, lower=-10.0, upper=10.0, scale=1.0)
@@ -281,16 +282,6 @@ for i in [0, nFFDs_x - 1]:
         indSetB.append(ptsMain[i, 1, k])
 DVCon.addLinearConstraintsShape(indSetA, indSetB, factorA=1.0, factorB=1.0, lower=0.0, upper=0.0)
 
-# clearance constraint for slat and main to avoid skewed mesh and overlap
-leListClearance1 = [[0.028, -0.015, 1e-6], [0.028, -0.015, 0.1 - 1e-6]]
-teListClearance1 = [[0.030, -0.002, 1e-6], [0.030, -0.002, 0.1 - 1e-6]]
-DVCon.addThicknessConstraints2D(leListClearance1, teListClearance1, nSpan=2, nChord=2, lower=0.8, upper=3.0, scaled=True)
-
-# clearance constraint for flap and main to avoid skewed mesh and overlap
-leListClearance2 = [[0.870, 0.0196, 1e-6], [0.870, 0.0196, 0.1 - 1e-6]]
-teListClearance2 = [[0.876, 0.0237, 1e-6], [0.876, 0.0237, 0.1 - 1e-6]]
-DVCon.addThicknessConstraints2D(leListClearance2, teListClearance2, nSpan=2, nChord=2, lower=0.8, upper=3.0, scaled=True)
-
 #DVCon.writeTecplot("DVConstraints.dat")
 
 # =============================================================================
@@ -312,9 +303,9 @@ if args.task == "opt":
     DVCon.addConstraintsPyOpt(optProb)
 
     # Add objective
-    optProb.addObj("CD", scale=1)
+    optProb.addObj("CL", scale=-1)
     # Add physical constraints
-    optProb.addCon("CL", lower=CL_target, upper=CL_target, scale=1)
+    optProb.addCon("CD", lower=CD_target, upper=CD_target, scale=1)
 
     if gcomm.rank == 0:
         print(optProb)
