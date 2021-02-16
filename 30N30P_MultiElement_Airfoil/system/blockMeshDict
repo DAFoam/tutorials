@@ -1,0 +1,71 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+|       o          |                                                          |
+|    o     o       | HELYX-OS                                                  |
+|   o   O   o      | Version: v2.3.1                                           |
+|    o     o       | Web:     http://www.engys.com                            |
+|       o          |                                                          |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version 2.0;
+    format ascii;
+    class dictionary;
+    location system;
+    object blockMeshDict;
+}
+
+convertToMeters 1;
+
+
+vertices  
+(
+    ( -8  -10   0)
+    (  12 -10   0)
+    (  12  10   0)
+    ( -8  10   0)
+    ( -8 -10   0.5)
+    (  12 -10  0.5)
+    (  12  10  0.5)
+    ( -8  10  0.5)
+);
+
+blocks  
+(
+    hex ( 0 1 2 3 4 5 6 7) (40 40 1) simpleGrading (1 1 1)
+);
+
+edges  
+(
+);
+
+patches  
+( 
+  patch inlet
+  (
+      (0 4 7 3)
+  ) 
+  patch outlet
+  (
+      (1 2 6 5)
+  ) 
+  patch bot
+  (
+      (0 1 5 4)
+  ) 
+  patch top
+  (
+      (3 7 6 2)
+  ) 
+  symmetry back
+  (
+      (0 3 2 1)
+  ) 
+  patch front
+  (
+      (4 5 6 7)
+  )
+);
+
+mergePatchPairs  
+(
+);
