@@ -201,14 +201,6 @@ zFlap = [0.0, 0.1]
 cFlap = pySpline.Curve(x=xFlap, y=yFlap, z=zFlap, k=2)
 DVGeo.addRefAxis("flapAxis", curve=cFlap, axis="z", volumes=[2])
 
-
-# shape slat
-iVol = 0
-ptsSlat = DVGeo.getLocalIndex(iVol)
-indexListSlat = ptsSlat[:, :, :].flatten()
-PSSlat = geo_utils.PointSelect("list", indexListSlat)
-DVGeo.addGeoDVSectionLocal("shapeslat", secIndex="i", lower=-0.1, upper=0.1, axis=1, scale=1.0, pointSelect=PSSlat)
-daOptions["designVar"]["shapeslat"] = {"designVarType": "FFD"}
 # twist slat
 twistslat0 = 0.0
 DVGeo.addGeoDVGlobal("twistslat", [twistslat0], twistslat, lower=-10.0, upper=10.0, scale=1.0)
@@ -224,13 +216,6 @@ indexListMain = ptsMain[:, :, :].flatten()
 PSMain = geo_utils.PointSelect("list", indexListMain)
 DVGeo.addGeoDVLocal("shapemain", lower=-1.0, upper=1.0, axis="y", scale=1.0, pointSelect=PSMain)
 daOptions["designVar"]["shapemain"] = {"designVarType": "FFD"}
-# shape flap
-iVol = 2
-ptsFlap = DVGeo.getLocalIndex(iVol)
-indexListFlap = ptsFlap[:, :, :].flatten()
-PSFlap = geo_utils.PointSelect("list", indexListFlap)
-DVGeo.addGeoDVSectionLocal("shapeflap", secIndex="i", lower=-0.1, upper=0.1, axis=1, scale=1.0, pointSelect=PSFlap)
-daOptions["designVar"]["shapeflap"] = {"designVarType": "FFD"}
 # twist flap
 twistflap0 = 0.0
 DVGeo.addGeoDVGlobal("twistflap", [twistflap0], twistflap, lower=-10.0, upper=10.0, scale=1.0)
@@ -261,31 +246,6 @@ DASolver.setEvalFuncs(evalFuncs)
 DVCon = DVConstraints()
 DVCon.setDVGeo(DVGeo)
 DVCon.setSurface(DASolver.getTriangulatedMeshSurface(groupName=DASolver.getOption("designSurfaceFamily")))
-
-# ******* Slat ***********
-leListSlat = [[-0.0769, -0.1108, 1e-6], [-0.0769, -0.1108, 0.1 - 1e-6]]
-teListSlat = [[0.000, -0.0111, 1e-6], [0.000, -0.0111, 0.1 - 1e-6]]
-# volume constraint
-DVCon.addVolumeConstraint(leListSlat, teListSlat, nSpan=2, nChord=10, lower=1.0, upper=3, scaled=True)
-# thickness constraint
-DVCon.addThicknessConstraints2D(leListSlat, teListSlat, nSpan=2, nChord=10, lower=0.8, upper=3.0, scaled=True)
-# symmetry constraint
-nFFDs_x = ptsSlat.shape[0]
-indSetA = []
-indSetB = []
-for i in range(nFFDs_x):
-    for j in [0, 1]:
-        indSetA.append(ptsSlat[i, j, 1])
-        indSetB.append(ptsSlat[i, j, 0])
-DVCon.addLinearConstraintsShape(indSetA, indSetB, factorA=1.0, factorB=-1.0, lower=0.0, upper=0.0)
-# LE and TE constraint
-indSetA = []
-indSetB = []
-for i in [0, nFFDs_x - 1]:
-    for k in [0]:  # do not constrain k=1 because it is linked in the above symmetry constraint
-        indSetA.append(ptsSlat[i, 0, k])
-        indSetB.append(ptsSlat[i, 1, k])
-DVCon.addLinearConstraintsShape(indSetA, indSetB, factorA=1.0, factorB=1.0, lower=0.0, upper=0.0)
 
 # ******* Main ***********
 leListMain = [[0.048, -0.014, 1e-6], [0.048, -0.014, 0.1 - 1e-6]]
@@ -321,32 +281,7 @@ for i in [0, nFFDs_x - 1]:
         indSetB.append(ptsMain[i, 1, k])
 DVCon.addLinearConstraintsShape(indSetA, indSetB, factorA=1.0, factorB=1.0, lower=0.0, upper=0.0)
 
-# ******* Flap ***********
-leListFlap = [[0.875, 0.014, 1e-6], [0.875, 0.014, 0.1 - 1e-6]]
-teListFlap = [[1.128, -0.0141, 1e-6], [1.128, -0.0141, 0.1 - 1e-6]]
-# volume constraint
-DVCon.addVolumeConstraint(leListFlap, teListFlap, nSpan=2, nChord=10, lower=1.0, upper=3, scaled=True)
-# thickness constraint
-DVCon.addThicknessConstraints2D(leListFlap, teListFlap, nSpan=2, nChord=10, lower=0.8, upper=3.0, scaled=True)
-# symmetry constraint
-nFFDs_x = ptsFlap.shape[0]
-indSetA = []
-indSetB = []
-for i in range(nFFDs_x):
-    for j in [0, 1]:
-        indSetA.append(ptsFlap[i, j, 1])
-        indSetB.append(ptsFlap[i, j, 0])
-DVCon.addLinearConstraintsShape(indSetA, indSetB, factorA=1.0, factorB=-1.0, lower=0.0, upper=0.0)
-# LE and TE constraint
-indSetA = []
-indSetB = []
-for i in [0, nFFDs_x - 1]:
-    for k in [0]:  # do not constrain k=1 because it is linked in the above symmetry constraint
-        indSetA.append(ptsFlap[i, 0, k])
-        indSetB.append(ptsFlap[i, 1, k])
-DVCon.addLinearConstraintsShape(indSetA, indSetB, factorA=1.0, factorB=1.0, lower=0.0, upper=0.0)
-
-#DVCon.writeTecplot("DVConstraints.dat")
+# DVCon.writeTecplot("DVConstraints.dat")
 
 # =============================================================================
 # Initialize optFuncs for optimization
