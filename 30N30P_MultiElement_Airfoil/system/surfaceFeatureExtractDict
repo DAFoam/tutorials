@@ -1,0 +1,128 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2.3.0                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      surfaceFeatureExtractDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+flap_lower.stl
+{
+    extractionMethod    extractFromSurface;
+    extractFromSurfaceCoeffs
+    {
+        // - 0  : selects no edges
+        // - 180: selects all edges
+        includedAngle   180;
+    }
+    writeObj                false;
+}
+
+flap_te.stl
+{
+    extractionMethod    extractFromSurface;
+    extractFromSurfaceCoeffs
+    {
+        // - 0  : selects no edges
+        // - 180: selects all edges
+        includedAngle   180;
+    }
+    writeObj                false;
+}
+
+flap_upper.stl
+{
+    extractionMethod    extractFromSurface;
+    extractFromSurfaceCoeffs
+    {
+        // - 0  : selects no edges
+        // - 180: selects all edges
+        includedAngle   180;
+    }
+    writeObj                false;
+}
+
+main_lower1.stl
+{
+    extractionMethod    extractFromSurface;
+    extractFromSurfaceCoeffs
+    {
+        // - 0  : selects no edges
+        // - 180: selects all edges
+        includedAngle   180;
+    }
+    writeObj                false;
+}
+
+main_lower2.stl
+{
+    extractionMethod    extractFromSurface;
+    extractFromSurfaceCoeffs
+    {
+        // - 0  : selects no edges
+        // - 180: selects all edges
+        includedAngle   180;
+    }
+    writeObj                false;
+}
+
+main_lower3.stl
+{
+    extractionMethod    extractFromSurface;
+    extractFromSurfaceCoeffs
+    {
+        // - 0  : selects no edges
+        // - 180: selects all edges
+        includedAngle   180;
+    }
+    writeObj                false;
+}
+
+main_upper.stl
+{
+    extractionMethod    extractFromSurface;
+    extractFromSurfaceCoeffs
+    {
+        // - 0  : selects no edges
+        // - 180: selects all edges
+        includedAngle   180;
+    }
+    writeObj                false;
+}
+
+slat_lower.stl
+{
+    extractionMethod    extractFromSurface;
+    extractFromSurfaceCoeffs
+    {
+        // - 0  : selects no edges
+        // - 180: selects all edges
+        includedAngle   180;
+    }
+    writeObj                false;
+}
+
+slat_upper.stl
+{
+    extractionMethod    extractFromSurface;
+    extractFromSurfaceCoeffs
+    {
+        // - 0  : selects no edges
+        // - 180: selects all edges
+        includedAngle   180;
+    }
+    writeObj                false;
+}
+
+
+
+
+// ************************************************************************* //
