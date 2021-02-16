@@ -37,7 +37,9 @@ jobs:
         docker exec -i regtest /bin/bash -c "rm -rf ${{ env.DOCKER_WORKING_DIR}} && cp -r ${{env.DOCKER_MOUNT_DIR}} ${{env.DOCKER_WORKING_DIR}}"
         docker exec -i regtest /bin/bash -c ". /home/dafoamuser/loadDAFoam.sh && cd ${{env.DOCKER_WORKING_DIR}} && wget https://github.com/mdolab/dafoam/archive/master.tar.gz && tar -xvf master.tar.gz"
         docker exec -i regtest /bin/bash -c ". /home/dafoamuser/loadDAFoam.sh && cd ${{env.DOCKER_WORKING_DIR}}/dafoam-master && ./Allmake ${{matrix.args}}"
-        if [ "${{matrix.args}}" = "incompressible" ]; then
+        if [ "${{matrix.args}}" = "solid" ]; then
+           echo "Skip building the AD version for solid"
+        else
            docker exec -i regtest /bin/bash -c ". /home/dafoamuser/loadDAFoam.sh && . /home/dafoamuser/OpenFOAM/OpenFOAM-v1812-AD/etc/bashrc && cd ${{env.DOCKER_WORKING_DIR}}/dafoam-master && ./Allclean && ./Allmake ${{matrix.args}} 2> makeWarnings.txt"
         fi
         docker exec -i regtest /bin/bash -c ". /home/dafoamuser/loadDAFoam.sh && cd ${{env.DOCKER_WORKING_DIR}}/dafoam-master && pip install ."
