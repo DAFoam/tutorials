@@ -28,7 +28,7 @@ args = parser.parse_args()
 gcomm = MPI.COMM_WORLD
 
 
-TPR_target = 1.7
+TPR_target = 1.4
 MFR_target = 0.7
 
 # Set the parameters for optimization
@@ -92,7 +92,7 @@ daOptions = {
     },
     "normalizeStates": {"U": 100.0, "p": 100000.0, "nuTilda": 1e-3, "phi": 1.0, "T": 300.0},
     "adjPartDerivFDStep": {"State": 1e-6, "FFD": 1e-3},
-    "adjEqnOption": {"gmresRelTol": 1.0e-5, "pcFillLevel": 1, "jacMatReOrdering": "rcm", "gmresMaxIters": 2000},
+    "adjEqnOption": {"gmresRelTol": 1.0e-5, "pcFillLevel": 1, "jacMatReOrdering": "rcm", "gmresMaxIters": 2000, "gmresRestart": 2000},
     "checkMeshThreshold": {"maxAspectRatio": 2000.0, "maxNonOrth": 75.0, "maxSkewness": 6.0},
     "transonicPCOption": 1,
     "adjPCLag": 1,
