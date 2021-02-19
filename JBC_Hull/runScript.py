@@ -89,7 +89,7 @@ elif args.opt == "ipopt":
     optOptions = {
         "tol": 1.0e-7,
         "constr_viol_tol": 1.0e-7,
-        "max_iter": 50,
+        "max_iter": 40,
         "print_level": 5,
         "output_file": "opt_IPOPT.txt",
         "mu_strategy": "adaptive",
