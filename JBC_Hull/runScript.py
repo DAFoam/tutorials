@@ -20,7 +20,7 @@ from pyoptsparse import Optimization, OPT
 # =============================================================================
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: slsqp (default), snopt, or ipopt
-parser.add_argument("--opt", help="optimizer to use", type=str, default="slsqp")
+parser.add_argument("--opt", help="optimizer to use", type=str, default="ipopt")
 # which task to run. Options are: opt (default), run, testSensShape, or solveCL
 parser.add_argument("--task", help="type of run to do", type=str, default="opt")
 args = parser.parse_args()
@@ -36,6 +36,7 @@ daOptions = {
     "solverName": "DASimpleFoam",
     "designSurfaces": ["hull"],
     "primalMinResTol": 1e-8,
+    "adjJacobianOption": "JacobianFree",
     "primalBC": {
         "U0": {"variable": "U", "patches": ["inlet"], "value": [U0, 0.0, 0.0]},
         "p0": {"variable": "p", "patches": ["outlet"], "value": [p0]},
@@ -58,7 +59,7 @@ daOptions = {
     "normalizeStates": {"U": 1.0, "p": 1.0, "nuTilda": 1e-4, "phi": 1.0},
     "adjPartDerivFDStep": {"State": 1e-6, "FFD": 1e-3},
     "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
-    "adjPCLag": 1,
+    "adjPCLag": 5,
     # Design variable setup
     "designVar": {"shapey": {"designVarType": "FFD"}},
 }
