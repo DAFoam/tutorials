@@ -33,7 +33,7 @@ p0 = 101325.0
 nuTilda0 = 4.5e-5
 T0 = 300.0
 CL_target = 0.5
-alpha0 = 2.2
+alpha0 = 2.428212
 A0 = 3.407014
 rho0 = 1.18  # density for normalizing CD and CL
 
@@ -100,7 +100,7 @@ meshOptions = {
     "fileType": "openfoam",
     "useRotations": False,
     # point and normal for the symmetry plane
-    "symmetryPlanes": [[[0.0, 0.0, 0.0], [0.0, 0.0, 1.0]]],
+    "symmetryPlanes": [[[0.0, 0.0, 0.0], [0.0, 1.0, 0.0]]],
 }
 
 # options for optimizers
@@ -146,20 +146,20 @@ else:
 DVGeo = DVGeometry("./FFD/wingFFD.xyz")
 
 # nTwists is the number of FFD points in the spanwise direction
-nTwists = DVGeo.addRefAxis("bodyAxis", xFraction=0.25, alignIndex="k")
+nTwists = DVGeo.addRefAxis("bodyAxis", xFraction=0.25, alignIndex="j")
 
 # twist function, we keep the root twist constant so the first
 # element in the twist design variable is the twist at the 2nd
 # spanwise location
 def twist(val, geo):
     for i in range(1, nTwists):
-        geo.rot_z["bodyAxis"].coef[i] = val[i - 1]
+        geo.rot_y["bodyAxis"].coef[i] = - val[i - 1]
 
 
 # angle of attack
 def alpha(val, geo):
     aoa = val[0] * np.pi / 180.0
-    inletU = [float(U0 * np.cos(aoa)), float(U0 * np.sin(aoa)), 0]
+    inletU = [float(U0 * np.cos(aoa)), 0.0, float(U0 * np.sin(aoa))]
     DASolver.setOption("primalBC", {"U0": {"variable": "U", "patches": ["inout"], "value": inletU}})
     DASolver.updateDAOption()
 
@@ -169,14 +169,14 @@ pts = DVGeo.getLocalIndex(0)
 indexList = pts[:, :, :].flatten()
 PS = geo_utils.PointSelect("list", indexList)
 # shape
-DVGeo.addGeoDVLocal("shapey", lower=-1.0, upper=1.0, axis="y", scale=1.0, pointSelect=PS)
-daOptions["designVar"]["shapey"] = {"designVarType": "FFD"}
+DVGeo.addGeoDVLocal("shapez", lower=-1.0, upper=1.0, axis="z", scale=1.0, pointSelect=PS)
+daOptions["designVar"]["shapez"] = {"designVarType": "FFD"}
 # twist
 DVGeo.addGeoDVGlobal("twist", np.zeros(nTwists - 1), twist, lower=-10.0, upper=10.0, scale=1.0)
 daOptions["designVar"]["twist"] = {"designVarType": "FFD"}
 # alpha
 DVGeo.addGeoDVGlobal("alpha", [alpha0], alpha, lower=0.0, upper=10.0, scale=1.0)
-daOptions["designVar"]["alpha"] = {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "y"}
+daOptions["designVar"]["alpha"] = {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "z"}
 
 # =============================================================================
 # DAFoam initialization
@@ -243,6 +243,9 @@ optFuncs.gcomm = gcomm
 # =============================================================================
 if args.task == "opt":
 
+    alpha4CLTarget = optFuncs.solveCL(CL_target, "alpha", "CL")
+    alpha([alpha4CLTarget], None)
+
     optProb = Optimization("opt", objFun=optFuncs.calcObjFuncValues, comm=gcomm)
     DVGeo.addVariablesPyOpt(optProb)
     DVCon.addConstraintsPyOpt(optProb)
@@ -270,10 +273,6 @@ elif args.task == "runPrimal":
 elif args.task == "runAdjoint":
 
     optFuncs.runAdjoint()
-
-elif args.task == "solveCL":
-
-    optFuncs.solveCL(CL_target, "alpha", "CL")
 
 elif args.task == "verifySens":
 
