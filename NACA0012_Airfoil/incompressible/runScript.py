@@ -34,7 +34,7 @@ k0 = 0.015
 epsilon0 = 0.14
 omega0 = 100.0
 CL_target = 0.5
-alpha0 = 5.139186
+alpha0 = 3 #5.139186
 A0 = 0.1
 
 # Set the parameters for optimization
@@ -220,6 +220,9 @@ optFuncs.gcomm = gcomm
 # =============================================================================
 if args.task == "opt":
 
+    alpha4CLTarget = optFuncs.solveCL(CL_target, "alpha", "CL")
+    alpha([alpha4CLTarget], None)
+
     optProb = Optimization("opt", objFun=optFuncs.calcObjFuncValues, comm=gcomm)
     DVGeo.addVariablesPyOpt(optProb)
     DVCon.addConstraintsPyOpt(optProb)
@@ -245,10 +248,6 @@ elif args.task == "runPrimal":
 elif args.task == "runAdjoint":
 
     optFuncs.runAdjoint()
-
-elif args.task == "solveCL":
-
-    optFuncs.solveCL(CL_target, "alpha", "CL")
 
 elif args.task == "verifySens":
 

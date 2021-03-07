@@ -237,6 +237,9 @@ optFuncs.gcomm = gcomm
 # =============================================================================
 if args.task == "opt":
 
+    alpha4CLTarget = optFuncs.solveCL(CL_target, "alpha", "CL")
+    alpha([alpha4CLTarget], None)
+
     optProb = Optimization("opt", objFun=optFuncs.calcObjFuncValues, comm=gcomm)
     DVGeo.addVariablesPyOpt(optProb)
     DVCon.addConstraintsPyOpt(optProb)
@@ -264,10 +267,6 @@ elif args.task == "runPrimal":
 elif args.task == "runAdjoint":
 
     optFuncs.runAdjoint()
-
-elif args.task == "solveCL":
-
-    optFuncs.solveCL(CL_target, "alpha", "CL")
 
 elif args.task == "verifySens":
 
