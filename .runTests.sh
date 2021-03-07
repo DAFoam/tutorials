@@ -31,6 +31,7 @@ case $argm in
     cd 30N30P_MultiElement_Airfoil && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
     cd Onera_M6_Wing && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
     cd Onera_M6_Wing && echo y | ./Allclean.sh && ./preProcessing_snappyHexMesh.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
+    cd CRM_Wing && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
     cd Rotor37_Compressor && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
     cd NREL6_Wind_Turbine && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
     cd Prowim_Wing_Propeller && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
