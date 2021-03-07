@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-DAFoam run script for the Onera M4 wing at transonic speed
+DAFoam run script for the CRM wing at transonic speed
 """
 
 # =============================================================================
@@ -21,7 +21,7 @@ import numpy as np
 # =============================================================================
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: slsqp (default), snopt, or ipopt
-parser.add_argument("--opt", help="optimizer to use", type=str, default="slsqp")
+parser.add_argument("--opt", help="optimizer to use", type=str, default="snopt")
 # which task to run. Options are: opt (default), run, testSensShape, or solveCL
 parser.add_argument("--task", help="type of run to do", type=str, default="opt")
 args = parser.parse_args()
@@ -32,15 +32,16 @@ U0 = 285.0
 p0 = 101325.0
 nuTilda0 = 4.5e-5
 T0 = 300.0
-CL_target = 0.270
-alpha0 = 3.0
-A0 = 0.7575
-rho0 = 1.0  # density for normalizing CD and CL
+CL_target = 0.5
+alpha0 = 2.2
+A0 = 3.407014
+rho0 = 1.18  # density for normalizing CD and CL
 
 # Set the parameters for optimization
 daOptions = {
     "designSurfaces": ["wing"],
     "solverName": "DARhoSimpleCFoam",
+    "adjJacobianOption": "JacobianFree",
     "primalMinResTol": 1.0e-8,
     "primalBC": {
         "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
@@ -198,14 +199,31 @@ DVCon.setSurface(DASolver.getTriangulatedMeshSurface(groupName=DASolver.getOptio
 
 # NOTE: the LE and TE lists are not parallel lines anymore, these two lists define lines that
 # are close to the leading and trailing edges while being completely within the wing surface
-leList = [[0.01, 0.0, 1e-3], [0.7, 0.0, 1.19]]
-teList = [[0.79, 0.0, 1e-3], [1.135, 0.0, 1.19]]
+LE_pt = np.array([0.01, 0.01, 0.0])
+break_pt = np.array([0.8477, 1.11853, 0.0])
+tip_pt = np.array([2.85680, 3.75816, 0.0])
+root_chord = 1.689
+break_chord = 1.03628
+tip_chord = 0.3902497
+
+leList = [
+    [LE_pt[0] + 0.01 * root_chord, LE_pt[1], LE_pt[2]],
+    [break_pt[0] + 0.01 * break_chord, break_pt[1], break_pt[2]],
+    [tip_pt[0] + 0.01 * tip_chord, tip_pt[1], tip_pt[2]],
+]
+
+teList = [
+    [LE_pt[0] + 0.99 * root_chord, LE_pt[1], LE_pt[2]],
+    [break_pt[0] + 0.99 * break_chord, break_pt[1], break_pt[2]],
+    [tip_pt[0] + 0.99 * tip_chord, tip_pt[1], tip_pt[2]],
+]
+
 
 # volume constraint
-DVCon.addVolumeConstraint(leList, teList, nSpan=10, nChord=10, lower=1.0, upper=3, scaled=True)
+DVCon.addVolumeConstraint(leList, teList, nSpan=25, nChord=30, lower=1.0, upper=3, scaled=True)
 
 # thickness constraint
-DVCon.addThicknessConstraints2D(leList, teList, nSpan=10, nChord=10, lower=0.8, upper=3.0, scaled=True)
+DVCon.addThicknessConstraints2D(leList, teList, nSpan=25, nChord=30, lower=0.5, upper=3.0, scaled=True)
 
 # Le/Te constraints
 DVCon.addLeTeConstraints(0, "iLow")
