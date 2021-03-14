@@ -57,10 +57,12 @@ daOptions = {
             }
         },
     },
+    "adjStateOrdering": "cell",
     "normalizeStates": {"U": 10.0, "p": 100000.0, "nuTilda": 1e-3, "phi": 1.0, "T": 300.0},
     "adjPartDerivFDStep": {"State": 1e-6, "FFD": 1e-3},
-    "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 2, "jacMatReOrdering": "rcm"},
-    "adjPCLag": 4,
+    "adjEqnOption": {"gmresRelTol": 1.0e-5, "pcFillLevel": 1, "jacMatReOrdering": "natural"},
+    "adjPCLag": 5,
+    "transonicPCOption": 1,
     "checkMeshThreshold": {"maxNonOrth": 70.0, "maxSkewness": 6.0, "maxAspectRatio": 1000.0},
     # Design variable setup
     "designVar": {"shapex0": {"designVarType": "FFD"}, "shapex1": {"designVarType": "FFD"}},
@@ -187,10 +189,6 @@ elif args.task == "runPrimal":
 elif args.task == "runAdjoint":
 
     optFuncs.runAdjoint()
-
-elif args.task == "solveCL":
-
-    optFuncs.solveCL(CL_target, "alpha", "CL")
 
 elif args.task == "verifySens":
 
