@@ -286,18 +286,18 @@ elif args.task == "testAPI":
 
 elif args.task == "deformGeo":
     # Import Optimization Values Dictionary
-    with open("./OptRef_Obj32.json") as f:
+    with open("./OptRef_Example.json") as f:
         optRef = json.load(f)
 
     # Import IGES file as geometry object
-    geo = pyGeo(fileName="./wing.iges", initType="iges")
+    geo = pyGeo(fileName="./wing.igs", initType="iges")
     geo.doConnectivity()
 
     # Update Design Variables
     DVGeo.setDesignVars(optRef)
 
     # Deform Geometry and Output
-    DVGeo.updatePyGeo(geo, "tecplot", "wingNew", nRefU=0, nRefV=0)
+    DVGeo.updatePyGeo(geo, "iges", "wingNew", nRefU=10, nRefV=10)
 
 else:
     print("task arg not found!")
