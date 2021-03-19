@@ -15,6 +15,7 @@ from pyspline import *
 from idwarp import *
 from pyoptsparse import Optimization, OPT
 import numpy as np
+import json
 
 # =============================================================================
 # Input Parameters
@@ -180,6 +181,8 @@ def alpha(val, geo):
 
 # select points
 pts = DVGeo.getLocalIndex(0)
+
+# print(pts)
 indexList = pts[:, :, :].flatten()
 PS = geo_utils.PointSelect("list", indexList)
 # shape
@@ -280,6 +283,21 @@ elif args.task == "testAPI":
     DASolver.setOption("primalMinResTol", 1e-2)
     DASolver.updateDAOption()
     optFuncs.runPrimal()
+
+elif args.task == "deformGeo":
+    # Import Optimization Values Dictionary
+    with open("./OptRef_Example.json") as f:
+        optRef = json.load(f)
+
+    # Import IGES file as geometry object
+    geo = pyGeo(fileName="./wing.igs", initType="iges")
+    geo.doConnectivity()
+
+    # Update Design Variables
+    DVGeo.setDesignVars(optRef)
+
+    # Deform Geometry and Output
+    DVGeo.updatePyGeo(geo, "iges", "wingNew", nRefU=10, nRefV=10)
 
 else:
     print("task arg not found!")
