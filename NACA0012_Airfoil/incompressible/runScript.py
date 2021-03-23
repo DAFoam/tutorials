@@ -34,7 +34,7 @@ k0 = 0.015
 epsilon0 = 0.14
 omega0 = 100.0
 CL_target = 0.5
-alpha0 = 3 #5.139186
+alpha0 = 5.139186
 A0 = 0.1
 
 # Set the parameters for optimization
