@@ -202,11 +202,11 @@ DVCon.setSurface(DASolver.getTriangulatedMeshSurface(groupName=DASolver.getOptio
 # NOTE: the LE and TE lists are not parallel lines anymore, these two lists define lines that
 # are close to the leading and trailing edges while being completely within the wing surface
 LE_pt = np.array([0.01, 0.01, 0.0])
-break_pt = np.array([0.8477, 1.11853, 0.0])
-tip_pt = np.array([2.85680, 3.75816, 0.0])
+break_pt = np.array([0.848, 1.119, 0.0])
+tip_pt = np.array([2.855, 3.755, 0.0])
 root_chord = 1.689
-break_chord = 1.03628
-tip_chord = 0.3902497
+break_chord = 1.036
+tip_chord = 0.390
 
 leList = [
     [LE_pt[0] + 0.01 * root_chord, LE_pt[1], LE_pt[2]],
