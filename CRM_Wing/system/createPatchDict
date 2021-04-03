@@ -36,12 +36,12 @@ patches
 
     {
         // Name of new patch
-        name inout;
+        name sym;
 
         // Dictionary to construct new patch from
         patchInfo
         {
-            type patch;
+            type symmetry;
         }
 
         // How to construct: either from 'patches' or 'set'
@@ -51,12 +51,12 @@ patches
 
     {
         // Name of new patch
-        name sym;
+        name inout;
 
         // Dictionary to construct new patch from
         patchInfo
         {
-            type symmetry;
+            type patch;
         }
 
         // How to construct: either from 'patches' or 'set'
