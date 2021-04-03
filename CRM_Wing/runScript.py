@@ -33,7 +33,7 @@ p0 = 101325.0
 nuTilda0 = 4.5e-5
 T0 = 300.0
 CL_target = 0.5
-alpha0 = 2.178962
+alpha0 = 2.110139
 A0 = 3.407014
 rho0 = 1.1768  # density for normalizing CD and CL
 
