@@ -17,6 +17,9 @@ else
   wget https://github.com/dafoam/files/releases/download/v1.0.0/CRM_surfMesh.cgns.tar.gz
 fi
 tar -xvf CRM_surfMesh.cgns.tar.gz
+# need to scale the mesh by 1/chord = 1/7.00532 = 0.1427486538801939
+cgns_utils scale surfMesh.cgns 0.1427486538801939
+cgns_utils coarsen surfMesh.cgns
 python genWingMesh.py &> logMeshGeneration.txt
 plot3dToFoam -noBlank volumeMesh.xyz >> logMeshGeneration.txt
 autoPatch 45 -overwrite >> logMeshGeneration.txt
