@@ -33,7 +33,7 @@ p0 = 101325.0
 nuTilda0 = 4.5e-5
 T0 = 300.0
 CL_target = 0.5
-alpha0 = 2.110139
+alpha0 = 2.178962
 A0 = 3.407014
 rho0 = 1.1768  # density for normalizing CD and CL
 
@@ -88,7 +88,7 @@ daOptions = {
     "adjStateOrdering": "cell",
     "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "natural", "gmresMaxIters": 2000, "gmresRestart": 2000},
     # transonic preconditioner to speed up the adjoint convergence
-    "transonicPCOption": 1,
+    "transonicPCOption": 2,
     "checkMeshThreshold": {"maxAspectRatio": 2000.0, "maxNonOrth": 75.0, "maxSkewness": 5.0},
     "normalizeStates": {"U": U0, "p": p0, "nuTilda": nuTilda0 * 10.0, "phi": 1.0, "T": T0},
     "adjPartDerivFDStep": {"State": 1e-6, "FFD": 1e-3},
