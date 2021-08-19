@@ -36,7 +36,8 @@ epsilon0 = 1350.0
 omega0 = 1e4
 T0 = 300.0
 A0 = 0.1
-rho0 = 1.0  # density for normalizing CD and CL
+#rho0 = 1.0  # density for normalizing CD and CL
+rho0 = 1.177 #updated rho0
 CL_target = 0.5
 alpha0 = 3.850127
 
