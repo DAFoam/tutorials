@@ -36,7 +36,7 @@ nCells = 12225
 daOptions = {
     "designSurfaces": ["upperWall"],
     "solverName": "DASimpleFoam",
-    "adjJacobianOption": "JacobianFree",
+    "useAD": {"mode": "reverse"},
     "primalMinResTol": 1.0e-6,
     "primalMinResTolDiff": 1.0e4,
     "primalBC": {
@@ -194,9 +194,9 @@ elif args.task == "runAdjoint":
 
     optFuncs.runAdjoint()
 
-elif args.task == "verifySens":
+elif args.task == "runForwardAD":
 
-    optFuncs.verifySens()
+    optFuncs.runForwardAD("alphaPorosity", 0)
 
 elif args.task == "testAPI":
 

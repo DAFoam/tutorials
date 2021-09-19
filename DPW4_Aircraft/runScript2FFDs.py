@@ -49,7 +49,7 @@ daOptions = {
     "designSurfaces": ["wing", "tail"],
     "solverName": "DARhoSimpleCFoam",
     "primalMinResTol": 1.0e-9,
-    "adjJacobianOption": "JacobianFree",
+    "useAD": {"mode": "reverse"},
     "primalBC": {
         "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
         "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
@@ -338,9 +338,9 @@ elif args.task == "runAdjoint":
 
     optFuncs.runAdjoint()
 
-elif args.task == "verifySens":
+elif args.task == "runForwardAD":
 
-    optFuncs.verifySens()
+    optFuncs.runForwardAD("shapez", 0)
 
 elif args.task == "testAPI":
 

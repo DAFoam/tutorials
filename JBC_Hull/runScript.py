@@ -36,7 +36,7 @@ daOptions = {
     "solverName": "DASimpleFoam",
     "designSurfaces": ["hull"],
     "primalMinResTol": 1e-8,
-    "adjJacobianOption": "JacobianFree",
+    "useAD": {"mode": "reverse"},
     "primalBC": {
         "U0": {"variable": "U", "patches": ["inlet"], "value": [U0, 0.0, 0.0]},
         "p0": {"variable": "p", "patches": ["outlet"], "value": [p0]},
@@ -269,9 +269,9 @@ elif args.task == "runAdjoint":
 
     optFuncs.runAdjoint()
 
-elif args.task == "verifySens":
+elif args.task == "runForwardAD":
 
-    optFuncs.verifySens()
+    optFuncs.runForwardAD("shapey", 0)
 
 elif args.task == "testAPI":
 
