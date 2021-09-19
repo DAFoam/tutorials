@@ -21,7 +21,7 @@ import numpy as np
 # =============================================================================
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: slsqp (default), snopt, or ipopt
-parser.add_argument("--opt", help="optimizer to use", type=str, default="slsqp")
+parser.add_argument("--opt", help="optimizer to use", type=str, default="ipopt")
 # which task to run. Options are: opt (default), run, testSensShape, or solveCL
 parser.add_argument("--task", help="type of run to do", type=str, default="opt")
 args = parser.parse_args()

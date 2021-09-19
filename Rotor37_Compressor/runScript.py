@@ -34,6 +34,7 @@ MFR_target = 0.7
 # Set the parameters for optimization
 daOptions = {
     "solverName": "DATurboFoam",
+    "useAD": {"mode": "reverse"},
     "designSurfaces": ["blade"],
     "primalMinResTol": 1e-8,
     "primalVarBounds": {
@@ -221,9 +222,9 @@ elif args.task == "runAdjoint":
 
     optFuncs.runAdjoint()
 
-elif args.task == "verifySens":
+elif args.task == "runForwardAD":
 
-    optFuncs.verifySens()
+    optFuncs.runForwardAD("shapey", 0)
 
 elif args.task == "testAPI":
 

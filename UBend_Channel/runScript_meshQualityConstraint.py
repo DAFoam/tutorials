@@ -21,7 +21,7 @@ import numpy as np
 # =============================================================================
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: slsqp (default), snopt, or ipopt
-parser.add_argument("--opt", help="optimizer to use", type=str, default="slsqp")
+parser.add_argument("--opt", help="optimizer to use", type=str, default="ipopt")
 # which task to run. Options are: opt (default), run, testSensShape, or solveCL
 parser.add_argument("--task", help="type of run to do", type=str, default="opt")
 args = parser.parse_args()
@@ -35,6 +35,7 @@ CPL_weight = 0.5
 # Set the parameters for optimization
 daOptions = {
     "solverName": "DASimpleTFoam",
+    "useAD": {"mode": "reverse"},
     "designSurfaces": ["ubend", "ubendup"],
     "primalMinResTol": 1e-8,
     "primalMinResTolDiff": 1e5,
@@ -230,9 +231,9 @@ elif args.task == "runAdjoint":
 
     optFuncs.runAdjoint()
 
-elif args.task == "verifySens":
+elif args.task == "runForwardAD":
 
-    optFuncs.verifySens()
+    optFuncs.runForwardAD("shape", 0)
 
 elif args.task == "testAPI":
 

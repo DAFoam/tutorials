@@ -21,7 +21,7 @@ import numpy as np
 # Input Parameters
 # =============================================================================
 parser = argparse.ArgumentParser()
-parser.add_argument("--opt", help="optimizer to use", type=str, default="slsqp")
+parser.add_argument("--opt", help="optimizer to use", type=str, default="ipopt")
 parser.add_argument("--task", help="type of run to do", type=str, default="opt")
 args = parser.parse_args()
 gcomm = MPI.COMM_WORLD
@@ -41,6 +41,7 @@ A0 = 0.1
 daOptions = {
     "designSurfaces": ["wing"],
     "solverName": "DASimpleFoam",
+    "useAD": {"mode": "reverse"},
     "primalMinResTol": 1.0e-8,
     "primalBC": {
         "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
@@ -249,9 +250,9 @@ elif args.task == "runAdjoint":
 
     optFuncs.runAdjoint()
 
-elif args.task == "verifySens":
+elif args.task == "runForwardAD":
 
-    optFuncs.verifySens()
+    optFuncs.runForwardAD("shapey", 0)
 
 elif args.task == "testAPI":
 

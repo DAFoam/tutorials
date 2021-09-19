@@ -21,7 +21,7 @@ import numpy as np
 # =============================================================================
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: slsqp (default), snopt, or ipopt
-parser.add_argument("--opt", help="optimizer to use", type=str, default="slsqp")
+parser.add_argument("--opt", help="optimizer to use", type=str, default="ipopt")
 # which task to run. Options are: opt (default), run, testSensShape, or solveCL
 parser.add_argument("--task", help="type of run to do", type=str, default="opt")
 args = parser.parse_args()
@@ -40,6 +40,7 @@ rho0 = 1.0  # density for normalizing CD and CL
 # Set the parameters for optimization
 daOptions = {
     "designSurfaces": ["wing"],
+    "useAD": {"mode": "reverse"},
     "solverName": "DARhoSimpleCFoam",
     "primalMinResTol": 1.0e-8,
     "primalBC": {
@@ -256,9 +257,9 @@ elif args.task == "runAdjoint":
 
     optFuncs.runAdjoint()
 
-elif args.task == "verifySens":
+elif args.task == "runForwardAD":
 
-    optFuncs.verifySens()
+    optFuncs.runForwardAD("shapey", 0)
 
 elif args.task == "testAPI":
 

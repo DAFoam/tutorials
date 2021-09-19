@@ -41,7 +41,7 @@ rho0 = 1.1768  # density for normalizing CD and CL
 daOptions = {
     "designSurfaces": ["wing"],
     "solverName": "DARhoSimpleCFoam",
-    "adjJacobianOption": "JacobianFree",
+    "useAD": {"mode": "reverse"},
     "primalMinResTol": 1.0e-8,
     "primalBC": {
         "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
@@ -276,9 +276,9 @@ elif args.task == "runAdjoint":
 
     optFuncs.runAdjoint()
 
-elif args.task == "verifySens":
+elif args.task == "runForwardAD":
 
-    optFuncs.verifySens()
+    optFuncs.runForwardAD("shapez", 0)
 
 elif args.task == "testAPI":
 

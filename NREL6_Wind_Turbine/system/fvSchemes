@@ -60,7 +60,7 @@ snGradSchemes
 
 wallDist
 {
-    method                                              meshWave;
+    method                                              meshWaveFrozen;
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
