@@ -9,114 +9,220 @@ DAFoam run script for the NACA0012 airfoil at low-speed
 import os
 import argparse
 from mpi4py import MPI
-from dafoam import PYDAFOAM, optFuncs
-from pygeo import *
-from pyspline import *
-from idwarp import USMesh
-from pyoptsparse import Optimization, OPT
 import numpy as np
 
+import openmdao.api as om
+from mphys.multipoint import Multipoint
+from dafoam.mphys_dafoam import DAFoamBuilder
+from mphys.scenario_aerodynamic import ScenarioAerodynamic
+from mphys.solver_builders.mphys_dvgeo import OM_DVGEOCOMP
+from pygeo import *
+
+
+parser = argparse.ArgumentParser()
+# which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
+parser.add_argument("-optimizer", help="optimizer to use", type=str, default="IPOPT")
+# which task to run. Options are: opt (default), runPrimal
+parser.add_argument("-task", help="type of run to do", type=str, default="opt")
+args = parser.parse_args()
 
 # =============================================================================
 # Input Parameters
 # =============================================================================
-parser = argparse.ArgumentParser()
-parser.add_argument("--opt", help="optimizer to use", type=str, default="ipopt")
-parser.add_argument("--task", help="type of run to do", type=str, default="opt")
-args = parser.parse_args()
-gcomm = MPI.COMM_WORLD
-
-# Define the global parameters here
 U0 = 10.0
 p0 = 0.0
 nuTilda0 = 4.5e-5
-k0 = 0.015
-epsilon0 = 0.14
-omega0 = 100.0
 CL_target = 0.5
 alpha0 = 5.139186
 A0 = 0.1
 
-# Set the parameters for optimization
-daOptions = {
-    "designSurfaces": ["wing"],
-    "solverName": "DASimpleFoam",
-    "useAD": {"mode": "reverse"},
-    "primalMinResTol": 1.0e-8,
-    "primalBC": {
-        "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
-        "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
-        "nuTilda0": {"variable": "nuTilda", "patches": ["inout"], "value": [nuTilda0]},
-        "k0": {"variable": "k", "patches": ["inout"], "value": [k0]},
-        "omega0": {"variable": "omega", "patches": ["inout"], "value": [omega0]},
-        "epsilon0": {"variable": "epsilon", "patches": ["inout"], "value": [epsilon0]},
-        "useWallFunction": True,
-    },
-    "objFunc": {
-        "CD": {
-            "part1": {
-                "type": "force",
-                "source": "patchToFace",
-                "patches": ["wing"],
-                "directionMode": "parallelToFlow",
-                "alphaName": "alpha",
-                "scale": 1.0 / (0.5 * U0 * U0 * A0),
-                "addToAdjoint": True,
-            }
-        },
-        "CL": {
-            "part1": {
-                "type": "force",
-                "source": "patchToFace",
-                "patches": ["wing"],
-                "directionMode": "normalToFlow",
-                "alphaName": "alpha",
-                "scale": 1.0 / (0.5 * U0 * U0 * A0),
-                "addToAdjoint": True,
-            }
-        },
-    },
-    "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
-    "normalizeStates": {
-        "U": U0,
-        "p": U0 * U0 / 2.0,
-        "nuTilda": nuTilda0 * 10.0,
-        "k": k0 * 10.0,
-        "epsilon": epsilon0,
-        "omega": omega0,
-        "phi": 1.0,
-    },
-    "adjPartDerivFDStep": {"State": 1e-7, "FFD": 1e-3},
-    "adjPCLag": 20,
-    "designVar": {},
-}
+# Top class to setup the optimization problem
+class Top(Multipoint):
+    def setup(self):
+        # Input parameters for DAFoam
+        daOptions = {
+            "designSurfaces": ["wing"],
+            "solverName": "DASimpleFoam",
+            "primalMinResTol": 1.0e-8,
+            "primalBC": {
+                "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
+                "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
+                "nuTilda0": {"variable": "nuTilda", "patches": ["inout"], "value": [nuTilda0]},
+                "useWallFunction": True,
+            },
+            "objFunc": {
+                "CD": {
+                    "part1": {
+                        "type": "force",
+                        "source": "patchToFace",
+                        "patches": ["wing"],
+                        "directionMode": "parallelToFlow",
+                        "alphaName": "aoa",
+                        "scale": 1.0 / (0.5 * U0 * U0 * A0),
+                        "addToAdjoint": True,
+                    }
+                },
+                "CL": {
+                    "part1": {
+                        "type": "force",
+                        "source": "patchToFace",
+                        "patches": ["wing"],
+                        "directionMode": "normalToFlow",
+                        "alphaName": "aoa",
+                        "scale": 1.0 / (0.5 * U0 * U0 * A0),
+                        "addToAdjoint": True,
+                    }
+                },
+            },
+            "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
+            "normalizeStates": {
+                "U": U0,
+                "p": U0 * U0 / 2.0,
+                "nuTilda": nuTilda0 * 10.0,
+                "phi": 1.0,
+            },
+            "adjPartDerivFDStep": {"State": 1e-6},
+            "adjPCLag": 100,
+            "designVar": {
+                "aoa": {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "y"},
+                "shape": {"designVarType": "FFD"},
+            },
+        }
 
-# mesh warping parameters, users need to manually specify the symmetry plane and their normals
-meshOptions = {
-    "gridFile": os.getcwd(),
-    "fileType": "openfoam",
-    # point and normal for the symmetry plane
-    "symmetryPlanes": [[[0.0, 0.0, 0.0], [0.0, 0.0, 1.0]], [[0.0, 0.0, 0.1], [0.0, 0.0, 1.0]]],
-}
+        # Mesh deformation setup
+        meshOptions = {
+            "gridFile": os.getcwd(),
+            "fileType": "OpenFOAM",
+            # point and normal for the symmetry plane
+            "symmetryPlanes": [[[0.0, 0.0, 0.0], [0.0, 0.0, 1.0]], [[0.0, 0.0, 0.1], [0.0, 0.0, 1.0]]],
+        }
 
+        # create the builder to initialize the DASolvers
+        dafoam_builder = DAFoamBuilder(daOptions, meshOptions, scenario="aerodynamic")
+        dafoam_builder.initialize(self.comm)
+
+        # add the design variable component to keep the top level design variables
+        self.add_subsystem("dvs", om.IndepVarComp(), promotes=["*"])
+
+        # add the mesh component
+        self.add_subsystem("mesh", dafoam_builder.get_mesh_coordinate_subsystem())
+
+        # add the geometry component (FFD)
+        self.add_subsystem("geometry", OM_DVGEOCOMP(ffd_file="FFD/wingFFD.xyz"))
+
+        # add a scenario (flow condition) for optimization, we pass the builder
+        # to the scenario to actually run the flow and adjoint
+        self.mphys_add_scenario("cruise", ScenarioAerodynamic(aero_builder=dafoam_builder))
+
+        # need to manually connect the x_aero0 between the mesh and geometry components
+        # here x_aero0 means the surface coordinates of structurally undeformed mesh
+        self.connect("mesh.x_aero0", "geometry.x_aero_in")
+        # need to manually connect the x_aero0 between the geometry component and the cruise
+        # scenario group
+        self.connect("geometry.x_aero0", "cruise.x_aero")
+
+    def configure(self):
+        # configure and setup perform a similar function, i.e., initialize the optimization.
+        # But configure will be run after setup
+
+        # add the objective function to the cruise scenario
+        self.cruise.aero_post.mphys_add_funcs(["CD", "CL"])
+
+        # get the surface coordinates from the mesh component
+        points = self.mesh.mphys_get_surface_mesh()
+
+        # add pointset to the geometry component
+        self.geometry.nom_add_discipline_coords("aero", points)
+
+        # set the triangular points to the geometry component for geometric constraints
+        tri_points = self.mesh.mphys_get_triangulated_surface()
+        self.geometry.nom_setConstraintSurface(tri_points)
+
+        # define an angle of attack function to change the U direction at the far field
+        def aoa(val, DASolver):
+            aoa = val[0] * np.pi / 180.0
+            U = [float(U0 * np.cos(aoa)), float(U0 * np.sin(aoa)), 0]
+            # we need to update the U value only
+            DASolver.setOption("primalBC", {"U0": {"value": U}})
+            DASolver.updateDAOption()
+
+        # pass this aoa function to the cruise group
+        self.cruise.coupling.solver.aoa_func = aoa
+        self.cruise.aero_post.aoa_func = aoa
+
+        # select the FFD points to move
+        pts = self.geometry.DVGeo.getLocalIndex(0)
+        indexList = pts[:, :, :].flatten()
+        PS = geo_utils.PointSelect("list", indexList)
+        nShapes = self.geometry.nom_addGeoDVLocal(dvName="shape", pointSelect=PS)
+
+        # setup the symmetry constraint to link the y displacement between k=0 and k=1
+        nFFDs_x = pts.shape[0]
+        nFFDs_y = pts.shape[1]
+        indSetA = []
+        indSetB = []
+        for i in range(nFFDs_x):
+            for j in range(nFFDs_y):
+                indSetA.append(pts[i, j, 0])
+                indSetB.append(pts[i, j, 1])
+        self.geometry.nom_addLinearConstraintsShape("linearcon", indSetA, indSetB, factorA=1.0, factorB=-1.0)
+
+        # setup the volume and thickness constraints
+        leList = [[1e-4, 0.0, 1e-4], [1e-4, 0.0, 0.1 - 1e-4]]
+        teList = [[0.998 - 1e-4, 0.0, 1e-4], [0.998 - 1e-4, 0.0, 0.1 - 1e-4]]
+        self.geometry.nom_addThicknessConstraints2D("thickcon", leList, teList, nSpan=2, nChord=10)
+        self.geometry.nom_addVolumeConstraint("volcon", leList, teList, nSpan=2, nChord=10)
+        self.geometry.nom_add_LETEConstraint("lecon", 0, "iLow", topID="k")
+        self.geometry.nom_add_LETEConstraint("tecon", 0, "iHigh", topID="k")
+
+        # add the design variables to the dvs component's output
+        self.dvs.add_output("shape", val=np.array([0] * nShapes))
+        self.dvs.add_output("aoa", val=np.array([alpha0]))
+        # manually connect the dvs output to the geometry and cruise
+        self.connect("aoa", "cruise.aoa")
+        self.connect("shape", "geometry.shape")
+
+        # define the design variables to the top level
+        self.add_design_var("shape", lower=-1.0, upper=1.0, scaler=1.0)
+        self.add_design_var("aoa", lower=0.0, upper=10.0, scaler=1.0)
+
+        # add objective and constraints to the top level
+        self.add_objective("cruise.aero_post.CD", scaler=1.0)
+        self.add_constraint("cruise.aero_post.CL", equals=CL_target, scaler=1.0)
+        self.add_constraint("geometry.thickcon", lower=0.5, upper=3.0, scaler=1.0)
+        self.add_constraint("geometry.volcon", lower=1.0, scaler=1.0)
+        self.add_constraint("geometry.tecon", equals=0.0, scaler=1.0, linear=True)
+        self.add_constraint("geometry.lecon", equals=0.0, scaler=1.0, linear=True)
+        self.add_constraint("geometry.linearcon", equals=0.0)
+
+
+# OpenMDAO setup
+prob = om.Problem()
+prob.model = Top()
+prob.setup(mode="rev")
+om.n2(prob, show_browser=False, outfile="mphys_aero.html")
+
+# use pyoptsparse to setup optimization
+prob.driver = om.pyOptSparseDriver()
+prob.driver.options["optimizer"] = args.optimizer
 # options for optimizers
-if args.opt == "snopt":
-    optOptions = {
+if args.optimizer == "SNOPT":
+    prob.driver.opt_settings = {
         "Major feasibility tolerance": 1.0e-7,
         "Major optimality tolerance": 1.0e-7,
         "Minor feasibility tolerance": 1.0e-7,
         "Verify level": -1,
         "Function precision": 1.0e-7,
-        "Major iterations limit": 50,
+        "Major iterations limit": 100,
         "Nonderivative linesearch": None,
         "Print file": "opt_SNOPT_print.txt",
         "Summary file": "opt_SNOPT_summary.txt",
     }
-elif args.opt == "ipopt":
-    optOptions = {
+elif args.optimizer == "IPOPT":
+    prob.driver.opt_settings = {
         "tol": 1.0e-7,
         "constr_viol_tol": 1.0e-7,
-        "max_iter": 50,
+        "max_iter": 100,
         "print_level": 5,
         "output_file": "opt_IPOPT.txt",
         "mu_strategy": "adaptive",
@@ -125,141 +231,22 @@ elif args.opt == "ipopt":
         "alpha_for_y": "full",
         "recalc_y": "yes",
     }
-elif args.opt == "slsqp":
-    optOptions = {
+elif args.optimizer == "SLSQP":
+    prob.driver.opt_settings = {
         "ACC": 1.0e-7,
-        "MAXIT": 50,
+        "MAXIT": 100,
         "IFILE": "opt_SLSQP.txt",
     }
 else:
-    print("opt arg not valid!")
-    exit(0)
+    print("optimizer arg not valid!")
+    exit(1)
 
+prob.driver.options["debug_print"] = ["nl_cons", "objs", "desvars"]
 
-# =============================================================================
-# Design variable setup
-# =============================================================================
-def alpha(val, geo):
-    aoa = val[0] * np.pi / 180.0
-    inletU = [float(U0 * np.cos(aoa)), float(U0 * np.sin(aoa)), 0]
-    DASolver.setOption("primalBC", {"U0": {"variable": "U", "patches": ["inout"], "value": inletU}})
-    DASolver.updateDAOption()
-
-
-DVGeo = DVGeometry("./FFD/wingFFD.xyz")
-DVGeo.addRefAxis("bodyAxis", xFraction=0.25, alignIndex="k")
-# select points
-iVol = 0
-pts = DVGeo.getLocalIndex(iVol)
-indexList = pts[:, :, :].flatten()
-PS = geo_utils.PointSelect("list", indexList)
-# shape
-DVGeo.addGeoDVLocal("shapey", lower=-1.0, upper=1.0, axis="y", scale=1.0, pointSelect=PS)
-daOptions["designVar"]["shapey"] = {"designVarType": "FFD"}
-# angle of attack
-DVGeo.addGeoDVGlobal("alpha", value=[alpha0], func=alpha, lower=0.0, upper=10.0, scale=1.0)
-daOptions["designVar"]["alpha"] = {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "y"}
-
-# =============================================================================
-# DAFoam initialization
-# =============================================================================
-DASolver = PYDAFOAM(options=daOptions, comm=gcomm)
-DASolver.setDVGeo(DVGeo)
-mesh = USMesh(options=meshOptions, comm=gcomm)
-DASolver.addFamilyGroup(DASolver.getOption("designSurfaceFamily"), DASolver.getOption("designSurfaces"))
-DASolver.printFamilyList()
-DASolver.setMesh(mesh)
-evalFuncs = []
-DASolver.setEvalFuncs(evalFuncs)
-
-# =============================================================================
-# Constraint setup
-# =============================================================================
-DVCon = DVConstraints()
-DVCon.setDVGeo(DVGeo)
-DVCon.setSurface(DASolver.getTriangulatedMeshSurface(groupName=DASolver.getOption("designSurfaceFamily")))
-
-leList = [[1e-4, 0.0, 1e-4], [1e-4, 0.0, 0.1 - 1e-4]]
-teList = [[0.998 - 1e-4, 0.0, 1e-4], [0.998 - 1e-4, 0.0, 0.1 - 1e-4]]
-
-# volume constraint
-DVCon.addVolumeConstraint(leList, teList, nSpan=2, nChord=10, lower=1.0, upper=3, scaled=True)
-
-# thickness constraint
-DVCon.addThicknessConstraints2D(leList, teList, nSpan=2, nChord=10, lower=0.8, upper=3.0, scaled=True)
-
-# Create linear constraints to link the shape change between k=0 and k=1
-nFFDs_x = pts.shape[0]
-indSetA = []
-indSetB = []
-for i in range(nFFDs_x):
-    for j in [0, 1]:
-        indSetA.append(pts[i, j, 1])
-        indSetB.append(pts[i, j, 0])
-DVCon.addLinearConstraintsShape(indSetA, indSetB, factorA=1.0, factorB=-1.0, lower=0.0, upper=0.0)
-
-# Create a linear constraint to fix the leading and trailing point.
-indSetA = []
-indSetB = []
-for i in [0, nFFDs_x - 1]:
-    for k in [0]:  # do not constrain k=1 because it is linked in the above symmetry constraint
-        indSetA.append(pts[i, 0, k])
-        indSetB.append(pts[i, 1, k])
-DVCon.addLinearConstraintsShape(indSetA, indSetB, factorA=1.0, factorB=1.0, lower=0.0, upper=0.0)
-
-# =============================================================================
-# Initialize optFuncs for optimization
-# =============================================================================
-optFuncs.DASolver = DASolver
-optFuncs.DVGeo = DVGeo
-optFuncs.DVCon = DVCon
-optFuncs.evalFuncs = evalFuncs
-optFuncs.gcomm = gcomm
-
-# =============================================================================
-# Task
-# =============================================================================
 if args.task == "opt":
-
-    alpha4CLTarget = optFuncs.solveCL(CL_target, "alpha", "CL")
-    alpha([alpha4CLTarget], None)
-
-    optProb = Optimization("opt", objFun=optFuncs.calcObjFuncValues, comm=gcomm)
-    DVGeo.addVariablesPyOpt(optProb)
-    DVCon.addConstraintsPyOpt(optProb)
-
-    optProb.addObj("CD", scale=1)
-    optProb.addCon("CL", lower=CL_target, upper=CL_target, scale=1)
-
-    if gcomm.rank == 0:
-        print(optProb)
-
-    DASolver.runColoring()
-
-    opt = OPT(args.opt, options=optOptions)
-    histFile = "./%s_hist.hst" % args.opt
-    sol = opt(optProb, sens=optFuncs.calcObjFuncSens, storeHistory=histFile)
-    if gcomm.rank == 0:
-        print(sol)
-
+    prob.run_driver()
 elif args.task == "runPrimal":
-
-    optFuncs.runPrimal()
-
-elif args.task == "runAdjoint":
-
-    optFuncs.runAdjoint()
-
-elif args.task == "runForwardAD":
-
-    optFuncs.runForwardAD("shapey", 0)
-
-elif args.task == "testAPI":
-
-    DASolver.setOption("primalMinResTol", 1e-2)
-    DASolver.updateDAOption()
-    optFuncs.runPrimal()
-
+    prob.run_model()
 else:
     print("task arg not found!")
-    exit(0)
+    exit(1)
