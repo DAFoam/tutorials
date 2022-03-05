@@ -147,8 +147,8 @@ class Top(Multipoint):
             DASolver.updateDAOption()
 
         # pass this aoa function to the cruise group
-        self.cruise.coupling.solver.aoa_func = aoa
-        self.cruise.aero_post.aoa_func = aoa
+        self.cruise.coupling.solver.add_dv_func("aoa", aoa)
+        self.cruise.aero_post.add_dv_func("aoa", aoa)
 
         # select the FFD points to move
         pts = self.geometry.DVGeo.getLocalIndex(0)
