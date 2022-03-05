@@ -31,7 +31,6 @@ args = parser.parse_args()
 U0 = 10.0
 p0 = 0.0
 nuTilda0 = 4.5e-5
-CL_target = 0.5
 alpha0 = 5.139186
 A0 = 0.1
 rho0 = 1.0
@@ -121,6 +120,9 @@ class Top(Multipoint):
         # scenario group
         self.connect("geometry.x_aero0", "cruise.x_aero")
 
+        # add an exec comp to compute L/D
+        self.add_subsystem("obj", om.ExecComp("LOD=CL/CD"))
+
     def configure(self):
         # configure and setup perform a similar function, i.e., initialize the optimization.
         # But configure will be run after setup
@@ -187,8 +189,9 @@ class Top(Multipoint):
         self.add_design_var("aoa", lower=0.0, upper=10.0, scaler=1.0)
 
         # add objective and constraints to the top level
-        self.add_objective("cruise.aero_post.CD", scaler=1.0)
-        self.add_constraint("cruise.aero_post.CL", equals=CL_target, scaler=1.0)
+        self.add_objective("obj.LOD", scaler=-1.0)
+        self.connect("cruise.aero_post.CD", "obj.CD")
+        self.connect("cruise.aero_post.CL", "obj.CL")
         self.add_constraint("geometry.thickcon", lower=0.5, upper=3.0, scaler=1.0)
         self.add_constraint("geometry.volcon", lower=1.0, scaler=1.0)
         self.add_constraint("geometry.tecon", equals=0.0, scaler=1.0, linear=True)
