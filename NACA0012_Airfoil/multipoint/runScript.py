@@ -12,7 +12,7 @@ import numpy as np
 
 import openmdao.api as om
 from mphys.multipoint import Multipoint
-from dafoam.mphys_dafoam import DAFoamBuilder
+from dafoam.mphys_dafoam import DAFoamBuilder, checkDesignVarSetup
 from mphys.scenario_aerodynamic import ScenarioAerodynamic
 from mphys.solver_builders.mphys_dvgeo import OM_DVGEOCOMP
 from pygeo import *
@@ -43,67 +43,67 @@ fc1 = {"primalBC": {"U0": {"value": [U0[1], 0.0, 0.0]}},
        "objFunc": {"CD": {"part1": {"scale": 1.0 / (0.5 * U0[1] * U0[1] * A0 * rho0)}},
                    "CL": {"part1": {"scale": 1.0 / (0.5 * U0[1] * U0[1] * A0 * rho0)}}}}
 
+# Input parameters for DAFoam
+daOptions = {
+    "designSurfaces": ["wing"],
+    "solverName": "DASimpleFoam",
+    "primalMinResTol": 1.0e-8,
+    "primalBC": {
+        "U0": {"variable": "U", "patches": ["inout"], "value": [U0[0], 0.0, 0.0]},
+        "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
+        "nuTilda0": {"variable": "nuTilda", "patches": ["inout"], "value": [nuTilda0]},
+        "useWallFunction": True,
+    },
+    "objFunc": {
+        "CD": {
+            "part1": {
+                "type": "force",
+                "source": "patchToFace",
+                "patches": ["wing"],
+                "directionMode": "parallelToFlow",
+                "alphaName": "aoa",
+                "scale": 1.0 / (0.5 * U0[0] * U0[0] * A0 * rho0),
+                "addToAdjoint": True,
+            }
+        },
+        "CL": {
+            "part1": {
+                "type": "force",
+                "source": "patchToFace",
+                "patches": ["wing"],
+                "directionMode": "normalToFlow",
+                "alphaName": "aoa",
+                "scale": 1.0 / (0.5 * U0[0] * U0[0] * A0 * rho0),
+                "addToAdjoint": True,
+            }
+        },
+    },
+    "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
+    "normalizeStates": {
+        "U": U0[0],
+        "p": U0[0] * U0[0] / 2.0,
+        "nuTilda": nuTilda0 * 10.0,
+        "phi": 1.0,
+    },
+    "adjPartDerivFDStep": {"State": 1e-6},
+    "adjPCLag": 100,
+    "designVar": {
+        "aoa": {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "y"},
+        "shape": {"designVarType": "FFD"},
+    },
+}
+
+# Mesh deformation setup
+meshOptions = {
+    "gridFile": os.getcwd(),
+    "fileType": "OpenFOAM",
+    # point and normal for the symmetry plane
+    "symmetryPlanes": [[[0.0, 0.0, 0.0], [0.0, 0.0, 1.0]], [[0.0, 0.0, 0.1], [0.0, 0.0, 1.0]]],
+}
+
 # Top class to setup the optimization problem
 class Top(Multipoint):
     def setup(self):
-        # Input parameters for DAFoam
-        daOptions = {
-            "designSurfaces": ["wing"],
-            "solverName": "DASimpleFoam",
-            "primalMinResTol": 1.0e-8,
-            "primalBC": {
-                "U0": {"variable": "U", "patches": ["inout"], "value": [U0[0], 0.0, 0.0]},
-                "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
-                "nuTilda0": {"variable": "nuTilda", "patches": ["inout"], "value": [nuTilda0]},
-                "useWallFunction": True,
-            },
-            "objFunc": {
-                "CD": {
-                    "part1": {
-                        "type": "force",
-                        "source": "patchToFace",
-                        "patches": ["wing"],
-                        "directionMode": "parallelToFlow",
-                        "alphaName": "aoa",
-                        "scale": 1.0 / (0.5 * U0[0] * U0[0] * A0 * rho0),
-                        "addToAdjoint": True,
-                    }
-                },
-                "CL": {
-                    "part1": {
-                        "type": "force",
-                        "source": "patchToFace",
-                        "patches": ["wing"],
-                        "directionMode": "normalToFlow",
-                        "alphaName": "aoa",
-                        "scale": 1.0 / (0.5 * U0[0] * U0[0] * A0 * rho0),
-                        "addToAdjoint": True,
-                    }
-                },
-            },
-            "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
-            "normalizeStates": {
-                "U": U0[0],
-                "p": U0[0] * U0[0] / 2.0,
-                "nuTilda": nuTilda0 * 10.0,
-                "phi": 1.0,
-            },
-            "adjPartDerivFDStep": {"State": 1e-6},
-            "adjPCLag": 100,
-            "designVar": {
-                "aoa": {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "y"},
-                "shape": {"designVarType": "FFD"},
-            },
-        }
-
-        # Mesh deformation setup
-        meshOptions = {
-            "gridFile": os.getcwd(),
-            "fileType": "OpenFOAM",
-            # point and normal for the symmetry plane
-            "symmetryPlanes": [[[0.0, 0.0, 0.0], [0.0, 0.0, 1.0]], [[0.0, 0.0, 0.1], [0.0, 0.0, 1.0]]],
-        }
-
         # create the builder to initialize the DASolvers
         dafoam_builder = DAFoamBuilder(daOptions, meshOptions, scenario="aerodynamic")
         dafoam_builder.initialize(self.comm)
@@ -230,6 +230,9 @@ prob = om.Problem()
 prob.model = Top()
 prob.setup(mode="rev")
 om.n2(prob, show_browser=False, outfile="mphys_aero.html")
+
+# check if the design variable dict is properly set
+checkDesignVarSetup(daOptions, prob.model.get_design_vars())
 
 # use pyoptsparse to setup optimization
 prob.driver = om.pyOptSparseDriver()
