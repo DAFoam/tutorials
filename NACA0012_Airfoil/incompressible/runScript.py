@@ -21,7 +21,7 @@ from pygeo import *
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
 parser.add_argument("-optimizer", help="optimizer to use", type=str, default="IPOPT")
-# which task to run. Options are: opt (default), runPrimal
+# which task to run. Options are: opt (default), runPrimal, runAdjoint, checkTotals
 parser.add_argument("-task", help="type of run to do", type=str, default="opt")
 args = parser.parse_args()
 
