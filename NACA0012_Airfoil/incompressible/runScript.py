@@ -9,10 +9,10 @@ DAFoam run script for the NACA0012 airfoil at low-speed
 import os
 import argparse
 import numpy as np
-
+from mpi4py import MPI
 import openmdao.api as om
 from mphys.multipoint import Multipoint
-from dafoam.mphys_dafoam import DAFoamBuilder, checkDesignVarSetup
+from dafoam.mphys import DAFoamBuilder, OptFuncs
 from mphys.scenario_aerodynamic import ScenarioAerodynamic
 from mphys.solver_builders.mphys_dvgeo import OM_DVGEOCOMP
 from pygeo import *
@@ -32,8 +32,9 @@ U0 = 10.0
 p0 = 0.0
 nuTilda0 = 4.5e-5
 CL_target = 0.5
-alpha0 = 5.139186
+alpha0 = 5.0
 A0 = 0.1
+# rho is used for normalizing CD and CL
 rho0 = 1.0
 
 # Input parameters for DAFoam
@@ -78,8 +79,6 @@ daOptions = {
         "nuTilda": nuTilda0 * 10.0,
         "phi": 1.0,
     },
-    "adjPartDerivFDStep": {"State": 1e-6},
-    "adjPCLag": 100,
     "designVar": {
         "aoa": {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "y"},
         "shape": {"designVarType": "FFD"},
@@ -127,7 +126,7 @@ class Top(Multipoint):
         # But configure will be run after setup
 
         # add the objective function to the cruise scenario
-        self.cruise.aero_post.mphys_add_funcs(["CD", "CL"])
+        self.cruise.aero_post.mphys_add_funcs()
 
         # get the surface coordinates from the mesh component
         points = self.mesh.mphys_get_surface_mesh()
@@ -173,6 +172,7 @@ class Top(Multipoint):
         teList = [[0.998 - 1e-4, 0.0, 1e-4], [0.998 - 1e-4, 0.0, 0.1 - 1e-4]]
         self.geometry.nom_addThicknessConstraints2D("thickcon", leList, teList, nSpan=2, nChord=10)
         self.geometry.nom_addVolumeConstraint("volcon", leList, teList, nSpan=2, nChord=10)
+        # add the LE/TE constraints
         self.geometry.nom_add_LETEConstraint("lecon", 0, "iLow", topID="k")
         self.geometry.nom_add_LETEConstraint("tecon", 0, "iHigh", topID="k")
 
@@ -194,17 +194,17 @@ class Top(Multipoint):
         self.add_constraint("geometry.volcon", lower=1.0, scaler=1.0)
         self.add_constraint("geometry.tecon", equals=0.0, scaler=1.0, linear=True)
         self.add_constraint("geometry.lecon", equals=0.0, scaler=1.0, linear=True)
-        self.add_constraint("geometry.linearcon", equals=0.0)
+        self.add_constraint("geometry.linearcon", equals=0.0, scaler=1.0, linear=True)
 
 
 # OpenMDAO setup
 prob = om.Problem()
 prob.model = Top()
 prob.setup(mode="rev")
-om.n2(prob, show_browser=False, outfile="mphys_aero.html")
+om.n2(prob, show_browser=False, outfile="mphys.html")
 
-# check if the design variable dict is properly set
-checkDesignVarSetup(daOptions, prob.model.get_design_vars())
+# initialize the optimization function
+optFuncs = OptFuncs(daOptions, prob)
 
 # use pyoptsparse to setup optimization
 prob.driver = om.pyOptSparseDriver()
@@ -212,11 +212,11 @@ prob.driver.options["optimizer"] = args.optimizer
 # options for optimizers
 if args.optimizer == "SNOPT":
     prob.driver.opt_settings = {
-        "Major feasibility tolerance": 1.0e-7,
-        "Major optimality tolerance": 1.0e-7,
-        "Minor feasibility tolerance": 1.0e-7,
+        "Major feasibility tolerance": 1.0e-5,
+        "Major optimality tolerance": 1.0e-5,
+        "Minor feasibility tolerance": 1.0e-5,
         "Verify level": -1,
-        "Function precision": 1.0e-7,
+        "Function precision": 1.0e-5,
         "Major iterations limit": 100,
         "Nonderivative linesearch": None,
         "Print file": "opt_SNOPT_print.txt",
@@ -224,8 +224,8 @@ if args.optimizer == "SNOPT":
     }
 elif args.optimizer == "IPOPT":
     prob.driver.opt_settings = {
-        "tol": 1.0e-7,
-        "constr_viol_tol": 1.0e-7,
+        "tol": 1.0e-5,
+        "constr_viol_tol": 1.0e-5,
         "max_iter": 100,
         "print_level": 5,
         "output_file": "opt_IPOPT.txt",
@@ -237,7 +237,7 @@ elif args.optimizer == "IPOPT":
     }
 elif args.optimizer == "SLSQP":
     prob.driver.opt_settings = {
-        "ACC": 1.0e-7,
+        "ACC": 1.0e-5,
         "MAXIT": 100,
         "IFILE": "opt_SLSQP.txt",
     }
@@ -246,12 +246,29 @@ else:
     exit(1)
 
 prob.driver.options["debug_print"] = ["nl_cons", "objs", "desvars"]
-prob.driver.hist_file = "opt.hst"
+# prob.driver.options["print_opt_prob"] = True
+prob.driver.hist_file = "OptView.hst"
 
 if args.task == "opt":
+    # solve CL
+    optFuncs.findFeasibleDesign(["cruise.aero_post.CL"], ["aoa"], targets=[CL_target])
+    # run the optimization
     prob.run_driver()
 elif args.task == "runPrimal":
+    # just run the primal once
     prob.run_model()
+elif args.task == "runAdjoint":
+    # just run the primal and adjoint once
+    prob.run_model()
+    totals = prob.compute_totals()
+    if MPI.COMM_WORLD.rank == 0:
+        print(totals)
+elif args.task == "checkTotals":
+    # verify the total derivatives against the finite-difference
+    prob.run_model()
+    prob.check_totals(
+        of=["CD", "CL"], wrt=["shape", "aoa"], compact_print=True, step=1e-3, form="central", step_calc="abs"
+    )
 else:
     print("task arg not found!")
     exit(1)
