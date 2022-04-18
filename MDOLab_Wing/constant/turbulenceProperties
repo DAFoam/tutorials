@@ -10,23 +10,18 @@ FoamFile
     version     2.0;
     format      ascii;
     class       dictionary;
-    location    "system";
-    object      decomposeParDict;
+    location    "constant";
+    object      turbulenceProperties;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-numberOfSubdomains     4;
-
-method                 scotch;
-
-simpleCoeffs 
+simulationType RAS;
+RAS 
 { 
-    n                  (2 2 1);
-    delta              0.001;
+    RASModel             SpalartAllmaras;
+    turbulence           on;
+    printCoeffs          off;
+    Prt                  1.0;
 } 
-
-distributed            false;
-
-roots();
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

@@ -9,27 +9,24 @@ FoamFile
 {
     version     2.0;
     format      ascii;
-    class       volScalarField;
+    class       volVectorField;
     location    "0";
-    object      T;
+    object      U;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-dimensions      [0 0 0 1 0 0 0];
+dimensions      [0 1 -1 0 0 0 0];
 
-internalField   uniform 300.0;
+internalField uniform (100 0 0);
 
 boundaryField
 {
     "wing.*"
     {
-        type            zeroGradient;
+        type            fixedValue;
+        value           uniform (0 0 0);
     }
-    symmetry1
-    {
-        type            symmetry;
-    }
-    symmetry2
+    sym
     {
         type            symmetry;
     }

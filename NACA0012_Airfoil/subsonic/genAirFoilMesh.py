@@ -33,8 +33,8 @@ dXMaxSS = 0.02  # max dx for SS
 # TE parameters
 NpTE = 5  # number of points for blunt TE
 # 3D
-NpExtrude = 37  # how many points to extrude for the 3D volume mesh in y
-yWall = 1e-3  # first layer mesh length
+NpExtrude = 33  # how many points to extrude for the 3D volume mesh in y
+yWall = 4e-3  # first layer mesh length
 marchDist = 20.0  # march distance for extruding
 ########## user input ################
 
@@ -115,9 +115,9 @@ for i in range(nStretch2PS):
     tmp /= Alpha2PS
 # print xInterpPS
 # Finally, we interpolate the refined stretch stuff
-c1PS = pySpline.Curve(x=xPS, y=yPS, z=zPS, k=3)
+c1PS = Curve(x=xPS, y=yPS, z=zPS, k=3)
 XPS = c1PS(xInterpPS)
-c2PS = pySpline.Curve(X=XPS, k=3)
+c2PS = Curve(X=XPS, k=3)
 x1PS = c2PS.X[:, 0]
 y1PS = c2PS.X[:, 1]
 
@@ -171,9 +171,9 @@ for i in range(nStretch2SS):
     tmp /= Alpha2SS
 # print xInterpSS
 # Finally, we interpolate the refined stretch stuff
-c1SS = pySpline.Curve(x=xSS, y=ySS, z=zSS, k=3)
+c1SS = Curve(x=xSS, y=ySS, z=zSS, k=3)
 XSS = c1SS(xInterpSS)
-c2SS = pySpline.Curve(X=XSS, k=3)
+c2SS = Curve(X=XSS, k=3)
 x1SS = c2SS.X[:, 0]
 y1SS = c2SS.X[:, 1]
 
@@ -235,7 +235,7 @@ options = {
     # ---------------------------
     "inputFile": "surfaceMesh.xyz",
     "unattachedEdgesAreSymmetry": False,
-    "outerFaceBC": "farField",
+    "outerFaceBC": "farfield",
     "autoConnect": True,
     "BC": {1: {"jLow": "zSymm", "jHigh": "zSymm"}},
     "families": "wall",
@@ -248,8 +248,8 @@ options = {
     # ---------------------------
     #   Pseudo Grid Parameters
     # ---------------------------
-    "ps0": -1,
-    "pGridRatio": -1,
+    "ps0": -1.0,
+    "pGridRatio": -1.0,
     "cMax": 1.0,
     # ---------------------------
     #   Smoothing parameters
@@ -265,5 +265,4 @@ options = {
 
 hyp = pyHyp(options=options)
 hyp.run()
-# hyp.writeCGNS('volumeMesh.cgns')
 hyp.writePlot3D("volumeMesh.xyz")
