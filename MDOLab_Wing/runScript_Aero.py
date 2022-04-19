@@ -5,9 +5,9 @@ import numpy as np
 
 import openmdao.api as om
 from mphys.multipoint import Multipoint
-from dafoam.mphys_dafoam import DAFoamBuilder
+from dafoam.mphys import DAFoamBuilder
 from mphys.scenario_aerodynamic import ScenarioAerodynamic
-from mphys.solver_builders.mphys_dvgeo import OM_DVGEOCOMP
+from pygeo.mphys import OM_DVGEOCOMP
 
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
@@ -32,6 +32,7 @@ class Top(Multipoint):
             "designSurfaces": ["wing"],
             "solverName": "DARhoSimpleFoam",
             "primalMinResTol": 1.0e-8,
+            "useAD": {"mode": "fd"},
             "primalBC": {
                 "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
                 "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
