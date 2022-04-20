@@ -5,7 +5,7 @@ import numpy as np
 from mpi4py import MPI
 import openmdao.api as om
 from mphys.multipoint import Multipoint
-from dafoam.mphys import DAFoamBuilder
+from dafoam.mphys import DAFoamBuilder, OptFuncs
 from tacs.mphys import TacsBuilder
 from mphys.solver_builders.mphys_meld import MeldBuilder
 from mphys.scenario_aerostructural import ScenarioAeroStructural
@@ -219,8 +219,8 @@ class Top(Multipoint):
         self.geometry.nom_addThicknessConstraints2D("thickcon", leList, teList, nSpan=10, nChord=10)
         self.geometry.nom_addVolumeConstraint("volcon", leList, teList, nSpan=10, nChord=10)
         # add the LE/TE constraints
-        self.geometry.nom_add_LETEConstraint("lecon", volID=0, "iLow")
-        self.geometry.nom_add_LETEConstraint("tecon", volID=0, "iHigh")
+        self.geometry.nom_add_LETEConstraint("lecon", volID=0, faceID="iLow")
+        self.geometry.nom_add_LETEConstraint("tecon", volID=0, faceID="iHigh")
 
         # add the design variables to the dvs component's output
         self.dvs.add_output("twist", val=np.array([0] * (nRefAxPts - 1)))
