@@ -2,24 +2,28 @@
 import os
 import argparse
 import numpy as np
-
+from mpi4py import MPI
 import openmdao.api as om
 from mphys.multipoint import Multipoint
 from dafoam.mphys import DAFoamBuilder
 from tacs.mphys import TacsBuilder
-from tacs import elements, constitutive, functions
 from mphys.solver_builders.mphys_meld import MeldBuilder
 from mphys.scenario_aerostructural import ScenarioAeroStructural
 from pygeo.mphys import OM_DVGEOCOMP
+from pygeo import geo_utils
 
 import tacsSetup
 
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
 parser.add_argument("-optimizer", help="optimizer to use", type=str, default="IPOPT")
-# which task to run. Options are: opt (default), runPrimal
+# which task to run. Options are: opt (default), runPrimal, runAdjoint, checkTotals
 parser.add_argument("-task", help="type of run to do", type=str, default="opt")
 args = parser.parse_args()
+
+# =============================================================================
+# Input Parameters
+# =============================================================================
 
 U0 = 100.0
 p0 = 101325.0
@@ -30,95 +34,85 @@ aoa0 = 2.0
 rho0 = p0 / T0 / 287.0
 A0 = 45.5
 
+daOptions = {
+    "designSurfaces": ["wing"],
+    "solverName": "DARhoSimpleFoam",
+    "primalMinResTol": 1.0e-8,
+    "fsi": {"pRef": p0},  # set the ref pressure for computing force for FSI
+    "primalBC": {
+        "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
+        "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
+        "T0": {"variable": "T", "patches": ["inout"], "value": [T0]},
+        "nuTilda0": {"variable": "nuTilda", "patches": ["inout"], "value": [nuTilda0]},
+        "useWallFunction": True,
+    },
+    "objFunc": {
+        "CD": {
+            "part1": {
+                "type": "force",
+                "source": "patchToFace",
+                "patches": ["wing"],
+                "directionMode": "parallelToFlow",
+                "alphaName": "aoa",
+                "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
+                "addToAdjoint": True,
+            }
+        },
+        "CL": {
+            "part1": {
+                "type": "force",
+                "source": "patchToFace",
+                "patches": ["wing"],
+                "directionMode": "normalToFlow",
+                "alphaName": "aoa",
+                "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
+                "addToAdjoint": True,
+            }
+        },
+    },
+    "adjEqnOption": {
+        "gmresRelTol": 1.0e-2,  # set relative tolerance for block Gauss-Seidel adjoint
+        "pcFillLevel": 1,
+        "jacMatReOrdering": "rcm",
+        "useNonZeroInitGuess": True,
+    },
+    "normalizeStates": {
+        "U": U0,
+        "p": p0,
+        "T": T0,
+        "nuTilda": 1e-3,
+        "phi": 1.0,
+    },
+    "checkMeshThreshold": {
+        "maxAspectRatio": 1000.0,
+        "maxNonOrth": 70.0,
+        "maxSkewness": 5.0,
+    },
+    "designVar": {
+        "aoa": {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "y"},
+        "twist": {"designVarType": "FFD"},
+        "shape": {"designVarType": "FFD"},
+    },
+}
+
+# Mesh deformation setup
+meshOptions = {
+    "gridFile": os.getcwd(),
+    "fileType": "OpenFOAM",
+    # point and normal for the symmetry plane
+    "symmetryPlanes": [[[0.0, 0.0, 0.0], [0.0, 0.0, 1.0]]],
+}
+
+# TACS Setup
+tacsOptions = {
+    "element_callback": tacsSetup.element_callback,
+    "problem_setup": tacsSetup.problem_setup,
+    "mesh_file": "./wingbox.bdf",
+}
+
 
 class Top(Multipoint):
     def setup(self):
-        daOptions = {
-            "designSurfaces": ["wing"],
-            "solverName": "DARhoSimpleFoam",
-            "primalMinResTol": 1.0e-8,
-            "fsi": {"pRef": p0},
-            "primalBC": {
-                "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
-                "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
-                "T0": {"variable": "T", "patches": ["inout"], "value": [T0]},
-                "nuTilda0": {"variable": "nuTilda", "patches": ["inout"], "value": [nuTilda0]},
-                "useWallFunction": True,
-            },
-            # variable bounds for compressible flow conditions
-            "primalVarBounds": {
-                "UMax": 1000.0,
-                "UMin": -1000.0,
-                "pMax": 500000.0,
-                "pMin": 20000.0,
-                "eMax": 500000.0,
-                "eMin": 100000.0,
-                "rhoMax": 5.0,
-                "rhoMin": 0.2,
-            },
-            "objFunc": {
-                "CD": {
-                    "part1": {
-                        "type": "force",
-                        "source": "patchToFace",
-                        "patches": ["wing"],
-                        "directionMode": "parallelToFlow",
-                        "alphaName": "aoa",
-                        "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
-                        "addToAdjoint": True,
-                    }
-                },
-                "CL": {
-                    "part1": {
-                        "type": "force",
-                        "source": "patchToFace",
-                        "patches": ["wing"],
-                        "directionMode": "normalToFlow",
-                        "alphaName": "aoa",
-                        "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
-                        "addToAdjoint": True,
-                    }
-                },
-            },
-            "adjEqnOption": {
-                "gmresRelTol": 1.0e-2,
-                "pcFillLevel": 1,
-                "jacMatReOrdering": "rcm",
-                "useNonZeroInitGuess": True,
-            },
-            "normalizeStates": {
-                "U": U0,
-                "p": p0,
-                "T": T0,
-                "nuTilda": 1e-3,
-                "phi": 1.0,
-            },
-            "adjPartDerivFDStep": {"State": 1e-6},
-            "checkMeshThreshold": {
-                "maxAspectRatio": 1000.0,
-                "maxNonOrth": 70.0,
-                "maxSkewness": 8.0,
-            },
-            "designVar": {
-                "aoa": {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "y"},
-                "twist": {"designVarType": "FFD"},
-                "shape": {"designVarType": "FFD"},
-            },
-        }
-
-        meshOptions = {
-            "gridFile": os.getcwd(),
-            "fileType": "OpenFOAM",
-            # point and normal for the symmetry plane
-            "symmetryPlanes": [[[0.0, 0.0, 0.0], [0.0, 0.0, 1.0]]],
-        }
-
-        # TACS Setup
-        tacs_options = {
-            "element_callback": tacsSetup.element_callback,
-            "problem_setup": tacsSetup.problem_setup,
-            "mesh_file": "./wingbox.bdf",
-        }
 
         # create the builder to initialize the DASolvers
         aero_builder = DAFoamBuilder(daOptions, meshOptions, scenario="aerostructural")
@@ -127,13 +121,14 @@ class Top(Multipoint):
         # add the aerodynamic mesh component
         self.add_subsystem("mesh_aero", aero_builder.get_mesh_coordinate_subsystem())
 
-        struct_builder = TacsBuilder(tacs_options)
+        # create the builder to initialize TACS
+        struct_builder = TacsBuilder(tacsOptions)
         struct_builder.initialize(self.comm)
-        
+
         # add the structure mesh component
         self.add_subsystem("mesh_struct", struct_builder.get_mesh_coordinate_subsystem())
 
-        # load and displacement transfer options
+        # load and displacement transfer builder (meld), isym sets the symmetry plan axis (k)
         xfer_builder = MeldBuilder(aero_builder, struct_builder, isym=2, check_partials=True)
         xfer_builder.initialize(self.comm)
 
@@ -143,9 +138,11 @@ class Top(Multipoint):
         # add the geometry component (FFD)
         self.add_subsystem("geometry", OM_DVGEOCOMP(ffd_file="FFD/wingFFD.xyz"))
 
-        # add the coupling solvers
+        # primal and adjoint solution options, i.e., nonlinear block Gauss-Seidel for aerostructural analysis
+        # and linear block Gauss-Seidel for the coupled adjoint
         nonlinear_solver = om.NonlinearBlockGS(maxiter=25, iprint=2, use_aitken=True, rtol=1e-8, atol=1e-8)
         linear_solver = om.LinearBlockGS(maxiter=25, iprint=2, use_aitken=True, rtol=1e-6, atol=1e-6)
+        # add the coupling aerostructural scenario
         self.mphys_add_scenario(
             "cruise",
             ScenarioAeroStructural(
@@ -158,7 +155,7 @@ class Top(Multipoint):
         # need to manually connect the vars in the geo component to cruise
         for discipline in ["aero", "struct"]:
             self.connect("geometry.x_%s0" % discipline, "cruise.x_%s0" % discipline)
-        
+
         # add the structural thickness DVs
         ndv_struct = struct_builder.get_ndv()
         dvs.add_output("dv_struct", np.array(ndv_struct * [0.01]))
@@ -174,25 +171,23 @@ class Top(Multipoint):
         super().configure()
 
         # add the objective function to the cruise scenario
-        self.cruise.aero_post.mphys_add_funcs(["CD", "CL"])
+        self.cruise.aero_post.mphys_add_funcs()
 
-        # create geometric DV setup
+        # get the surface coordinates from the mesh component
         points = self.mesh_aero.mphys_get_surface_mesh()
 
-        # add pointset
+        # add pointset for both aero and struct
         self.geometry.nom_add_discipline_coords("aero", points)
         self.geometry.nom_add_discipline_coords("struct")
 
-        # create constraint DV setup
+        # set the triangular points to the geometry component for geometric constraints
         tri_points = self.mesh_aero.mphys_get_triangulated_surface()
         self.geometry.nom_setConstraintSurface(tri_points)
 
-        # geometry setup
-
-        # Create reference axis
+        # Create reference axis for the twist variable
         nRefAxPts = self.geometry.nom_addRefAxis(name="wingAxis", xFraction=0.25, alignIndex="k")
 
-        # Set up twist variables
+        # Set up global design variables. We dont change the root twist
         def twist(val, geo):
             for i in range(1, nRefAxPts):
                 geo.rot_z["wingAxis"].coef[i] = -val[i - 1]
@@ -209,24 +204,29 @@ class Top(Multipoint):
         self.cruise.coupling.aero.solver.add_dv_func("aoa", aoa)
         self.cruise.aero_post.add_dv_func("aoa", aoa)
 
-        # add shape variable
+        # add twist variable
         self.geometry.nom_addGeoDVGlobal(dvName="twist", value=np.array([0] * (nRefAxPts - 1)), func=twist)
 
         # add shape variable
-        nShapes = self.geometry.nom_addGeoDVLocal(dvName="shape")
+        pts = self.geometry.DVGeo.getLocalIndex(0)
+        indexList = pts[:, :, :].flatten()
+        PS = geo_utils.PointSelect("list", indexList)
+        nShapes = self.geometry.nom_addGeoDVLocal(dvName="shape", pointSelect=PS)
 
-        # Set up geo constraints
+        # setup the volume and thickness constraints
         leList = [[0.1, 0, 0.01], [7.5, 0, 13.9]]
         teList = [[4.9, 0, 0.01], [8.9, 0, 13.9]]
         self.geometry.nom_addThicknessConstraints2D("thickcon", leList, teList, nSpan=10, nChord=10)
         self.geometry.nom_addVolumeConstraint("volcon", leList, teList, nSpan=10, nChord=10)
-        self.geometry.nom_add_LETEConstraint("lecon", 0, "iLow")
-        self.geometry.nom_add_LETEConstraint("tecon", 0, "iHigh")
+        # add the LE/TE constraints
+        self.geometry.nom_add_LETEConstraint("lecon", volID=0, "iLow")
+        self.geometry.nom_add_LETEConstraint("tecon", volID=0, "iHigh")
 
-        # add dvs to ivc and connect
+        # add the design variables to the dvs component's output
         self.dvs.add_output("twist", val=np.array([0] * (nRefAxPts - 1)))
         self.dvs.add_output("shape", val=np.array([0] * nShapes))
         self.dvs.add_output("aoa", val=np.array([aoa0]))
+        # manually connect the dvs output to the geometry and cruise
         self.connect("twist", "geometry.twist")
         self.connect("shape", "geometry.shape")
         self.connect("aoa", "cruise.aoa")
@@ -251,17 +251,20 @@ prob.model = Top()
 prob.setup(mode="rev")
 om.n2(prob, show_browser=False, outfile="mphys_aero_struct.html")
 
+# initialize the optimization function
+optFuncs = OptFuncs(daOptions, prob)
+
 # use pyoptsparse to setup optimization
 prob.driver = om.pyOptSparseDriver()
 prob.driver.options["optimizer"] = args.optimizer
 # options for optimizers
 if args.optimizer == "SNOPT":
     prob.driver.opt_settings = {
-        "Major feasibility tolerance": 1.0e-7,
-        "Major optimality tolerance": 1.0e-7,
-        "Minor feasibility tolerance": 1.0e-7,
+        "Major feasibility tolerance": 1.0e-5,
+        "Major optimality tolerance": 1.0e-5,
+        "Minor feasibility tolerance": 1.0e-5,
         "Verify level": -1,
-        "Function precision": 1.0e-7,
+        "Function precision": 1.0e-5,
         "Major iterations limit": 100,
         "Nonderivative linesearch": None,
         "Print file": "opt_SNOPT_print.txt",
@@ -269,8 +272,8 @@ if args.optimizer == "SNOPT":
     }
 elif args.optimizer == "IPOPT":
     prob.driver.opt_settings = {
-        "tol": 1.0e-7,
-        "constr_viol_tol": 1.0e-7,
+        "tol": 1.0e-5,
+        "constr_viol_tol": 1.0e-5,
         "max_iter": 100,
         "print_level": 5,
         "output_file": "opt_IPOPT.txt",
@@ -282,7 +285,7 @@ elif args.optimizer == "IPOPT":
     }
 elif args.optimizer == "SLSQP":
     prob.driver.opt_settings = {
-        "ACC": 1.0e-7,
+        "ACC": 1.0e-5,
         "MAXIT": 100,
         "IFILE": "opt_SLSQP.txt",
     }
@@ -291,12 +294,29 @@ else:
     exit(1)
 
 prob.driver.options["debug_print"] = ["nl_cons", "objs", "desvars"]
-prob.driver.hist_file = "opt.hst"
+# prob.driver.options["print_opt_prob"] = True
+prob.driver.hist_file = "OptView.hst"
 
 if args.task == "opt":
+    # solve CL
+    optFuncs.findFeasibleDesign(["cruise.aero_post.CL"], ["aoa"], targets=[CL_target])
+    # run the optimization
     prob.run_driver()
 elif args.task == "runPrimal":
+    # just run the primal once
     prob.run_model()
+elif args.task == "runAdjoint":
+    # just run the primal and adjoint once
+    prob.run_model()
+    totals = prob.compute_totals()
+    if MPI.COMM_WORLD.rank == 0:
+        print(totals)
+elif args.task == "checkTotals":
+    # verify the total derivatives against the finite-difference
+    prob.run_model()
+    prob.check_totals(
+        of=["CD", "CL"], wrt=["shape", "aoa"], compact_print=True, step=1e-3, form="central", step_calc="abs"
+    )
 else:
     print("task arg not found!")
     exit(1)
