@@ -202,8 +202,8 @@ class Top(Multipoint):
         self.geometry.nom_addThicknessConstraints2D("thickcon", leList, teList, nSpan=2, nChord=10)
         self.geometry.nom_addVolumeConstraint("volcon", leList, teList, nSpan=2, nChord=10)
         # LE/TE constrants
-        self.geometry.nom_add_LETEConstraint("lecon", 0, "iLow", topID="k")
-        self.geometry.nom_add_LETEConstraint("tecon", 0, "iHigh", topID="k")
+        self.geometry.nom_add_LETEConstraint("lecon", volID=0, "iLow", topID="k")
+        self.geometry.nom_add_LETEConstraint("tecon", volID=0, "iHigh", topID="k")
 
         # add the design variables to the dvs component's output
         self.dvs.add_output("shape", val=np.array([0] * nShapes))
