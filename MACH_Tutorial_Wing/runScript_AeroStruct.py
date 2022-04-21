@@ -239,6 +239,8 @@ class Top(Multipoint):
         # add constraints and the objective
         self.add_objective("cruise.aero_post.CD", scaler=1.0)
         self.add_constraint("cruise.aero_post.CL", equals=0.3, scaler=1.0)
+        # stress constraint
+        self.add_constraint("cruise.ks_vmfailure", lower=0.0, upper=1.0, scaler=1.0)
         self.add_constraint("geometry.thickcon", lower=0.5, upper=3.0, scaler=1.0)
         self.add_constraint("geometry.volcon", lower=1.0, scaler=1.0)
         self.add_constraint("geometry.tecon", equals=0.0, scaler=1.0, linear=True)
