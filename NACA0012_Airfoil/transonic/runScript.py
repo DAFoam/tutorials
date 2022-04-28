@@ -33,7 +33,7 @@ p0 = 101325.0
 T0 = 300.0
 nuTilda0 = 4.5e-5
 CL_target = 0.5
-alpha0 = 3.0
+aoa0 = 3.0
 A0 = 0.1
 # rho is used for normalizing CD and CL
 rho0 = p0 / T0 / 287
@@ -183,7 +183,7 @@ class Top(Multipoint):
 
         # add the design variables to the dvs component's output
         self.dvs.add_output("shape", val=np.array([0] * nShapes))
-        self.dvs.add_output("aoa", val=np.array([alpha0]))
+        self.dvs.add_output("aoa", val=np.array([aoa0]))
         # manually connect the dvs output to the geometry and cruise
         self.connect("aoa", "cruise.aoa")
         self.connect("shape", "geometry.shape")

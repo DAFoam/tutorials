@@ -33,7 +33,7 @@ U0 = [10.0, 8.0]
 p0 = 0.0
 nuTilda0 = 4.5e-5
 CL_target = [0.5, 0.6]
-alpha0 = [5.0, 6.0]
+aoa0 = [5.0, 6.0]
 A0 = 0.1
 # rho is used for normalizing CD and CL
 rho0 = 1.0
@@ -208,8 +208,8 @@ class Top(Multipoint):
         # add the design variables to the dvs component's output
         self.dvs.add_output("shape", val=np.array([0] * nShapes))
         # NOTE: we have two separated aoa variables for the two flight conditions
-        self.dvs.add_output("aoa0", val=np.array([alpha0[0]]))
-        self.dvs.add_output("aoa1", val=np.array([alpha0[1]]))
+        self.dvs.add_output("aoa0", val=np.array([aoa0[0]]))
+        self.dvs.add_output("aoa1", val=np.array([aoa0[1]]))
         # manually connect the dvs output to the geometry and cruise
         self.connect("aoa0", "cruise0.aoa")
         self.connect("aoa1", "cruise1.aoa")
