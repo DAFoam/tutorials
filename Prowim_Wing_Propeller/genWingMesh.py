@@ -14,7 +14,7 @@ options = {
     "inputFile": fileName,
     "fileType": "CGNS",
     "unattachedEdgesAreSymmetry": True,
-    "outerFaceBC": "farField",
+    "outerFaceBC": "farfield",
     "autoConnect": True,
     "BC": {},
     "families": "wall",
@@ -23,12 +23,12 @@ options = {
     # ---------------------------
     "N": 49,  # number of layers to march
     "s0": 1.0e-3,  # first layer thickness
-    "marchDist": 10,  # distance to march
+    "marchDist": 10.0,  # distance to march
     # ---------------------------
     #   Pseudo Grid Parameters
     # ---------------------------
-    "ps0": -1,
-    "pGridRatio": -1,
+    "ps0": -1.0,
+    "pGridRatio": -1.0,
     "cMax": 0.5,
     # ---------------------------
     #   Smoothing parameters

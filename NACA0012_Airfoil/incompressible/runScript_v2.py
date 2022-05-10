@@ -43,6 +43,7 @@ daOptions = {
     "solverName": "DASimpleFoam",
     "useAD": {"mode": "reverse"},
     "primalMinResTol": 1.0e-8,
+    "writeDeformedFFDs": True,
     "primalBC": {
         "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
         "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
@@ -94,7 +95,7 @@ daOptions = {
 # mesh warping parameters, users need to manually specify the symmetry plane and their normals
 meshOptions = {
     "gridFile": os.getcwd(),
-    "fileType": "openfoam",
+    "fileType": "OpenFOAM",
     # point and normal for the symmetry plane
     "symmetryPlanes": [[[0.0, 0.0, 0.0], [0.0, 0.0, 1.0]], [[0.0, 0.0, 0.1], [0.0, 0.0, 1.0]]],
 }
