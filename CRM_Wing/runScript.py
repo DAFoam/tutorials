@@ -1,11 +1,4 @@
 #!/usr/bin/env python
-"""
-DAFoam run script for the NACA0012 airfoil at low-speed
-"""
-
-# =============================================================================
-# Imports
-# =============================================================================
 import os
 import argparse
 import numpy as np
@@ -17,7 +10,6 @@ from mphys.scenario_aerodynamic import ScenarioAerodynamic
 from pygeo.mphys import OM_DVGEOCOMP
 from pygeo import geo_utils
 
-
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
 parser.add_argument("-optimizer", help="optimizer to use", type=str, default="IPOPT")
@@ -28,24 +20,24 @@ args = parser.parse_args()
 # =============================================================================
 # Input Parameters
 # =============================================================================
-U0 = 10.0
-p0 = 0.0
-nuTilda0 = 4.5e-5
-CL_target = 0.5
-aoa0 = 5.0
-A0 = 0.1
-# rho is used for normalizing CD and CL
-rho0 = 1.0
 
-# Input parameters for DAFoam
+U0 = 295.0
+p0 = 101325.0
+nuTilda0 = 4.5e-5
+T0 = 300.0
+CL_target = 0.5
+aoa0 = 2.178962
+rho0 = p0 / T0 / 287.0
+A0 = 3.407014
+
 daOptions = {
     "designSurfaces": ["wing"],
-    "solverName": "DASimpleFoam",
+    "solverName": "DARhoSimpleCFoam",
     "primalMinResTol": 1.0e-8,
-    "adjEqnSolMethod": "fixedPoint",
     "primalBC": {
         "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
         "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
+        "T0": {"variable": "T", "patches": ["inout"], "value": [T0]},
         "nuTilda0": {"variable": "nuTilda", "patches": ["inout"], "value": [nuTilda0]},
         "useWallFunction": True,
     },
@@ -73,15 +65,31 @@ daOptions = {
             }
         },
     },
-    "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
+    "adjStateOrdering": "cell",
+    "adjEqnOption": {
+        "gmresRelTol": 1.0e-6,
+        "pcFillLevel": 1,
+        "jacMatReOrdering": "natural",
+        "gmresMaxIters": 2000,
+        "gmresRestart": 2000,
+    },
     "normalizeStates": {
         "U": U0,
-        "p": U0 * U0 / 2.0,
-        "nuTilda": nuTilda0 * 10.0,
+        "p": p0,
+        "T": T0,
+        "nuTilda": 1e-3,
         "phi": 1.0,
     },
+    "checkMeshThreshold": {
+        "maxAspectRatio": 2000.0,
+        "maxNonOrth": 75.0,
+        "maxSkewness": 5.0,
+    },
+    # transonic preconditioner to speed up the adjoint convergence
+    "transonicPCOption": 2,
     "designVar": {
         "aoa": {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "y"},
+        "twist": {"designVarType": "FFD"},
         "shape": {"designVarType": "FFD"},
     },
 }
@@ -91,7 +99,7 @@ meshOptions = {
     "gridFile": os.getcwd(),
     "fileType": "OpenFOAM",
     # point and normal for the symmetry plane
-    "symmetryPlanes": [[[0.0, 0.0, 0.0], [0.0, 0.0, 1.0]], [[0.0, 0.0, 0.1], [0.0, 0.0, 1.0]]],
+    "symmetryPlanes": [[[0.0, 0.0, 0.0], [0.0, 1.0, 0.0]]],
 }
 
 # Top class to setup the optimization problem
@@ -123,6 +131,7 @@ class Top(Multipoint):
         self.connect("geometry.x_aero0", "cruise.x_aero")
 
     def configure(self):
+
         # configure and setup perform a similar function, i.e., initialize the optimization.
         # But configure will be run after setup
 
@@ -139,10 +148,18 @@ class Top(Multipoint):
         tri_points = self.mesh.mphys_get_triangulated_surface()
         self.geometry.nom_setConstraintSurface(tri_points)
 
+        # Create reference axis for the twist variable
+        nRefAxPts = self.geometry.nom_addRefAxis(name="wingAxis", xFraction=0.25, alignIndex="j")
+
+        # Set up global design variables. We dont change the root twist
+        def twist(val, geo):
+            for i in range(1, nRefAxPts):
+                geo.rot_y["wingAxis"].coef[i] = -val[i - 1]
+
         # define an angle of attack function to change the U direction at the far field
         def aoa(val, DASolver):
             aoa = val[0] * np.pi / 180.0
-            U = [float(U0 * np.cos(aoa)), float(U0 * np.sin(aoa)), 0]
+            U = [float(U0 * np.cos(aoa)), 0.0, float(U0 * np.sin(aoa))]
             # we need to update the U value only
             DASolver.setOption("primalBC", {"U0": {"value": U}})
             DASolver.updateDAOption()
@@ -151,40 +168,53 @@ class Top(Multipoint):
         self.cruise.coupling.solver.add_dv_func("aoa", aoa)
         self.cruise.aero_post.add_dv_func("aoa", aoa)
 
+        # add twist variable
+        self.geometry.nom_addGeoDVGlobal(dvName="twist", value=np.array([0] * (nRefAxPts - 1)), func=twist)
+
         # select the FFD points to move
         pts = self.geometry.DVGeo.getLocalIndex(0)
         indexList = pts[:, :, :].flatten()
         PS = geo_utils.PointSelect("list", indexList)
         nShapes = self.geometry.nom_addGeoDVLocal(dvName="shape", pointSelect=PS)
 
-        # setup the symmetry constraint to link the y displacement between k=0 and k=1
-        nFFDs_x = pts.shape[0]
-        nFFDs_y = pts.shape[1]
-        indSetA = []
-        indSetB = []
-        for i in range(nFFDs_x):
-            for j in range(nFFDs_y):
-                indSetA.append(pts[i, j, 0])
-                indSetB.append(pts[i, j, 1])
-        self.geometry.nom_addLinearConstraintsShape("linearcon", indSetA, indSetB, factorA=1.0, factorB=-1.0)
-
         # setup the volume and thickness constraints
-        leList = [[1e-4, 0.0, 1e-4], [1e-4, 0.0, 0.1 - 1e-4]]
-        teList = [[0.998 - 1e-4, 0.0, 1e-4], [0.998 - 1e-4, 0.0, 0.1 - 1e-4]]
-        self.geometry.nom_addThicknessConstraints2D("thickcon", leList, teList, nSpan=2, nChord=10)
-        self.geometry.nom_addVolumeConstraint("volcon", leList, teList, nSpan=2, nChord=10)
+        leList = [[0.1, 0, 0.01], [7.5, 0, 13.9]]
+        teList = [[4.9, 0, 0.01], [8.9, 0, 13.9]]# NOTE: the LE and TE lists are not parallel lines anymore, these two lists define lines that
+        # are close to the leading and trailing edges while being completely within the wing surface
+        LE_pt = np.array([0.01, 0.01, 0.0])
+        break_pt = np.array([0.848, 1.119, 0.0])
+        tip_pt = np.array([2.855, 3.755, 0.0])
+        root_chord = 1.689
+        break_chord = 1.036
+        tip_chord = 0.390
+        leList = [
+            [LE_pt[0] + 0.01 * root_chord, LE_pt[1], LE_pt[2]],
+            [break_pt[0] + 0.01 * break_chord, break_pt[1], break_pt[2]],
+            [tip_pt[0] + 0.01 * tip_chord, tip_pt[1], tip_pt[2]],
+        ]
+        
+        teList = [
+            [LE_pt[0] + 0.99 * root_chord, LE_pt[1], LE_pt[2]],
+            [break_pt[0] + 0.99 * break_chord, break_pt[1], break_pt[2]],
+            [tip_pt[0] + 0.99 * tip_chord, tip_pt[1], tip_pt[2]],
+        ]
+        self.geometry.nom_addThicknessConstraints2D("thickcon", leList, teList, nSpan=25, nChord=30)
+        self.geometry.nom_addVolumeConstraint("volcon", leList, teList, nSpan=25, nChord=30)
         # add the LE/TE constraints
-        self.geometry.nom_add_LETEConstraint("lecon", volID=0, faceID="iLow", topID="k")
-        self.geometry.nom_add_LETEConstraint("tecon", volID=0, faceID="iHigh", topID="k")
+        self.geometry.nom_add_LETEConstraint("lecon", volID=0, faceID="iLow")
+        self.geometry.nom_add_LETEConstraint("tecon", volID=0, faceID="iHigh")
 
         # add the design variables to the dvs component's output
+        self.dvs.add_output("twist", val=np.array([0] * (nRefAxPts - 1)))
         self.dvs.add_output("shape", val=np.array([0] * nShapes))
         self.dvs.add_output("aoa", val=np.array([aoa0]))
         # manually connect the dvs output to the geometry and cruise
-        self.connect("aoa", "cruise.aoa")
+        self.connect("twist", "geometry.twist")
         self.connect("shape", "geometry.shape")
+        self.connect("aoa", "cruise.aoa")
 
-        # define the design variables to the top level
+        # define the design variables
+        self.add_design_var("twist", lower=-10.0, upper=10.0, scaler=1.0)
         self.add_design_var("shape", lower=-1.0, upper=1.0, scaler=1.0)
         self.add_design_var("aoa", lower=0.0, upper=10.0, scaler=1.0)
 
@@ -195,7 +225,6 @@ class Top(Multipoint):
         self.add_constraint("geometry.volcon", lower=1.0, scaler=1.0)
         self.add_constraint("geometry.tecon", equals=0.0, scaler=1.0, linear=True)
         self.add_constraint("geometry.lecon", equals=0.0, scaler=1.0, linear=True)
-        self.add_constraint("geometry.linearcon", equals=0.0, scaler=1.0, linear=True)
 
 
 # OpenMDAO setup
@@ -249,6 +278,7 @@ else:
 prob.driver.options["debug_print"] = ["nl_cons", "objs", "desvars"]
 # prob.driver.options["print_opt_prob"] = True
 prob.driver.hist_file = "OptView.hst"
+
 
 if args.task == "opt":
     # solve CL
