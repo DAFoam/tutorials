@@ -1,0 +1,59 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1812                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      surfaceFeatureExtractDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+wing_upper.stl
+{
+    extractionMethod    extractFromSurface;
+    includedAngle       150;
+    geometricTestOnly   yes;
+    intersectionMethod  none;
+    // Tolerance for surface intersections
+    // tolerance           1e-3;
+    writeObj            yes;
+}
+
+wing_lower.stl
+{
+    extractionMethod    extractFromSurface;
+    includedAngle       150;
+    geometricTestOnly   yes;
+    intersectionMethod  none;
+    // Tolerance for surface intersections
+    // tolerance           1e-3;
+    writeObj            yes;
+}
+
+wing_tip.stl
+{
+    extractionMethod    extractFromSurface;
+    includedAngle       150;
+    geometricTestOnly   yes;
+    intersectionMethod  none;
+    // Tolerance for surface intersections
+    // tolerance           1e-3;
+    writeObj            yes;
+}
+
+wing_te.stl
+{
+    extractionMethod    extractFromSurface;
+    includedAngle       150;
+    geometricTestOnly   yes;
+    intersectionMethod  none;
+    // Tolerance for surface intersections
+    // tolerance           1e-3;
+    writeObj            yes;
+}
