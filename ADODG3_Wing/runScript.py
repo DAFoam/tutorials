@@ -24,6 +24,10 @@ args = parser.parse_args()
 U0 = 100.0
 p0 = 101325.0
 nuTilda0 = 4.5e-5
+# Tu 0.5%, nu_r = 5
+k0 = 0.375
+epsilon0 = 168.75
+omega0 = 5000.0
 T0 = 300.0
 CL_target = 0.375
 aoa0 = 2.0
@@ -39,6 +43,9 @@ daOptions = {
         "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
         "T0": {"variable": "T", "patches": ["inout"], "value": [T0]},
         "nuTilda0": {"variable": "nuTilda", "patches": ["inout"], "value": [nuTilda0]},
+        "k0": {"variable": "k", "patches": ["inout"], "value": [k0]},
+        "epsilon0": {"variable": "epsilon", "patches": ["inout"], "value": [epsilon0]},
+        "omega0": {"variable": "omega", "patches": ["inout"], "value": [omega0]},
         "useWallFunction": True,
     },
     "objFunc": {
@@ -77,6 +84,9 @@ daOptions = {
         "p": p0,
         "T": T0,
         "nuTilda": 1e-3,
+        "k": 1.0,
+        "omega": 100.0,
+        "epsilon": 10.0,
         "phi": 1.0,
     },
     "designVar": {
