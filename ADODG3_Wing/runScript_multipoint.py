@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+
+# =============================================================================
+# Imports
+# =============================================================================
 import os
 import argparse
 import numpy as np
@@ -7,8 +11,9 @@ import openmdao.api as om
 from mphys.multipoint import Multipoint
 from dafoam.mphys import DAFoamBuilder, OptFuncs
 from mphys.scenario_aerodynamic import ScenarioAerodynamic
-from pygeo.mphys import OM_DVGEOCOMP
+from pygeo.mphys  import OM_DVGEOCOMP
 from pygeo import geo_utils
+
 
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
@@ -20,32 +25,34 @@ args = parser.parse_args()
 # =============================================================================
 # Input Parameters
 # =============================================================================
-
-U0 = 100.0
+# we have two flight conditions
+U0 = [100.0, 90.0]
 p0 = 101325.0
 T0 = 300.0
 rho0 = p0 / T0 / 287.0
 nuTilda0 = 4.5e-5
-# Tu 0.5%, nu_r = 5
-k0 = 0.375
-epsilon0 = 168.75
-omega0 = 5000.0
-CL_target = 0.375
-aoa0 = 2.0
+CL_target = [0.4, 0.5]
+aoa0 = [2.0, 3.0]
 A0 = 3.0
 
+# define the BC and objFunc dicts for each flight condition
+fc0 = {"primalBC": {"U0": {"value": [U0[0], 0.0, 0.0]}},
+       "objFunc": {"CD": {"part1": {"scale": 1.0 / (0.5 * U0[0] * U0[0] * A0 * rho0)}},
+                   "CL": {"part1": {"scale": 1.0 / (0.5 * U0[0] * U0[0] * A0 * rho0)}}}}
+fc1 = {"primalBC": {"U0": {"value": [U0[1], 0.0, 0.0]}},
+       "objFunc": {"CD": {"part1": {"scale": 1.0 / (0.5 * U0[1] * U0[1] * A0 * rho0)}},
+                   "CL": {"part1": {"scale": 1.0 / (0.5 * U0[1] * U0[1] * A0 * rho0)}}}}
+
+# Input parameters for DAFoam
 daOptions = {
     "designSurfaces": ["wing"],
     "solverName": "DARhoSimpleFoam",
     "primalMinResTol": 1.0e-8,
     "primalBC": {
-        "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
+        "U0": {"variable": "U", "patches": ["inout"], "value": [U0[0], 0.0, 0.0]},
         "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
         "T0": {"variable": "T", "patches": ["inout"], "value": [T0]},
         "nuTilda0": {"variable": "nuTilda", "patches": ["inout"], "value": [nuTilda0]},
-        "k0": {"variable": "k", "patches": ["inout"], "value": [k0]},
-        "epsilon0": {"variable": "epsilon", "patches": ["inout"], "value": [epsilon0]},
-        "omega0": {"variable": "omega", "patches": ["inout"], "value": [omega0]},
         "useWallFunction": True,
     },
     "objFunc": {
@@ -56,7 +63,9 @@ daOptions = {
                 "patches": ["wing"],
                 "directionMode": "parallelToFlow",
                 "alphaName": "aoa",
-                "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
+                # the scale here is not important because we will replace it with
+                # the values defined in fc0 and fc1 later
+                "scale": 1.0 / (0.5 * U0[0] * U0[0] * A0 * rho0),
                 "addToAdjoint": True,
             }
         },
@@ -67,7 +76,7 @@ daOptions = {
                 "patches": ["wing"],
                 "directionMode": "normalToFlow",
                 "alphaName": "aoa",
-                "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
+                "scale": 1.0 / (0.5 * U0[0] * U0[0] * A0 * rho0),
                 "addToAdjoint": True,
             }
         },
@@ -80,13 +89,10 @@ daOptions = {
         "gmresRestart": 1000,
     },
     "normalizeStates": {
-        "U": U0,
+        "U": U0[0],
         "p": p0,
         "T": T0,
         "nuTilda": 1e-3,
-        "k": 1.0,
-        "omega": 100.0,
-        "epsilon": 10.0,
         "phi": 1.0,
     },
     "designVar": {
@@ -123,22 +129,34 @@ class Top(Multipoint):
 
         # add a scenario (flow condition) for optimization, we pass the builder
         # to the scenario to actually run the flow and adjoint
-        self.mphys_add_scenario("cruise", ScenarioAerodynamic(aero_builder=dafoam_builder))
+        self.mphys_add_scenario("cruise0", ScenarioAerodynamic(aero_builder=dafoam_builder))
+        self.mphys_add_scenario("cruise1", ScenarioAerodynamic(aero_builder=dafoam_builder))
 
         # need to manually connect the x_aero0 between the mesh and geometry components
         # here x_aero0 means the surface coordinates of structurally undeformed mesh
         self.connect("mesh.x_aero0", "geometry.x_aero_in")
         # need to manually connect the x_aero0 between the geometry component and the cruise
         # scenario group
-        self.connect("geometry.x_aero0", "cruise.x_aero")
+        self.connect("geometry.x_aero0", "cruise0.x_aero")
+        self.connect("geometry.x_aero0", "cruise1.x_aero")
+
+        # add an exec comp to average two drags, the weights are 0.5 and 0.5
+        self.add_subsystem("obj", om.ExecComp("CD_AVG=0.5*CD0+0.5*CD1"))
 
     def configure(self):
-
         # configure and setup perform a similar function, i.e., initialize the optimization.
         # But configure will be run after setup
 
+        # we set the fc (flight conditions) to each cruise conditions
+        self.cruise0.coupling.mphys_set_options(fc0)
+        self.cruise0.aero_post.mphys_set_options(fc0)
+
+        self.cruise1.coupling.mphys_set_options(fc1)
+        self.cruise1.aero_post.mphys_set_options(fc1)
+
         # add the objective function to the cruise scenario
-        self.cruise.aero_post.mphys_add_funcs()
+        self.cruise0.aero_post.mphys_add_funcs()
+        self.cruise1.aero_post.mphys_add_funcs()
 
         # get the surface coordinates from the mesh component
         points = self.mesh.mphys_get_surface_mesh()
@@ -157,21 +175,26 @@ class Top(Multipoint):
         def twist(val, geo):
             for i in range(1, nRefAxPts):
                 geo.rot_y["wingAxis"].coef[i] = -val[i - 1]
+        
+        # add twist variable
+        self.geometry.nom_addGeoDVGlobal(dvName="twist", value=np.array([0] * (nRefAxPts - 1)), func=twist)
 
         # define an angle of attack function to change the U direction at the far field
+        # here the function is different from the single point, we only change the flow
+        # direction, not its magnitude
         def aoa(val, DASolver):
-            aoa = val[0] * np.pi / 180.0
-            U = [float(U0 * np.cos(aoa)), float(U0 * np.sin(aoa)), 0.0]
-            # we need to update the U value only
+            aoa = float(val[0] * np.pi / 180.0)
+            U = DASolver.getOption("primalBC")["U0"]["value"]
+            UAll = np.sqrt(U[0] ** 2 + U[1] ** 2 + U[2] ** 2)
+            U = [float(UAll * np.cos(aoa)), float(UAll * np.sin(aoa)), 0]
             DASolver.setOption("primalBC", {"U0": {"value": U}})
             DASolver.updateDAOption()
 
-        # pass this aoa function to the cruise group
-        self.cruise.coupling.solver.add_dv_func("aoa", aoa)
-        self.cruise.aero_post.add_dv_func("aoa", aoa)
-
-        # add twist variable
-        self.geometry.nom_addGeoDVGlobal(dvName="twist", value=np.array([0] * (nRefAxPts - 1)), func=twist)
+        # pass this aoa function to the cruise group. we need to do it for each condition
+        self.cruise0.coupling.solver.add_dv_func("aoa", aoa)
+        self.cruise0.aero_post.add_dv_func("aoa", aoa)
+        self.cruise1.coupling.solver.add_dv_func("aoa", aoa)
+        self.cruise1.aero_post.add_dv_func("aoa", aoa)
 
         # select the FFD points to move
         pts = self.geometry.DVGeo.getLocalIndex(0)
@@ -191,24 +214,34 @@ class Top(Multipoint):
         # add the design variables to the dvs component's output
         self.dvs.add_output("twist", val=np.array([0] * (nRefAxPts - 1)))
         self.dvs.add_output("shape", val=np.array([0] * nShapes))
-        self.dvs.add_output("aoa", val=np.array([aoa0]))
+        # NOTE: we have two separated aoa variables for the two flight conditions
+        self.dvs.add_output("aoa0", val=np.array([aoa0[0]]))
+        self.dvs.add_output("aoa1", val=np.array([aoa0[1]]))
         # manually connect the dvs output to the geometry and cruise
+        self.connect("aoa0", "cruise0.aoa")
+        self.connect("aoa1", "cruise1.aoa")
         self.connect("twist", "geometry.twist")
         self.connect("shape", "geometry.shape")
-        self.connect("aoa", "cruise.aoa")
 
-        # define the design variables
+        # define the design variables to the top level
         self.add_design_var("twist", lower=-10.0, upper=10.0, scaler=1.0)
         self.add_design_var("shape", lower=-1.0, upper=1.0, scaler=1.0)
-        self.add_design_var("aoa", lower=0.0, upper=10.0, scaler=1.0)
+        self.add_design_var("aoa0", lower=0.0, upper=10.0, scaler=1.0)
+        self.add_design_var("aoa1", lower=0.0, upper=10.0, scaler=1.0)
 
         # add objective and constraints to the top level
-        self.add_objective("cruise.aero_post.CD", scaler=1.0)
-        self.add_constraint("cruise.aero_post.CL", equals=CL_target, scaler=1.0)
+        # we have two separated lift constraints for for the two flight conditions
+        self.add_constraint("cruise0.aero_post.CL", equals=CL_target[0], scaler=1.0)
+        self.add_constraint("cruise1.aero_post.CL", equals=CL_target[1], scaler=1.0)
         self.add_constraint("geometry.thickcon", lower=0.5, upper=3.0, scaler=1.0)
         self.add_constraint("geometry.volcon", lower=1.0, scaler=1.0)
         self.add_constraint("geometry.tecon", equals=0.0, scaler=1.0, linear=True)
         self.add_constraint("geometry.lecon", equals=0.0, scaler=1.0, linear=True)
+
+        # here we use the CD_AVG defined above as the obj func.
+        self.add_objective("obj.CD_AVG", scaler=1.0)
+        self.connect("cruise0.aero_post.CD", "obj.CD0")
+        self.connect("cruise1.aero_post.CD", "obj.CD1")
 
 
 # OpenMDAO setup
@@ -260,13 +293,13 @@ else:
     exit(1)
 
 prob.driver.options["debug_print"] = ["nl_cons", "objs", "desvars"]
-# prob.driver.options["print_opt_prob"] = True
+#prob.driver.options["print_opt_prob"] = True
 prob.driver.hist_file = "OptView.hst"
 
 
 if args.task == "opt":
     # solve CL
-    optFuncs.findFeasibleDesign(["cruise.aero_post.CL"], ["aoa"], targets=[CL_target])
+    optFuncs.findFeasibleDesign(["cruise0.aero_post.CL", "cruise1.aero_post.CL"], ["aoa0", "aoa1"], targets=CL_target)
     # run the optimization
     prob.run_driver()
 elif args.task == "runPrimal":

@@ -26,13 +26,12 @@ p0 = 101325.0
 T0 = 300.0
 rho0 = p0 / T0 / 287.0
 nuTilda0 = 4.5e-5
-# Tu 0.5%, nu_r = 5
-k0 = 0.375
-epsilon0 = 168.75
-omega0 = 5000.0
 CL_target = 0.375
+CMX_upper = 1.0
 aoa0 = 2.0
 A0 = 3.0
+span0 = 3.0
+chord0 = 1.0
 
 daOptions = {
     "designSurfaces": ["wing"],
@@ -43,9 +42,6 @@ daOptions = {
         "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
         "T0": {"variable": "T", "patches": ["inout"], "value": [T0]},
         "nuTilda0": {"variable": "nuTilda", "patches": ["inout"], "value": [nuTilda0]},
-        "k0": {"variable": "k", "patches": ["inout"], "value": [k0]},
-        "epsilon0": {"variable": "epsilon", "patches": ["inout"], "value": [epsilon0]},
-        "omega0": {"variable": "omega", "patches": ["inout"], "value": [omega0]},
         "useWallFunction": True,
     },
     "objFunc": {
@@ -71,6 +67,17 @@ daOptions = {
                 "addToAdjoint": True,
             }
         },
+        "CMX": {
+            "part1": {
+                "type": "moment",
+                "source": "patchToFace",
+                "patches": ["wing"],
+                "axis": [1.0, 0.0, 0.0],
+                "center": [0.5, 0.0, 0.0],
+                "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0 * chord0),
+                "addToAdjoint": True,
+            }
+        },
     },
     "adjEqnOption": {
         "gmresRelTol": 1.0e-6,
@@ -84,14 +91,13 @@ daOptions = {
         "p": p0,
         "T": T0,
         "nuTilda": 1e-3,
-        "k": 1.0,
-        "omega": 100.0,
-        "epsilon": 10.0,
         "phi": 1.0,
     },
     "designVar": {
         "aoa": {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "y"},
         "twist": {"designVarType": "FFD"},
+        "span": {"designVarType": "FFD"},
+        "taper": {"designVarType": "FFD"},
         "shape": {"designVarType": "FFD"},
     },
 }
@@ -158,6 +164,38 @@ class Top(Multipoint):
             for i in range(1, nRefAxPts):
                 geo.rot_y["wingAxis"].coef[i] = -val[i - 1]
 
+        # add twist variable
+        self.geometry.nom_addGeoDVGlobal(dvName="twist", value=np.array([0] * (nRefAxPts - 1)), func=twist)
+
+        # Set up the span variable, here val[0] is the span change in %
+        def span(val, geo):
+            # coordinates for the reference axis
+            refAxisCoef = geo.extractCoef("wingAxis")
+            # the relative location of a point in the ref axis
+            # refAxisS[0] = 0, and refAxisS[-1] = 1
+            refAxisS = geo.refAxis.curves[0].s
+            deltaSpan = span0 * val[0] / 100.0
+            # linearly change the refAxis coef along the span
+            for i in range(nRefAxPts):
+                refAxisCoef[i, 2] += refAxisS[i] * deltaSpan
+            geo.restoreCoef(refAxisCoef, "wingAxis")
+
+        # add span variable
+        self.geometry.nom_addGeoDVGlobal(dvName="span", value=np.array([0]), func=span)
+
+        # Set up the taper variable, val[0] is the chord change in % at the root and
+        # val[1] is the chord change at the tip, the chords at other spanwise locations
+        # will be linearly determined by the root and tip chords
+        def taper(val, geo):
+            refAxisS = geo.refAxis.curves[0].s
+            cRoot = chord0 * val[0] / 100.0
+            cTip = chord0 * val[1] / 100.0
+            for i in range(nRefAxPts):
+                geo.scale_x["wingAxis"].coef[i] = 1.0 + refAxisS[i] * (cTip - cRoot) + cRoot
+
+        # add taper variable
+        self.geometry.nom_addGeoDVGlobal(dvName="taper", value=np.array([0, 0]), func=taper)
+
         # define an angle of attack function to change the U direction at the far field
         def aoa(val, DASolver):
             aoa = val[0] * np.pi / 180.0
@@ -169,9 +207,6 @@ class Top(Multipoint):
         # pass this aoa function to the cruise group
         self.cruise.coupling.solver.add_dv_func("aoa", aoa)
         self.cruise.aero_post.add_dv_func("aoa", aoa)
-
-        # add twist variable
-        self.geometry.nom_addGeoDVGlobal(dvName="twist", value=np.array([0] * (nRefAxPts - 1)), func=twist)
 
         # select the FFD points to move
         pts = self.geometry.DVGeo.getLocalIndex(0)
@@ -190,21 +225,28 @@ class Top(Multipoint):
 
         # add the design variables to the dvs component's output
         self.dvs.add_output("twist", val=np.array([0] * (nRefAxPts - 1)))
+        self.dvs.add_output("span", val=np.array([0]))
+        self.dvs.add_output("taper", val=np.array([0, 0]))
         self.dvs.add_output("shape", val=np.array([0] * nShapes))
         self.dvs.add_output("aoa", val=np.array([aoa0]))
         # manually connect the dvs output to the geometry and cruise
         self.connect("twist", "geometry.twist")
+        self.connect("span", "geometry.span")
+        self.connect("taper", "geometry.taper")
         self.connect("shape", "geometry.shape")
         self.connect("aoa", "cruise.aoa")
 
         # define the design variables
         self.add_design_var("twist", lower=-10.0, upper=10.0, scaler=1.0)
+        self.add_design_var("span", lower=-30.0, upper=30.0, scaler=1.0)
+        self.add_design_var("taper", lower=-30.0, upper=30.0, scaler=1.0)
         self.add_design_var("shape", lower=-1.0, upper=1.0, scaler=1.0)
         self.add_design_var("aoa", lower=0.0, upper=10.0, scaler=1.0)
 
         # add objective and constraints to the top level
         self.add_objective("cruise.aero_post.CD", scaler=1.0)
         self.add_constraint("cruise.aero_post.CL", equals=CL_target, scaler=1.0)
+        self.add_constraint("cruise.aero_post.CMX", upper=CMX_upper, scaler=1.0)
         self.add_constraint("geometry.thickcon", lower=0.5, upper=3.0, scaler=1.0)
         self.add_constraint("geometry.volcon", lower=1.0, scaler=1.0)
         self.add_constraint("geometry.tecon", equals=0.0, scaler=1.0, linear=True)
