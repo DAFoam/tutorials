@@ -101,7 +101,7 @@ meshOptions = {
     "gridFile": os.getcwd(),
     "fileType": "OpenFOAM",
     # point and normal for the symmetry plane
-    "symmetryPlanes": [[[0.0, 0.0, 0.0], [0.0, 1.0, 0.0]]],
+    "symmetryPlanes": [[[0.0, 0.0, 0.0], [0.0, 0.0, 1.0]]],
 }
 
 # Top class to setup the optimization problem
@@ -156,7 +156,7 @@ class Top(Multipoint):
         # Set up global design variables. We dont change the root twist
         def twist(val, geo):
             for i in range(1, nRefAxPts):
-                geo.rot_y["wingAxis"].coef[i] = -val[i - 1]
+                geo.rot_z["wingAxis"].coef[i] = -val[i - 1]
 
         # define an angle of attack function to change the U direction at the far field
         def aoa(val, DASolver):
