@@ -9,6 +9,7 @@ DAFoam run script for the NACA0012 airfoil at low-speed
 import os
 import argparse
 import numpy as np
+import json
 from mpi4py import MPI
 import openmdao.api as om
 from mphys.multipoint import Multipoint
@@ -254,6 +255,10 @@ if args.task == "opt":
     optFuncs.findFeasibleDesign(["cruise.aero_post.CL"], ["aoa"], targets=[CL_target])
     # run the optimization
     prob.run_driver()
+    # write the optimal design variable values to disk
+    OptDesignVars = {var: val.tolist() for var, val in prob.model.geometry.DVGeo.getValues().items()}
+    with open('OptDesignVars.json', 'w') as f:
+        json.dump(OptDesignVars, f, indent=4)
 elif args.task == "runPrimal":
     # just run the primal once
     prob.run_model()
@@ -267,7 +272,7 @@ elif args.task == "checkTotals":
     # verify the total derivatives against the finite-difference
     prob.run_model()
     prob.check_totals(
-        of=["CD", "CL"], wrt=["shape", "aoa"], compact_print=True, step=1e-3, form="central", step_calc="abs"
+        of=["cruise.aero_post.CD", "cruise.aero_post.CL"], wrt=["shape", "aoa"], compact_print=True, step=1e-3, form="central", step_calc="abs"
     )
 else:
     print("task arg not found!")
