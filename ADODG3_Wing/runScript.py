@@ -282,7 +282,7 @@ elif args.task == "checkTotals":
     # verify the total derivatives against the finite-difference
     prob.run_model()
     prob.check_totals(
-        of=["CD", "CL"], wrt=["shape", "aoa"], compact_print=True, step=1e-3, form="central", step_calc="abs"
+        of=["cruise.aero_post.CD", "cruise.aero_post.CL"], wrt=["shape", "aoa"], compact_print=True, step=1e-3, form="central", step_calc="abs"
     )
 else:
     print("task arg not found!")
