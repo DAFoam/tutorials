@@ -27,7 +27,6 @@ T0 = 300.0
 rho0 = p0 / T0 / 287.0
 nuTilda0 = 4.5e-5
 CL_target = 0.375
-CMX_upper = 1.0
 aoa0 = 2.0
 A0 = 3.0
 span0 = 3.0
@@ -67,17 +66,6 @@ daOptions = {
                 "addToAdjoint": True,
             }
         },
-        "CMX": {
-            "part1": {
-                "type": "moment",
-                "source": "patchToFace",
-                "patches": ["wing"],
-                "axis": [1.0, 0.0, 0.0],
-                "center": [0.5, 0.0, 0.0],
-                "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0 * chord0),
-                "addToAdjoint": True,
-            }
-        },
     },
     "adjEqnOption": {
         "gmresRelTol": 1.0e-6,
@@ -99,6 +87,11 @@ daOptions = {
         "span": {"designVarType": "FFD"},
         "taper": {"designVarType": "FFD"},
         "shape": {"designVarType": "FFD"},
+    },
+    "checkMeshThreshold": {
+        "maxAspectRatio": 1000.0,
+        "maxNonOrth": 75.0,
+        "maxSkewness": 6.0,
     },
 }
 
@@ -237,16 +230,15 @@ class Top(Multipoint):
         self.connect("aoa", "cruise.aoa")
 
         # define the design variables
-        self.add_design_var("twist", lower=-10.0, upper=10.0, scaler=1.0)
-        self.add_design_var("span", lower=-30.0, upper=30.0, scaler=1.0)
-        self.add_design_var("taper", lower=-30.0, upper=30.0, scaler=1.0)
-        self.add_design_var("shape", lower=-1.0, upper=1.0, scaler=1.0)
+        self.add_design_var("twist", lower=-10.0, upper=10.0, scaler=0.1)
+        self.add_design_var("span", lower=-30.0, upper=30.0, scaler=0.01)
+        self.add_design_var("taper", lower=[0.0, -30.0], upper=30.0, scaler=0.01)
+        self.add_design_var("shape", lower=-1.0, upper=1.0, scaler=10.0)
         self.add_design_var("aoa", lower=0.0, upper=10.0, scaler=1.0)
 
         # add objective and constraints to the top level
         self.add_objective("cruise.aero_post.CD", scaler=1.0)
         self.add_constraint("cruise.aero_post.CL", equals=CL_target, scaler=1.0)
-        self.add_constraint("cruise.aero_post.CMX", upper=CMX_upper, scaler=1.0)
         self.add_constraint("geometry.thickcon", lower=0.5, upper=3.0, scaler=1.0)
         self.add_constraint("geometry.volcon", lower=1.0, scaler=1.0)
         self.add_constraint("geometry.tecon", equals=0.0, scaler=1.0, linear=True)
