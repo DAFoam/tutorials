@@ -49,7 +49,7 @@ daOptions = {
         "maxAspectRatio": 3000.0,
         "maxNonOrth": 75.0,
         "maxSkewness": 6.0,
-        "maxIncorrectlyOrientedFaces": 3,
+        "maxIncorrectlyOrientedFaces": 1,
     },
     "objFunc": {
         "CD": {
@@ -75,10 +75,11 @@ daOptions = {
             }
         },
     },
+    "adjStateOrdering": "cell",
     "adjEqnOption": {
         "gmresRelTol": 1.0e-6,
         "pcFillLevel": 1,
-        "jacMatReOrdering": "rcm",
+        "jacMatReOrdering": "natural",
         "gmresMaxIters": 1000,
         "gmresRestart": 1000,
     },
@@ -91,8 +92,10 @@ daOptions = {
     },
     "designVar": {
         "aoa": {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "y"},
+        "twist": {"designVarType": "FFD"},
         "span": {"designVarType": "FFD"},
         "taper": {"designVarType": "FFD"},
+        "shape": {"designVarType": "FFD"},
     },
 }
 
@@ -139,6 +142,7 @@ class Top(Multipoint):
 
         # add the objective function to the cruise scenario
         self.cruise.aero_post.mphys_add_funcs()
+
         # get the surface coordinates from the mesh component
         points = self.mesh.mphys_get_surface_mesh()
 
@@ -151,6 +155,14 @@ class Top(Multipoint):
 
         # Create reference axis for the twist variable
         nRefAxPts = self.geometry.nom_addRefAxis(name="wingAxis", xFraction=0.25, alignIndex="k")
+
+        # Set up global design variables. We dont change the root twist
+        def twist(val, geo):
+            for i in range(1, nRefAxPts):
+                geo.rot_z["wingAxis"].coef[i] = -val[i - 1]
+
+        # add twist variable
+        self.geometry.nom_addGeoDVGlobal(dvName="twist", value=np.array([0] * (nRefAxPts - 1)), func=twist)
 
         # Set up the span variable, here val[0] is the span change in %
         def span(val, geo):
@@ -193,28 +205,49 @@ class Top(Multipoint):
         self.cruise.coupling.solver.add_dv_func("aoa", aoa)
         self.cruise.aero_post.add_dv_func("aoa", aoa)
 
+        # select the FFD points to move
+        pts = self.geometry.DVGeo.getLocalIndex(0)
+        indexList = pts[:, :, :].flatten()
+        PS = geo_utils.PointSelect("list", indexList)
+        nShapes = self.geometry.nom_addGeoDVLocal(dvName="shape", pointSelect=PS)
+
         # setup the volume and thickness constraints
         leList = [[0.02, 0.0, 1e-3], [0.02, 0.0, 2.9]]
         teList = [[0.95, 0.0, 1e-3], [0.95, 0.0, 2.9]]
+        self.geometry.nom_addThicknessConstraints2D("thickcon", leList, teList, nSpan=25, nChord=30)
         self.geometry.nom_addVolumeConstraint("volcon", leList, teList, nSpan=25, nChord=30)
+        # add the LE/TE constraints
+        self.geometry.nom_add_LETEConstraint("lecon", volID=0, faceID="iLow")
+        self.geometry.nom_add_LETEConstraint("tecon", volID=0, faceID="iHigh")
 
         # add the design variables to the dvs component's output
+        self.dvs.add_output("twist", val=np.array([0] * (nRefAxPts - 1)))
         self.dvs.add_output("span", val=np.array([0]))
         self.dvs.add_output("taper", val=np.array([0, 0]))
+        self.dvs.add_output("shape", val=np.array([0] * nShapes))
         self.dvs.add_output("aoa", val=np.array([aoa0]))
         # manually connect the dvs output to the geometry and cruise
+        self.connect("twist", "geometry.twist")
         self.connect("span", "geometry.span")
         self.connect("taper", "geometry.taper")
+        self.connect("shape", "geometry.shape")
         self.connect("aoa", "cruise.aoa")
 
         # define the design variables
-        self.add_design_var("span", lower=-30.0, upper=30.0, scaler=1.0)
-        self.add_design_var("taper", lower=-30.0, upper=30.0, scaler=1.0)
+        self.add_design_var("twist", lower=-10.0, upper=10.0, scaler=0.1)
+        self.add_design_var("span", lower=-30.0, upper=30.0, scaler=0.01)
+        self.add_design_var("taper", lower=[0.0, -30.0], upper=30.0, scaler=0.01)
+        self.add_design_var("shape", lower=-1.0, upper=1.0, scaler=10.0)
         self.add_design_var("aoa", lower=0.0, upper=10.0, scaler=1.0)
 
         # add objective and constraints to the top level
         self.add_objective("cruise.aero_post.CD", scaler=1.0)
         self.add_constraint("cruise.aero_post.CL", equals=CL_target, scaler=1.0)
+        self.add_constraint("geometry.thickcon", lower=0.5, upper=3.0, scaler=1.0)
+        self.add_constraint("geometry.volcon", lower=1.0, scaler=1.0)
+        self.add_constraint("geometry.tecon", equals=0.0, scaler=1.0, linear=True)
+        self.add_constraint("geometry.lecon", equals=0.0, scaler=1.0, linear=True)
+
 
 # OpenMDAO setup
 prob = om.Problem()
@@ -287,7 +320,7 @@ elif args.task == "checkTotals":
     # verify the total derivatives against the finite-difference
     prob.run_model()
     prob.check_totals(
-        of=["CD", "CL"], wrt=["aoa"], compact_print=True, step=1e-3, form="central", step_calc="abs"
+        of=["CD", "CL"], wrt=["shape", "aoa"], compact_print=True, step=1e-3, form="central", step_calc="abs"
     )
 else:
     print("task arg not found!")
