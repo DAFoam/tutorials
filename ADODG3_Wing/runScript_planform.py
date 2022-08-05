@@ -152,14 +152,6 @@ class Top(Multipoint):
         # Create reference axis for the twist variable
         nRefAxPts = self.geometry.nom_addRefAxis(name="wingAxis", xFraction=0.25, alignIndex="k")
 
-        # Set up global design variables. We dont change the root twist (was removed for planform function.)
-        #def twist(val, geo):
-        #    for i in range(1, nRefAxPts):
-        #        geo.rot_z["wingAxis"].coef[i] = -val[i - 1]
-
-        # add twist variable
-        # self.geometry.nom_addGeoDVGlobal(dvName="twist", value=np.array([0] * (nRefAxPts - 1)), func=twist)
-
         # Set up the span variable, here val[0] is the span change in %
         def span(val, geo):
             # coordinates for the reference axis
@@ -201,20 +193,10 @@ class Top(Multipoint):
         self.cruise.coupling.solver.add_dv_func("aoa", aoa)
         self.cruise.aero_post.add_dv_func("aoa", aoa)
 
-        # select the FFD points to move
-        #pts = self.geometry.DVGeo.getLocalIndex(0)
-        #indexList = pts[:, :, :].flatten()
-        #PS = geo_utils.PointSelect("list", indexList)
-        #nShapes = self.geometry.nom_addGeoDVLocal(dvName="shape", pointSelect=PS)
-
         # setup the volume and thickness constraints
         leList = [[0.02, 0.0, 1e-3], [0.02, 0.0, 2.9]]
         teList = [[0.95, 0.0, 1e-3], [0.95, 0.0, 2.9]]
-        # self.geometry.nom_addThicknessConstraints2D("thickcon", leList, teList, nSpan=25, nChord=30)
         self.geometry.nom_addVolumeConstraint("volcon", leList, teList, nSpan=25, nChord=30)
-        # add the LE/TE constraints
-        #self.geometry.nom_add_LETEConstraint("lecon", volID=0, faceID="iLow")
-        #self.geometry.nom_add_LETEConstraint("tecon", volID=0, faceID="iHigh")
 
         # add the design variables to the dvs component's output
         self.dvs.add_output("span", val=np.array([0]))
@@ -233,12 +215,6 @@ class Top(Multipoint):
         # add objective and constraints to the top level
         self.add_objective("cruise.aero_post.CD", scaler=1.0)
         self.add_constraint("cruise.aero_post.CL", equals=CL_target, scaler=1.0)
-        #self.add_constraint("cruise.aero_post.CMX", upper=CMX_upper, scaler=1.0)
-        #self.add_constraint("geometry.thickcon", lower=0.5, upper=3.0, scaler=1.0)
-        # self.add_constraint("geometry.volcon", lower=1.0, scaler=1.0)
-        #self.add_constraint("geometry.tecon", equals=0.0, scaler=1.0, linear=True)
-        #self.add_constraint("geometry.lecon", equals=0.0, scaler=1.0, linear=True)
-
 
 # OpenMDAO setup
 prob = om.Problem()
