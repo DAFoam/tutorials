@@ -157,13 +157,13 @@ pts = DVGeo.getLocalIndex(iVol)
 indexList = pts[:, :, :].flatten()
 PS = geo_utils.PointSelect("list", indexList)
 # shape variable
-DVGeo.addGeoDVLocal("shapey", lower=-1.0, upper=1.0, axis="y", scale=1.0, pointSelect=PS)
+DVGeo.addLocalDV("shapey", lower=-1.0, upper=1.0, axis="y", scale=1.0, pointSelect=PS)
 daOptions["designVar"]["shapey"] = {"designVarType": "FFD"}
 # angle of attack for each configuration
 for i in range(nMultiPoints):
     # NOTE: here we don't need to implement the alpha function because the alpha values will be changed
     # in setMultiPointCondition. So we provide a dummyFunc
-    DVGeo.addGeoDVGlobal("mp%d_alpha" % i, alpha0[i], dummyFunc, lower=0.0, upper=10.0, scale=1.0)
+    DVGeo.addGlobalDV("mp%d_alpha" % i, alpha0[i], dummyFunc, lower=0.0, upper=10.0, scale=1.0)
     # add alpha for designVar
     daOptions["designVar"]["mp%d_alpha" % i] = {
         "designVarType": "AOA",

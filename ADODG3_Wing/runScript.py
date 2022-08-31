@@ -171,13 +171,13 @@ class Top(Multipoint):
         self.cruise.aero_post.add_dv_func("aoa", aoa)
 
         # add twist variable
-        self.geometry.nom_addGeoDVGlobal(dvName="twist", value=np.array([0] * (nRefAxPts - 1)), func=twist)
+        self.geometry.nom_addGlobalDV(dvName="twist", value=np.array([0] * (nRefAxPts - 1)), func=twist)
 
         # select the FFD points to move
         pts = self.geometry.DVGeo.getLocalIndex(0)
         indexList = pts[:, :, :].flatten()
         PS = geo_utils.PointSelect("list", indexList)
-        nShapes = self.geometry.nom_addGeoDVLocal(dvName="shape", pointSelect=PS)
+        nShapes = self.geometry.nom_addLocalDV(dvName="shape", pointSelect=PS)
 
         # setup the volume and thickness constraints
         leList = [[0.02, 0.0, 1e-3], [0.02, 0.0, 2.9]]

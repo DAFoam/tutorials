@@ -134,28 +134,28 @@ pts = DVGeo.getLocalIndex(0)
 indexList = []
 indexList.extend(pts[7:16, :, -1].flatten())
 PS = geo_utils.PointSelect("list", indexList)
-DVGeo.addGeoDVLocal("shapez", lower=-0.04, upper=0.0077, axis="z", scale=1.0, pointSelect=PS, config="configz")
+DVGeo.addLocalDV("shapez", lower=-0.04, upper=0.0077, axis="z", scale=1.0, pointSelect=PS, config="configz")
 # shapeyouter
 indexList = []
 indexList.extend(pts[7:16, -1, :].flatten())
 PS = geo_utils.PointSelect("list", indexList)
-DVGeo.addGeoDVLocal("shapeyouter", lower=-0.02, upper=0.02, axis="y", scale=1.0, pointSelect=PS, config="configyouter")
+DVGeo.addLocalDV("shapeyouter", lower=-0.02, upper=0.02, axis="y", scale=1.0, pointSelect=PS, config="configyouter")
 # shapeyinner
 indexList = []
 indexList.extend(pts[7:16, 0, :].flatten())
 PS = geo_utils.PointSelect("list", indexList)
-DVGeo.addGeoDVLocal("shapeyinner", lower=-0.04, upper=0.04, axis="y", scale=1.0, pointSelect=PS, config="configyinner")
+DVGeo.addLocalDV("shapeyinner", lower=-0.04, upper=0.04, axis="y", scale=1.0, pointSelect=PS, config="configyinner")
 # shapexinner
 indexList = []
 indexList.extend(pts[7:16, 0, :].flatten())
 PS = geo_utils.PointSelect("list", indexList)
-DVGeo.addGeoDVLocal("shapexinner", lower=-0.04, upper=0.04, axis="x", scale=1.0, pointSelect=PS, config="configxinner")
+DVGeo.addLocalDV("shapexinner", lower=-0.04, upper=0.04, axis="x", scale=1.0, pointSelect=PS, config="configxinner")
 
 # shapexouter1
 indexList = []
 indexList.extend(pts[9, -1, :].flatten())
 PS = geo_utils.PointSelect("list", indexList)
-DVGeo.addGeoDVLocal(
+DVGeo.addLocalDV(
     "shapexouter1", lower=-0.05, upper=0.05, axis="x", scale=1.0, pointSelect=PS, config="configxouter1"
 )
 
@@ -163,7 +163,7 @@ DVGeo.addGeoDVLocal(
 indexList = []
 indexList.extend(pts[10, -1, :].flatten())
 PS = geo_utils.PointSelect("list", indexList)
-DVGeo.addGeoDVLocal("shapexouter2", lower=-0.05, upper=0.0, axis="x", scale=1.0, pointSelect=PS, config="configxouter2")
+DVGeo.addLocalDV("shapexouter2", lower=-0.05, upper=0.0, axis="x", scale=1.0, pointSelect=PS, config="configxouter2")
 
 
 # =============================================================================

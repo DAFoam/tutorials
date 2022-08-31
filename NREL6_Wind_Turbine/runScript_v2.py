@@ -124,12 +124,12 @@ DVGeo = DVGeometry(FFDFile)
 pts0 = DVGeo.getLocalIndex(0)  # volume 0
 indexList0 = pts0[:, :, :].flatten()
 PS0 = geo_utils.PointSelect("list", indexList0)
-DVGeo.addGeoDVLocal("shapex0", lower=-0.5, upper=0.5, axis="x", scale=1.0, pointSelect=PS0)
+DVGeo.addLocalDV("shapex0", lower=-0.5, upper=0.5, axis="x", scale=1.0, pointSelect=PS0)
 
 pts1 = DVGeo.getLocalIndex(1)  # volume 1
 indexList1 = pts1[:, :, :].flatten()
 PS1 = geo_utils.PointSelect("list", indexList1)
-DVGeo.addGeoDVLocal("shapex1", lower=-0.5, upper=0.5, axis="x", scale=1.0, pointSelect=PS1)
+DVGeo.addLocalDV("shapex1", lower=-0.5, upper=0.5, axis="x", scale=1.0, pointSelect=PS1)
 
 
 # =============================================================================
