@@ -226,19 +226,19 @@ def alpha(val, geo):
 pts = DVGeo.getLocalIndex(0)
 indexList = pts[:, :, :].flatten()  # select the top layer FFD starts with i=1
 PS = geo_utils.PointSelect("list", indexList)
-DVGeo.addGeoDVLocal("shapez", lower=-1.0, upper=1.0, axis="z", scale=10.0, pointSelect=PS)
+DVGeo.addLocalDV("shapez", lower=-1.0, upper=1.0, axis="z", scale=10.0, pointSelect=PS)
 daOptions["designVar"]["shapez"] = {"designVarType": "FFD"}
 # twist
 lower = -10.0 * np.ones(nTwist)
 upper = 10.0 * np.ones(nTwist)
 lower[0] = 0.0  # root twist does not change
 upper[0] = 0.0
-DVGeo.addGeoDVGlobal("twist", 0 * np.zeros(nTwist), twist, lower=lower, upper=upper, scale=0.1)
+DVGeo.addGlobalDV("twist", 0 * np.zeros(nTwist), twist, lower=lower, upper=upper, scale=0.1)
 daOptions["designVar"]["twist"] = {"designVarType": "FFD"}
-DVGeo.addGeoDVGlobal("tail", 0 * np.zeros(1), tailTwist, lower=-10, upper=10, scale=0.1)
+DVGeo.addGlobalDV("tail", 0 * np.zeros(1), tailTwist, lower=-10, upper=10, scale=0.1)
 daOptions["designVar"]["tail"] = {"designVarType": "FFD"}
 # AOA
-DVGeo.addGeoDVGlobal("alpha", alpha0, alpha, lower=0, upper=10.0, scale=1.0)
+DVGeo.addGlobalDV("alpha", alpha0, alpha, lower=0, upper=10.0, scale=1.0)
 daOptions["designVar"]["alpha"] = {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "z"}
 
 # =============================================================================

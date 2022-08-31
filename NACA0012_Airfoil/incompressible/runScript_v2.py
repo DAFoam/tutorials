@@ -155,10 +155,10 @@ pts = DVGeo.getLocalIndex(iVol)
 indexList = pts[:, :, :].flatten()
 PS = geo_utils.PointSelect("list", indexList)
 # shape
-DVGeo.addGeoDVLocal("shapey", lower=-1.0, upper=1.0, axis="y", scale=1.0, pointSelect=PS)
+DVGeo.addLocalDV("shapey", lower=-1.0, upper=1.0, axis="y", scale=1.0, pointSelect=PS)
 daOptions["designVar"]["shapey"] = {"designVarType": "FFD"}
 # angle of attack
-DVGeo.addGeoDVGlobal("alpha", value=[alpha0], func=alpha, lower=0.0, upper=10.0, scale=1.0)
+DVGeo.addGlobalDV("alpha", value=[alpha0], func=alpha, lower=0.0, upper=10.0, scale=1.0)
 daOptions["designVar"]["alpha"] = {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "y"}
 
 # =============================================================================

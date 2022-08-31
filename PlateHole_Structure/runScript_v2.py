@@ -123,12 +123,12 @@ indexList1 = pts[2:5, 2, :].flatten()
 indexList2 = pts[2:5, 4, :].flatten()
 indexList = np.concatenate([indexList1, indexList2])
 PS = geo_utils.PointSelect("list", indexList)
-DVGeo.addGeoDVLocal("shapey", lower=-1.0, upper=1.0, axis="y", scale=1.0, pointSelect=PS, config="configy")
+DVGeo.addLocalDV("shapey", lower=-1.0, upper=1.0, axis="y", scale=1.0, pointSelect=PS, config="configy")
 indexList1 = pts[2, 2:5, :].flatten()
 indexList2 = pts[4, 2:5, :].flatten()
 indexList = np.concatenate([indexList1, indexList2])
 PS = geo_utils.PointSelect("list", indexList)
-DVGeo.addGeoDVLocal("shapex", lower=-1.0, upper=1.0, axis="x", scale=1.0, pointSelect=PS, config="configx")
+DVGeo.addLocalDV("shapex", lower=-1.0, upper=1.0, axis="x", scale=1.0, pointSelect=PS, config="configx")
 
 # =============================================================================
 # DAFoam initialization

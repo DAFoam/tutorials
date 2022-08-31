@@ -177,7 +177,7 @@ class Top(Multipoint):
                 geo.rot_z["wingAxis"].coef[i] = -val[i - 1]
         
         # add twist variable
-        self.geometry.nom_addGeoDVGlobal(dvName="twist", value=np.array([0] * (nRefAxPts - 1)), func=twist)
+        self.geometry.nom_addGlobalDV(dvName="twist", value=np.array([0] * (nRefAxPts - 1)), func=twist)
 
         # define an angle of attack function to change the U direction at the far field
         # here the function is different from the single point, we only change the flow
@@ -200,7 +200,7 @@ class Top(Multipoint):
         pts = self.geometry.DVGeo.getLocalIndex(0)
         indexList = pts[:, :, :].flatten()
         PS = geo_utils.PointSelect("list", indexList)
-        nShapes = self.geometry.nom_addGeoDVLocal(dvName="shape", pointSelect=PS)
+        nShapes = self.geometry.nom_addLocalDV(dvName="shape", pointSelect=PS)
 
         # setup the volume and thickness constraints
         leList = [[0.02, 0.0, 1e-3], [0.02, 0.0, 2.9]]

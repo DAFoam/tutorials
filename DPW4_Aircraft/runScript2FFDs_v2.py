@@ -236,16 +236,16 @@ def alpha(val, geo):
 pts = DVGeo.getLocalIndex(0)  # index 0 means the 1st element in FFD: wing
 indexList = pts[:, 2:, :].flatten()  # we don't change the 1st and 2nd layers points in y
 PS = geo_utils.PointSelect("list", indexList)
-DVGeo.addGeoDVLocal("shapez", lower=-1.0, upper=1.0, axis="z", scale=10.0, pointSelect=PS)
+DVGeo.addLocalDV("shapez", lower=-1.0, upper=1.0, axis="z", scale=10.0, pointSelect=PS)
 daOptions["designVar"]["shapez"] = {"designVarType": "FFD"}
 # twist
-DVGeo.addGeoDVGlobal("twist", np.zeros(nTwistWing - 2), twist, lower=-10.0, upper=10.0, scale=0.1)
+DVGeo.addGlobalDV("twist", np.zeros(nTwistWing - 2), twist, lower=-10.0, upper=10.0, scale=0.1)
 daOptions["designVar"]["twist"] = {"designVarType": "FFD"}
 # AOA
-DVGeo.addGeoDVGlobal("alpha", alpha0, alpha, lower=0, upper=10.0, scale=1.0)
+DVGeo.addGlobalDV("alpha", alpha0, alpha, lower=0, upper=10.0, scale=1.0)
 daOptions["designVar"]["alpha"] = {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "z"}
 # Tail twist
-DVGeo.addGeoDVGlobal("tail", np.zeros(1), tailTwist, lower=-10, upper=10, scale=0.1)
+DVGeo.addGlobalDV("tail", np.zeros(1), tailTwist, lower=-10, upper=10, scale=0.1)
 daOptions["designVar"]["tail"] = {"designVarType": "FFD"}
 
 # =============================================================================
