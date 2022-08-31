@@ -205,29 +205,29 @@ DVGeo.addRefAxis("flapAxis", curve=cFlap, axis="z", volumes=[2])
 
 # twist slat
 twistslat0 = 0.0
-DVGeo.addGeoDVGlobal("twistslat", [twistslat0], twistslat, lower=-10.0, upper=10.0, scale=1.0)
+DVGeo.addGlobalDV("twistslat", [twistslat0], twistslat, lower=-10.0, upper=10.0, scale=1.0)
 daOptions["designVar"]["twistslat"] = {"designVarType": "FFD"}
 # translate slat
 translateslat0 = np.zeros(2)
-DVGeo.addGeoDVGlobal("translateslat", translateslat0, translateslat, lower=[-0.1, 0.0], upper=[0.0, 0.1], scale=1.0)
+DVGeo.addGlobalDV("translateslat", translateslat0, translateslat, lower=[-0.1, 0.0], upper=[0.0, 0.1], scale=1.0)
 daOptions["designVar"]["translateslat"] = {"designVarType": "FFD"}
 # shape main
 iVol = 1
 ptsMain = DVGeo.getLocalIndex(iVol)
 indexListMain = ptsMain[:, :, :].flatten()
 PSMain = geo_utils.PointSelect("list", indexListMain)
-DVGeo.addGeoDVLocal("shapemain", lower=-1.0, upper=1.0, axis="y", scale=1.0, pointSelect=PSMain)
+DVGeo.addLocalDV("shapemain", lower=-1.0, upper=1.0, axis="y", scale=1.0, pointSelect=PSMain)
 daOptions["designVar"]["shapemain"] = {"designVarType": "FFD"}
 # twist flap
 twistflap0 = 0.0
-DVGeo.addGeoDVGlobal("twistflap", [twistflap0], twistflap, lower=-10.0, upper=10.0, scale=1.0)
+DVGeo.addGlobalDV("twistflap", [twistflap0], twistflap, lower=-10.0, upper=10.0, scale=1.0)
 daOptions["designVar"]["twistflap"] = {"designVarType": "FFD"}
 # translate flap
 translateflap0 = np.zeros(2)
-DVGeo.addGeoDVGlobal("translateflap", translateflap0, translateflap, lower=[0.0, -0.1], upper=[0.1, 0.0], scale=1.0)
+DVGeo.addGlobalDV("translateflap", translateflap0, translateflap, lower=[0.0, -0.1], upper=[0.1, 0.0], scale=1.0)
 daOptions["designVar"]["translateflap"] = {"designVarType": "FFD"}
 # alpha
-DVGeo.addGeoDVGlobal("alpha", [alpha0], alpha, lower=-10.0, upper=10.0, scale=1.0)
+DVGeo.addGlobalDV("alpha", [alpha0], alpha, lower=-10.0, upper=10.0, scale=1.0)
 daOptions["designVar"]["alpha"] = {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "y"}
 
 # =============================================================================

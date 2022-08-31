@@ -134,7 +134,7 @@ DVGeo.addRefAxis("dummyAxis", xFraction=0.25, alignIndex="k")
 alphaPorosity0 = np.zeros(nCells, dtype="d")
 # modify one alpha value. This can be used to verify the adjoint derivative with the finite-difference method
 #alphaPorosity0[4521] = 1e-5
-DVGeo.addGeoDVGlobal("alphaPorosity", value=alphaPorosity0, func=alphaPorosity, lower=0, upper=1e4, scale=1e-4)
+DVGeo.addGlobalDV("alphaPorosity", value=alphaPorosity0, func=alphaPorosity, lower=0, upper=1e4, scale=1e-4)
 daOptions["designVar"]["alphaPorosity"] = {"designVarType": "Field", "fieldName": "alphaPorosity", "fieldType": "scalar"}
 
 # =============================================================================

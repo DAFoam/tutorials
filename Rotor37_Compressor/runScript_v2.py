@@ -156,8 +156,8 @@ DVGeo = DVGeometry(FFDFile)
 pts = DVGeo.getLocalIndex(0)
 indexList = pts[1:4, :, :].flatten()
 PS = geo_utils.PointSelect("list", indexList)
-DVGeo.addGeoDVLocal("shapey", lower=-0.01, upper=0.01, axis="y", scale=1.0, pointSelect=PS)
-DVGeo.addGeoDVLocal("shapez", lower=-0.01, upper=0.01, axis="z", scale=1.0, pointSelect=PS)
+DVGeo.addLocalDV("shapey", lower=-0.01, upper=0.01, axis="y", scale=1.0, pointSelect=PS)
+DVGeo.addLocalDV("shapez", lower=-0.01, upper=0.01, axis="z", scale=1.0, pointSelect=PS)
 
 
 # =============================================================================

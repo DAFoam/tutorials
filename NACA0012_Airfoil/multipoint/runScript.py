@@ -183,7 +183,7 @@ class Top(Multipoint):
         pts = self.geometry.DVGeo.getLocalIndex(0)
         indexList = pts[:, :, :].flatten()
         PS = geo_utils.PointSelect("list", indexList)
-        nShapes = self.geometry.nom_addGeoDVLocal(dvName="shape", pointSelect=PS)
+        nShapes = self.geometry.nom_addLocalDV(dvName="shape", pointSelect=PS)
 
         # setup the symmetry constraint to link the y displacement between k=0 and k=1
         nFFDs_x = pts.shape[0]

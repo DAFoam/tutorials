@@ -166,7 +166,7 @@ class Top(Multipoint):
             geo.restoreCoef(refAxisCoef, "wingAxis")
 
         # add span variable
-        self.geometry.nom_addGeoDVGlobal(dvName="span", value=np.array([0]), func=span)
+        self.geometry.nom_addGlobalDV(dvName="span", value=np.array([0]), func=span)
 
         # Set up the taper variable, val[0] is the chord change in % at the root and
         # val[1] is the chord change at the tip, the chords at other spanwise locations
@@ -179,7 +179,7 @@ class Top(Multipoint):
                 geo.scale_x["wingAxis"].coef[i] = 1.0 + refAxisS[i] * (cTip - cRoot) + cRoot
 
         # add taper variable
-        self.geometry.nom_addGeoDVGlobal(dvName="taper", value=np.array([0, 0]), func=taper)
+        self.geometry.nom_addGlobalDV(dvName="taper", value=np.array([0, 0]), func=taper)
 
         # define an angle of attack function to change the U direction at the far field
         def aoa(val, DASolver):

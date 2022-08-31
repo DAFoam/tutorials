@@ -123,7 +123,7 @@ indexList = []
 indexList.extend(pts[8:12, 0, 0:4].flatten())
 indexList.extend(pts[8:12, -1, 0:4].flatten())
 PS = geo_utils.PointSelect("list", indexList)
-DVGeo.addGeoDVLocal("shapey", lower=-0.5, upper=0.5, axis="y", scale=1.0, pointSelect=PS)
+DVGeo.addLocalDV("shapey", lower=-0.5, upper=0.5, axis="y", scale=1.0, pointSelect=PS)
 
 
 # =============================================================================

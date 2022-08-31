@@ -162,7 +162,7 @@ class Top(Multipoint):
                 geo.rot_z["wingAxis"].coef[i] = -val[i - 1]
 
         # add twist variable
-        self.geometry.nom_addGeoDVGlobal(dvName="twist", value=np.array([0] * (nRefAxPts - 1)), func=twist)
+        self.geometry.nom_addGlobalDV(dvName="twist", value=np.array([0] * (nRefAxPts - 1)), func=twist)
 
         # Set up the span variable, here val[0] is the span change in %
         def span(val, geo):
@@ -178,7 +178,7 @@ class Top(Multipoint):
             geo.restoreCoef(refAxisCoef, "wingAxis")
 
         # add span variable
-        self.geometry.nom_addGeoDVGlobal(dvName="span", value=np.array([0]), func=span)
+        self.geometry.nom_addGlobalDV(dvName="span", value=np.array([0]), func=span)
 
         # Set up the taper variable, val[0] is the chord change in % at the root and
         # val[1] is the chord change at the tip, the chords at other spanwise locations
@@ -191,7 +191,7 @@ class Top(Multipoint):
                 geo.scale_x["wingAxis"].coef[i] = 1.0 + refAxisS[i] * (cTip - cRoot) + cRoot
 
         # add taper variable
-        self.geometry.nom_addGeoDVGlobal(dvName="taper", value=np.array([0, 0]), func=taper)
+        self.geometry.nom_addGlobalDV(dvName="taper", value=np.array([0, 0]), func=taper)
 
         # define an angle of attack function to change the U direction at the far field
         def aoa(val, DASolver):
@@ -209,7 +209,7 @@ class Top(Multipoint):
         pts = self.geometry.DVGeo.getLocalIndex(0)
         indexList = pts[:, :, :].flatten()
         PS = geo_utils.PointSelect("list", indexList)
-        nShapes = self.geometry.nom_addGeoDVLocal(dvName="shape", pointSelect=PS)
+        nShapes = self.geometry.nom_addLocalDV(dvName="shape", pointSelect=PS)
 
         # setup the volume and thickness constraints
         leList = [[0.02, 0.0, 1e-3], [0.02, 0.0, 2.9]]

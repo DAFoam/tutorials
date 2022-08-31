@@ -227,16 +227,16 @@ class Top(Multipoint):
         self.cruise.aero_post.add_dv_func("aoa", aoa)
 
         # add the global shape variable
-        self.geometry.nom_addGeoDVGlobal(dvName="twistslat", value=[0.0], func=twistslat)
-        self.geometry.nom_addGeoDVGlobal(dvName="translateslat", value=np.zeros(2), func=translateslat)
-        self.geometry.nom_addGeoDVGlobal(dvName="twistflap", value=[0.0], func=twistflap)
-        self.geometry.nom_addGeoDVGlobal(dvName="translateflap", value=np.zeros(2), func=translateflap)
+        self.geometry.nom_addGlobalDV(dvName="twistslat", value=[0.0], func=twistslat)
+        self.geometry.nom_addGlobalDV(dvName="translateslat", value=np.zeros(2), func=translateslat)
+        self.geometry.nom_addGlobalDV(dvName="twistflap", value=[0.0], func=twistflap)
+        self.geometry.nom_addGlobalDV(dvName="translateflap", value=np.zeros(2), func=translateflap)
 
         # select the FFD points to move
         pts = self.geometry.DVGeo.getLocalIndex(1)
         indexList = pts[:, :, :].flatten()
         PS = geo_utils.PointSelect("list", indexList)
-        nShapes = self.geometry.nom_addGeoDVLocal(dvName="shape", pointSelect=PS)
+        nShapes = self.geometry.nom_addLocalDV(dvName="shape", pointSelect=PS)
 
         # setup the symmetry constraint to link the y displacement between k=0 and k=1
         nFFDs_x = pts.shape[0]
