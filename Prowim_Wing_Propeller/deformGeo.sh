@@ -7,16 +7,16 @@ fi
 
 # Generate Input Geometry
 echo "Generating Input Geometry..."
-(cd deformGeo && python generate_wing.py)
+(cd deformIGS && python generate_wing.py)
 
 
 # Copy Necessary Files
 echo "Copying Files..."
-cp ./deformGeo/wing.igs .
-cp ./deformGeo/OptRef_Example.json .
+cp ./deformIGS/wing.igs .
+cp ./deformIGS/OptRef_Example.json .
 
 # Run Script to Deform the Geometry
 echo "Deforming Geometry..."
-python runScript.py --task=deformGeo
+python runScript.py --task=deformIGS
 
 echo "Geometry Deformation... Done!"
