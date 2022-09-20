@@ -285,7 +285,7 @@ elif args.task == "testAPI":
     DASolver.updateDAOption()
     optFuncs.runPrimal()
 
-elif args.task == "deformGeo":
+elif args.task == "deformIGS":
     # Import Optimization Values Dictionary
     with open("./OptRef_Example.json") as f:
         optRef = json.load(f)
