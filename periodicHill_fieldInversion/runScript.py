@@ -122,7 +122,7 @@ DVGeo.addRefAxis("bodyAxis", xFraction=0.25, alignIndex="k")
 
 nCells = 3500
 beta0 = np.ones(nCells, dtype="d")
-DVGeo.addGeoDVGlobal("beta", value=beta0, func=betaFieldInversion, lower=-5.0, upper=10.0, scale=1)
+DVGeo.addGlobalDV("beta", value=beta0, func=betaFieldInversion, lower=-5.0, upper=10.0, scale=1)
 daOptions["designVar"]["beta"] = {"designVarType": "Field", "fieldName": "betaFieldInversion", "fieldType": "scalar"}
 
 # =============================================================================
