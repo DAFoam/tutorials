@@ -7,7 +7,7 @@ import openmdao.api as om
 from mphys.multipoint import Multipoint
 from dafoam.mphys import DAFoamBuilder, OptFuncs
 from tacs.mphys import TacsBuilder
-from mphys.solver_builders.mphys_meld import MeldBuilder
+from funtofem.mphys import MeldBuilder
 from mphys.scenario_aerostructural import ScenarioAeroStructural
 from pygeo.mphys import OM_DVGEOCOMP
 from pygeo import geo_utils
@@ -153,7 +153,9 @@ class Top(Multipoint):
         )
 
         # need to manually connect the vars in the geo component to cruise
-        for discipline in ["aero", "struct"]:
+        for discipline in ["aero"]:
+            self.connect("geometry.x_%s0" % discipline, "cruise.x_%s0_masked" % discipline)
+        for discipline in ["struct"]:
             self.connect("geometry.x_%s0" % discipline, "cruise.x_%s0" % discipline)
 
         # add the structural thickness DVs
