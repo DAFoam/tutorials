@@ -45,7 +45,6 @@ daOptions = {
                 "min": [-10.0, -10.0, -10.0],
                 "max": [10.0, 10.0, 10.0],
                 "data": "UData", 
-		 "velocityComponent": [1.0, 0.0, 0.0],
                 "scale": 1,
                 "addToAdjoint": True,
                 "weightedSum": True,
