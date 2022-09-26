@@ -10,7 +10,7 @@ do
             rm -rf 0
             rm -rf postProcessing
             rm -rf *.bin *.info *.dat *.xyz *.stl
-            rm -rf processor* 0.0000* constant/polyMesh
+            rm -rf processor* 0.0000*
             rm -rf {1..9}*
             exit
             ;;
