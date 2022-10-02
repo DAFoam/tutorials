@@ -38,9 +38,9 @@ jobs:
         docker pull dafoam/opt-packages:${{env.DOCKER_TAG}}
         docker run -i -d -u dafoamuser --name apitest -v $GITHUB_WORKSPACE:${{env.DOCKER_MOUNT_DIR}} dafoam/opt-packages:${{env.DOCKER_TAG}} /bin/bash
         docker exec -i apitest /bin/bash -c "rm -rf ${{env.DOCKER_WORKING_DIR}} && cp -r ${{env.DOCKER_MOUNT_DIR}} ${{env.DOCKER_WORKING_DIR}}"
+        docker exec apitest sed -i '/endTime/c\endTime 10;' ${{env.DOCKER_WORKING_DIR}}/*/system/controlDict
         if [ "${{matrix.args}}" = "v2" ]; then
-           docker exec -i apitest /bin/bash -c ". ${{env.DOCKER_ENV_FILE}} && cd ${{env.DOCKER_WORKING_DIR}}/30N30P_MultiElement_Airfoil && ./preProcessing.sh && mpirun -np 4 python runScript_v2.py --task=apiTest"
+           docker exec -i apitest /bin/bash -c ". ${{env.DOCKER_ENV_FILE}} && cd ${{env.DOCKER_WORKING_DIR}}/30N30P_MultiElement_Airfoil && ./preProcessing.sh && python runScript_v2.py --task=runPrimal"
         elif [ "${{matrix.args}}" = "v3" ]; then
-           docker exec -i apitest /bin/bash -c ". ${{env.DOCKER_ENV_FILE}} && cd ${{env.DOCKER_WORKING_DIR}}/ADODG3_Wing && ./preProcessing.sh && mpirun -np 4 python runScript.py -task=runPrimal"
         fi
 
