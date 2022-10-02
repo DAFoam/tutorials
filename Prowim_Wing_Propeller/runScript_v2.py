@@ -76,6 +76,8 @@ daOptions = {
             "eps": 0.04,  # eps should be of cell size
             "expM": 1.0,
             "expN": 0.5,
+            "adjustThrust": 1,
+            "targetThrust": 55.0
         },
     },
     "objFunc": {
