@@ -1,14 +1,6 @@
 name: api_tests
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-  schedule:
-    - cron:  '59 23 * * *'
+on: [push, pull_request]
 
 env:
   REPO_NAME: 'dafoam'
