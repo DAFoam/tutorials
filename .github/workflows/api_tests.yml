@@ -1,6 +1,10 @@
 name: api_tests
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron:  '59 11,23 * * *'
 
 env:
   REPO_NAME: 'tutorials'
