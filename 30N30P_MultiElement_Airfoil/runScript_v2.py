@@ -11,7 +11,7 @@ import argparse
 from mpi4py import MPI
 from dafoam import PYDAFOAM, optFuncs
 from pygeo import *
-from pyspline import *
+from pyspline import Curve
 from idwarp import USMesh
 from pyoptsparse import Optimization, OPT
 import numpy as np
@@ -194,13 +194,13 @@ DVGeo = DVGeometry("./FFD/airfoilFFD.xyz")
 xSlat = [0.0169, 0.0169]
 ySlat = [0.0034, 0.0034]
 zSlat = [0.0, 0.1]
-cSlat = pySpline.Curve(x=xSlat, y=ySlat, z=zSlat, k=2)
+cSlat = Curve(x=xSlat, y=ySlat, z=zSlat, k=2)
 DVGeo.addRefAxis("slatAxis", curve=cSlat, axis="z", volumes=[0])
 # Flap refAxis
 xFlap = [0.875, 0.875]
 yFlap = [0.014, 0.014]
 zFlap = [0.0, 0.1]
-cFlap = pySpline.Curve(x=xFlap, y=yFlap, z=zFlap, k=2)
+cFlap = Curve(x=xFlap, y=yFlap, z=zFlap, k=2)
 DVGeo.addRefAxis("flapAxis", curve=cFlap, axis="z", volumes=[2])
 
 # twist slat
