@@ -15,8 +15,8 @@ fi
 case $argm in
   "v2")
     echo "Running incompressible tests"
-    find */system/controlDict -type f -exec sed -i '/endTime/c\endTime 10;' {} \;
-    find */*/system/controlDict -type f -exec sed -i '/endTime/c\endTime 10;' {} \;
+    find */runScript* -type f -exec sed -i '/"primalMinResTol"/c\    "primalMinResTol": 0.9,' {} \;
+    find */*/runScript* -type f -exec sed -i '/"primalMinResTol"/c\    "primalMinResTol": 0.9,' {} \;
     cd NACA0012_Airfoil/incompressible && ./preProcessing.sh && python runScript_v2.py --task=runPrimal && cd - || exit 1
     #cd NACA0012_Airfoil/incompressible && echo y | ./Allclean.sh && sed -i 's/SpalartAllmaras/kOmegaSST/g' constant/turbulenceProperties && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
     #cd NACA0012_Airfoil/incompressible && echo y | ./Allclean.sh && sed -i 's/kOmegaSST/kEpsilon/g' constant/turbulenceProperties && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
@@ -27,8 +27,8 @@ case $argm in
     ;;
   "v3")
     echo "Running compressible tests"
-    find */system/controlDict -type f -exec sed -i '/endTime/c\endTime 10;' {} \;
-    find */*/system/controlDict -type f -exec sed -i '/endTime/c\endTime 10;' {} \;
+    find */runScript* -type f -exec sed -i '/"primalMinResTol"/c\    "primalMinResTol": 0.9,' {} \;
+    find */*/runScript* -type f -exec sed -i '/"primalMinResTol"/c\    "primalMinResTol": 0.9,' {} \;
     cd NACA0012_Airfoil/incompressible && ./preProcessing.sh && python runScript.py -task=runPrimal && cd - || exit 1
     #cd NACA0012_Airfoil/subsonic && echo y | ./Allclean.sh && sed -i 's/SpalartAllmaras/kOmegaSST/g' constant/turbulenceProperties && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
     #cd NACA0012_Airfoil/subsonic && echo y | ./Allclean.sh && sed -i 's/kOmegaSST/kEpsilon/g' constant/turbulenceProperties && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
