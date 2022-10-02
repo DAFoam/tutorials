@@ -3,7 +3,7 @@ name: api_tests
 on: [push, pull_request]
 
 env:
-  REPO_NAME: 'dafoam'
+  REPO_NAME: 'tutorials'
   DOCKER_WORKING_DIR: '/home/dafoamuser/dafoam/$REPO_NAME'
   DOCKER_MOUNT_DIR: '/home/dafoamuser/mount/$REPO_NAME'
   DOCKER_TAG: 'latest'
