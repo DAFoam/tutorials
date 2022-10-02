@@ -279,12 +279,6 @@ elif args.task == "runForwardAD":
 
     optFuncs.runForwardAD("shapey", 0)
 
-elif args.task == "testAPI":
-
-    DASolver.setOption("primalMinResTol", 1e-2)
-    DASolver.updateDAOption()
-    optFuncs.runPrimal()
-
 elif args.task == "deformIGS":
     # Import Optimization Values Dictionary
     with open("./OptRef_Example.json") as f:
