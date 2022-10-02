@@ -18,7 +18,7 @@ case $argm in
     find */runScript* -type f -exec sed -i '/"primalMinResTol"/c\    "primalMinResTol": 0.9,' {} \;
     find */*/runScript* -type f -exec sed -i '/"primalMinResTol"/c\    "primalMinResTol": 0.9,' {} \;
     cd NACA0012_Airfoil/incompressible && ./preProcessing.sh && python runScript_v2.py --task=runPrimal && cd - || exit 1
-    #cd NACA0012_Airfoil/incompressible && echo y | ./Allclean.sh && sed -i 's/SpalartAllmaras/kOmegaSST/g' constant/turbulenceProperties && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
+    cd NACA0012_Airfoil/incompressible && echo y | ./Allclean.sh && sed -i 's/SpalartAllmaras/kOmegaSST/g' constant/turbulenceProperties && ./preProcessing.sh && python runScript_v2.py --task=runPrimal && cd - || exit 1
     #cd NACA0012_Airfoil/incompressible && echo y | ./Allclean.sh && sed -i 's/kOmegaSST/kEpsilon/g' constant/turbulenceProperties && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
     #cd NACA0012_Airfoil/multipoint && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
     #cd JBC_Hull && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
@@ -30,7 +30,7 @@ case $argm in
     find */runScript* -type f -exec sed -i '/"primalMinResTol"/c\    "primalMinResTol": 0.9,' {} \;
     find */*/runScript* -type f -exec sed -i '/"primalMinResTol"/c\    "primalMinResTol": 0.9,' {} \;
     cd NACA0012_Airfoil/incompressible && ./preProcessing.sh && python runScript.py -task=runPrimal && cd - || exit 1
-    #cd NACA0012_Airfoil/subsonic && echo y | ./Allclean.sh && sed -i 's/SpalartAllmaras/kOmegaSST/g' constant/turbulenceProperties && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
+    cd NACA0012_Airfoil/subsonic && echo y | ./Allclean.sh && sed -i 's/SpalartAllmaras/kOmegaSST/g' constant/turbulenceProperties && ./preProcessing.sh && python runScript.py -task=runPrimal && cd - || exit 1
     #cd NACA0012_Airfoil/subsonic && echo y | ./Allclean.sh && sed -i 's/kOmegaSST/kEpsilon/g' constant/turbulenceProperties && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
     #cd 30N30P_MultiElement_Airfoil && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1
     #cd Onera_M6_Wing && ./preProcessing.sh && mpirun -np 2 python runScript.py --task=testAPI && cd - || exit 1

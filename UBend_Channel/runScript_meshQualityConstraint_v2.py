@@ -235,12 +235,6 @@ elif args.task == "runForwardAD":
 
     optFuncs.runForwardAD("shape", 0)
 
-elif args.task == "testAPI":
-
-    DASolver.setOption("primalMinResTol", 1e-2)
-    DASolver.updateDAOption()
-    optFuncs.runPrimal()
-
 else:
     print("task arg not found!")
     exit(0)
