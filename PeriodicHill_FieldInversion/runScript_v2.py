@@ -28,15 +28,15 @@ gcomm = MPI.COMM_WORLD
 # Define the global parameters here
 U0 = 0.028
 p0 = 0.0
-nuTilda0 = 1E-4
-J0 = 0.0479729567 # this is the baseline L2 norm
+nuTilda0 = 1e-4
+J0 = 0.0479729567  # this is the baseline L2 norm
 
 # Set the parameters for optimization
 daOptions = {
     "designSurfaces": ["bottomWall", "topWall", "inlet", "outlet"],
     "solverName": "DASimpleFoam",
-    "useAD": {"mode": "reverse"}, 
-    "primalMinResTol": 1.0E-10,
+    "useAD": {"mode": "reverse"},
+    "primalMinResTol": 1.0e-10,
     "objFunc": {
         "FI": {
             "Ux": {
@@ -44,11 +44,11 @@ daOptions = {
                 "source": "boxToCell",
                 "min": [-10.0, -10.0, -10.0],
                 "max": [10.0, 10.0, 10.0],
-                "data": "UData", 
+                "data": "UData",
                 "scale": 1,
                 "addToAdjoint": True,
                 "weightedSum": True,
-                "weight": 1/J0
+                "weight": 1 / J0,
             },
             "beta": {
                 "type": "fieldInversion",
@@ -63,29 +63,29 @@ daOptions = {
         },
     },
     "adjStateOrdering": "cell",
-    "adjEqnOption": {"gmresRelTol": 1.0E-8, "pcFillLevel": 2, "jacMatReOrdering": "natural", "gmresMaxIters":3000},
+    "adjEqnOption": {"gmresRelTol": 1.0e-8, "pcFillLevel": 2, "jacMatReOrdering": "natural", "gmresMaxIters": 3000},
     "normalizeStates": {
         "U": U0,
         "p": U0 * U0 / 2.0,
         "nuTilda": nuTilda0 * 10.0,
         "phi": 1.0,
     },
-    "adjPartDerivFDStep": {"State": 1E-7, "FFD": 1E-3},
+    "adjPartDerivFDStep": {"State": 1e-7, "FFD": 1e-3},
     "adjPCLag": 100,
     "designVar": {},
-    "fvSource":{
-                "gradP": {
-                    "type": "uniformPressureGradient",
-                    "value": 6.634074021107811e-06,
-                    "direction": [1.0, 0.0, 0.0],
-                },
+    "fvSource": {
+        "gradP": {
+            "type": "uniformPressureGradient",
+            "value": 6.634074021107811e-06,
+            "direction": [1.0, 0.0, 0.0],
+        },
     },
 }
 
 # mesh warping parameters, users need to manually specify the symmetry plane and their normals
 meshOptions = {
     "gridFile": os.getcwd(),
-    "fileType": "openfoam",
+    "fileType": "OpenFOAM",
     # point and normal for the symmetry plane
     "symmetryPlanes": [[[0.0, 0.0, 0.0], [0.0, 0.0, 1.0]], [[0.0, 0.0, 0.1], [0.0, 0.0, 1.0]]],
 }
@@ -93,7 +93,7 @@ meshOptions = {
 # options for optimizers
 if args.opt == "ipopt":
     optOptions = {
-        "tol": 1.0E-7,
+        "tol": 1.0e-7,
         "max_iter": 50,
         "output_file": "opt_IPOPT.out",
         "constr_viol_tol": 1.0e-7,
@@ -103,7 +103,7 @@ if args.opt == "ipopt":
         "alpha_for_y": "full",
         "recalc_y": "yes",
         "print_level": 5,
-        "acceptable_tol": 1.0E-7,
+        "acceptable_tol": 1.0e-7,
     }
 else:
     print("opt arg not valid!")
@@ -116,6 +116,7 @@ else:
 def betaFieldInversion(val, geo):
     for idxI, v in enumerate(val):
         DASolver.setFieldValue4GlobalCellI(b"betaFieldInversion", v, idxI)
+
 
 DVGeo = DVGeometry("./FFD/periodicHillFFD.xyz")
 DVGeo.addRefAxis("bodyAxis", xFraction=0.25, alignIndex="k")
