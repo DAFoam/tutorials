@@ -2,9 +2,13 @@ name: api_tests
 
 on:
   push:
+    branches:
+      - main
   pull_request:
+    branches:
+      - main
   schedule:
-     - cron:  '59 23 * * *'
+    - cron:  '59 23 * * *'
 
 env:
   REPO_NAME: 'dafoam'
@@ -37,5 +41,6 @@ jobs:
         if [ "${{matrix.args}}" = "v2" ]; then
            docker exec -i apitest /bin/bash -c ". ${{env.DOCKER_ENV_FILE}} && cd ${{env.DOCKER_WORKING_DIR}}/30N30P_MultiElement_Airfoil && ./preProcessing.sh && mpirun -np 4 python runScript_v2.py --task=apiTest"
         elif [ "${{matrix.args}}" = "v3" ]; then
+           docker exec -i apitest /bin/bash -c ". ${{env.DOCKER_ENV_FILE}} && cd ${{env.DOCKER_WORKING_DIR}}/ADODG3_Wing && ./preProcessing.sh && mpirun -np 4 python runScript.py -task=runPrimal"
         fi
 
