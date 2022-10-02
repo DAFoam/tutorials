@@ -136,7 +136,7 @@ class Top(Multipoint):
         dvs = self.add_subsystem("dvs", om.IndepVarComp(), promotes=["*"])
 
         # add the geometry component (FFD)
-        self.add_subsystem("geometry", OM_DVGEOCOMP(ffd_file="FFD/wingFFD.xyz"))
+        self.add_subsystem("geometry", OM_DVGEOCOMP(file="FFD/wingFFD.xyz", type="ffd"))
 
         # primal and adjoint solution options, i.e., nonlinear block Gauss-Seidel for aerostructural analysis
         # and linear block Gauss-Seidel for the coupled adjoint
