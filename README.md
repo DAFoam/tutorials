@@ -1,6 +1,6 @@
 # DAFoam Tutorials
 
-[![API Test](https://github.com/DAFoam/tutorials/actions/workflows/reg_tests.yml/badge.svg)](https://github.com/DAFoam/tutorials/actions/workflows/reg_tests.yml)
+[![api_tests](https://github.com/DAFoam/tutorials/actions/workflows/api_tests.yml/badge.svg)](https://github.com/DAFoam/tutorials/actions/workflows/api_tests.yml)
 
 This tutorial uses the latest version of [DAFoam](https://github.com/mdolab/dafoam)
 
