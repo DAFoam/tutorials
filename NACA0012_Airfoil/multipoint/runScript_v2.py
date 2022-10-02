@@ -329,12 +329,6 @@ elif args.task == "runAdjoint":
 
     optFuncs.runAdjoint(objFun=optFuncs.calcObjFuncValuesMP, sens=optFuncs.calcObjFuncSensMP)
 
-elif args.task == "testAPI":
-
-    DASolver.setOption("primalMinResTol", 1e-2)
-    DASolver.updateDAOption()
-    optFuncs.runPrimal(objFun=optFuncs.calcObjFuncValuesMP)
-
 else:
     print("task arg not found!")
     exit(0)
