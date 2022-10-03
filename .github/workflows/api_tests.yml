@@ -4,7 +4,7 @@ on:
   push:
   pull_request:
   schedule:
-    - cron:  '59 11,23 * * *'
+    - cron:  '59 23 * * *'
 
 env:
   REPO_NAME: 'tutorials'
