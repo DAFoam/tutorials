@@ -53,6 +53,7 @@ case $argm in
     cd NACA0012_Airfoil/subsonic && echo y | ./Allclean.sh && sed -i 's/SpalartAllmaras/kOmegaSST/g' constant/turbulenceProperties && ./preProcessing.sh && python runScript.py -task=runPrimal && cd - || exit 1
     cd NACA0012_Airfoil/subsonic && echo y | ./Allclean.sh && sed -i 's/kOmegaSST/kEpsilon/g' constant/turbulenceProperties && ./preProcessing.sh && python runScript.py -task=runPrimal && cd - || exit 1
     cd NACA0012_Airfoil/multipoint && ./preProcessing.sh && python runScript.py -task=runPrimal && cd - || exit 1
+    cd NACA0012_Airfoil/multcase && ./preProcessing.sh && python runScript.py -task=runPrimal && cd - || exit 1
     ;;
   *)
     echo "Argument not valid! Options are: v2, v3"
