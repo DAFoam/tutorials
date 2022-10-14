@@ -285,8 +285,11 @@ class Top(Multipoint):
         self.add_constraint("geometry_sa.lecon", equals=0.0, scaler=1.0, linear=True)
         self.add_constraint("geometry_sa.linearcon", equals=0.0, scaler=1.0, linear=True)
 
+        os.chdir(absPath)
+
 
 # OpenMDAO setup
+os.chdir(absPath)
 prob = om.Problem()
 prob.model = Top()
 prob.setup(mode="rev")
@@ -340,7 +343,9 @@ prob.driver.hist_file = "OptView.hst"
 
 if args.task == "opt":
     # solve CL
-    optFuncs.findFeasibleDesign(["cruise_sa.aero_post.CL", "cruise_sst.aero_post.CL"], ["aoa_sa", "aoa_sst"], targets=[CL_target, CL_target])
+    optFuncs.findFeasibleDesign(
+        ["cruise_sa.aero_post.CL", "cruise_sst.aero_post.CL"], ["aoa_sa", "aoa_sst"], targets=[CL_target, CL_target]
+    )
     # run the optimization
     prob.run_driver()
 elif args.task == "runPrimal":
