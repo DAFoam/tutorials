@@ -14,7 +14,7 @@ FoamFile
     object      fvOptions;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
+/*
 momentumSource
 {
     type            meanVelocityForce;
@@ -29,6 +29,6 @@ momentumSource
         relaxation  1.0; 
     }
 }
-
+*/
 
 // ************************************************************************* //
