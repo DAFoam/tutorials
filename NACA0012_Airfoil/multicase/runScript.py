@@ -44,7 +44,6 @@ absPath = os.getcwd()
 
 # Input parameters for DAFoam
 daOptionsSA = {
-    "rootDir": absPath + "/SA",
     "designSurfaces": ["wing"],
     "solverName": "DASimpleFoam",
     "primalMinResTol": 1.0e-8,
@@ -92,7 +91,6 @@ daOptionsSA = {
 }
 
 daOptionsSST = {
-    "rootDir": absPath + "/SST",
     "designSurfaces": ["wing"],
     "solverName": "DASimpleFoam",
     "primalMinResTol": 1.0e-8,
@@ -154,10 +152,10 @@ class Top(Multipoint):
     def setup(self):
 
         # create the builder to initialize the DASolvers for both cases (they share the same mesh option)
-        dafoam_builder_sa = DAFoamBuilder(daOptionsSA, meshOptions, scenario="aerodynamic")
+        dafoam_builder_sa = DAFoamBuilder(daOptionsSA, meshOptions, scenario="aerodynamic", run_directory="SA")
         dafoam_builder_sa.initialize(self.comm)
 
-        dafoam_builder_sst = DAFoamBuilder(daOptionsSST, meshOptions, scenario="aerodynamic")
+        dafoam_builder_sst = DAFoamBuilder(daOptionsSST, meshOptions, scenario="aerodynamic", run_directory="SST")
         dafoam_builder_sst.initialize(self.comm)
 
         # add the design variable component to keep the top level design variables
@@ -173,8 +171,8 @@ class Top(Multipoint):
 
         # add a scenario (flow condition) for optimization, we pass the builder
         # to the scenario to actually run the flow and adjoint
-        self.mphys_add_scenario("cruise_sa", ScenarioAerodynamic(aero_builder=dafoam_builder_sa))
-        self.mphys_add_scenario("cruise_sst", ScenarioAerodynamic(aero_builder=dafoam_builder_sst))
+        self.mphys_add_scenario("cruise_sa", ScenarioAerodynamic(aero_builder=dafoam_builder_sa, run_directory="SA"))
+        self.mphys_add_scenario("cruise_sst", ScenarioAerodynamic(aero_builder=dafoam_builder_sst, run_directory="SST"))
 
         # need to manually connect the x_aero0 between the mesh and geometry components
         # here x_aero0 means the surface coordinates of structurally undeformed mesh
