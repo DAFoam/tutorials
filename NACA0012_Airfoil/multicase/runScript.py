@@ -40,8 +40,6 @@ aoa0 = 5.0
 A0 = 0.1
 rho0 = 1.0
 
-absPath = os.getcwd()
-
 # Input parameters for DAFoam
 daOptionsSA = {
     "designSurfaces": ["wing"],
@@ -166,8 +164,8 @@ class Top(Multipoint):
         self.add_subsystem("mesh_sst", dafoam_builder_sst.get_mesh_coordinate_subsystem())
 
         # add the geometry component (FFD)
-        self.add_subsystem("geometry_sa", OM_DVGEOCOMP(file=absPath + "/SA/FFD/wingFFD.xyz", type="ffd"))
-        self.add_subsystem("geometry_sst", OM_DVGEOCOMP(file=absPath + "/SST/FFD/wingFFD.xyz", type="ffd"))
+        self.add_subsystem("geometry_sa", OM_DVGEOCOMP(file="SA/FFD/wingFFD.xyz", type="ffd"))
+        self.add_subsystem("geometry_sst", OM_DVGEOCOMP(file="SST/FFD/wingFFD.xyz", type="ffd"))
 
         # add a scenario (flow condition) for optimization, we pass the builder
         # to the scenario to actually run the flow and adjoint
@@ -283,11 +281,8 @@ class Top(Multipoint):
         self.add_constraint("geometry_sa.lecon", equals=0.0, scaler=1.0, linear=True)
         self.add_constraint("geometry_sa.linearcon", equals=0.0, scaler=1.0, linear=True)
 
-        os.chdir(absPath)
-
 
 # OpenMDAO setup
-os.chdir(absPath)
 prob = om.Problem()
 prob.model = Top()
 prob.setup(mode="rev")
