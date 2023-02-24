@@ -249,7 +249,7 @@ else:
     exit(1)
 
 prob.driver.options["debug_print"] = ["nl_cons", "objs", "desvars"]
-# prob.driver.options["print_opt_prob"] = True
+prob.driver.options["print_opt_prob"] = True
 prob.driver.hist_file = "OptView.hst"
 
 
