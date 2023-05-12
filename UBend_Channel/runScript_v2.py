@@ -172,7 +172,6 @@ DVGeo.addLocalDV("shapexouter2", lower=-0.05, upper=0.0, axis="x", scale=1.0, po
 DASolver = PYDAFOAM(options=daOptions, comm=gcomm)
 DASolver.setDVGeo(DVGeo)
 mesh = USMesh(options=meshOptions, comm=gcomm)
-DASolver.addFamilyGroup(DASolver.getOption("designSurfaceFamily"), DASolver.getOption("designSurfaces"))
 DASolver.printFamilyList()
 DASolver.setMesh(mesh)
 evalFuncs = []
@@ -183,7 +182,7 @@ DASolver.setEvalFuncs(evalFuncs)
 # =============================================================================
 DVCon = DVConstraints()
 DVCon.setDVGeo(DVGeo)
-DVCon.setSurface(DASolver.getTriangulatedMeshSurface(groupName=DASolver.getOption("designSurfaceFamily")))
+DVCon.setSurface(DASolver.getTriangulatedMeshSurface(groupName=DASolver.designSurfacesGroup))
 
 if args.task == "opt":
     # Create a linear constraint so that the curvature at the symmetry plane is zero

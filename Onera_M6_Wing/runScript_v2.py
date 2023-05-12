@@ -184,7 +184,6 @@ daOptions["designVar"]["alpha"] = {"designVarType": "AOA", "patches": ["inout"],
 DASolver = PYDAFOAM(options=daOptions, comm=gcomm)
 DASolver.setDVGeo(DVGeo)
 mesh = USMesh(options=meshOptions, comm=gcomm)
-DASolver.addFamilyGroup(DASolver.getOption("designSurfaceFamily"), DASolver.getOption("designSurfaces"))
 DASolver.printFamilyList()
 DASolver.setMesh(mesh)
 evalFuncs = []
@@ -195,7 +194,7 @@ DASolver.setEvalFuncs(evalFuncs)
 # =============================================================================
 DVCon = DVConstraints()
 DVCon.setDVGeo(DVGeo)
-DVCon.setSurface(DASolver.getTriangulatedMeshSurface(groupName=DASolver.getOption("designSurfaceFamily")))
+DVCon.setSurface(DASolver.getTriangulatedMeshSurface(groupName=DASolver.designSurfacesGroup))
 
 # NOTE: the LE and TE lists are not parallel lines anymore, these two lists define lines that
 # are close to the leading and trailing edges while being completely within the wing surface

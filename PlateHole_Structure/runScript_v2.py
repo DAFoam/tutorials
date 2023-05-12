@@ -136,7 +136,6 @@ DVGeo.addLocalDV("shapex", lower=-1.0, upper=1.0, axis="x", scale=1.0, pointSele
 DASolver = PYDAFOAM(options=daOptions, comm=gcomm)
 DASolver.setDVGeo(DVGeo)
 mesh = USMesh(options=meshOptions, comm=gcomm)
-DASolver.addFamilyGroup(DASolver.getOption("designSurfaceFamily"), DASolver.getOption("designSurfaces"))
 DASolver.printFamilyList()
 DASolver.setMesh(mesh)
 evalFuncs = []
@@ -147,7 +146,7 @@ DASolver.setEvalFuncs(evalFuncs)
 # =============================================================================
 DVCon = DVConstraints()
 DVCon.setDVGeo(DVGeo)
-DVCon.setSurface(DASolver.getTriangulatedMeshSurface(groupName=DASolver.getOption("designSurfaceFamily")))
+DVCon.setSurface(DASolver.getTriangulatedMeshSurface(groupName=DASolver.designSurfacesGroup))
 
 leList = [[-0.5 + 1e-3, 0.0, 0.0 + 1e-3], [-0.5 + 1e-3, 0.0, 0.1 - 1e-3]]
 teList = [[0.5 - 1e-3, 0.0, 0.0 + 1e-3], [0.5 - 1e-3, 0.0, 0.1 - 1e-3]]
