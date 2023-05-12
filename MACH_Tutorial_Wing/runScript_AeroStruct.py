@@ -38,7 +38,9 @@ daOptions = {
     "designSurfaces": ["wing"],
     "solverName": "DARhoSimpleFoam",
     "primalMinResTol": 1.0e-8,
-    "fsi": {"pRef": p0},  # set the ref pressure for computing force for FSI
+    "couplingInfo": {
+        "aerostructural": {"active": True, "pRef": p0, "couplingSurfaceGroups": {"wingGroup": ["wing"]}}
+    },  # set the ref pressure for computing force for FSI
     "primalBC": {
         "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
         "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
@@ -319,7 +321,12 @@ elif args.task == "checkTotals":
     # verify the total derivatives against the finite-difference
     prob.run_model()
     prob.check_totals(
-        of=["cruise.aero_post.CD", "cruise.aero_post.CL"], wrt=["shape", "aoa"], compact_print=True, step=1e-3, form="central", step_calc="abs"
+        of=["cruise.aero_post.CD", "cruise.aero_post.CL"],
+        wrt=["shape", "aoa"],
+        compact_print=True,
+        step=1e-3,
+        form="central",
+        step_calc="abs",
     )
 else:
     print("task arg not found!")
