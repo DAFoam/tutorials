@@ -247,7 +247,6 @@ daOptions["designVar"]["alpha"] = {"designVarType": "AOA", "patches": ["inout"],
 DASolver = PYDAFOAM(options=daOptions, comm=gcomm)
 DASolver.setDVGeo(DVGeo)
 mesh = USMesh(options=meshOptions, comm=gcomm)
-DASolver.addFamilyGroup(DASolver.getOption("designSurfaceFamily"), DASolver.getOption("designSurfaces"))
 DASolver.printFamilyList()
 DASolver.setMesh(mesh)
 evalFuncs = []
@@ -259,7 +258,7 @@ DASolver.setEvalFuncs(evalFuncs)
 # =============================================================================
 DVCon = DVConstraints()
 DVCon.setDVGeo(DVGeo)
-DVCon.setSurface(DASolver.getTriangulatedMeshSurface(groupName=DASolver.getOption("designSurfaceFamily")))
+DVCon.setSurface(DASolver.getTriangulatedMeshSurface(groupName=DASolver.designSurfacesGroup))
 
 # Le/Te constraints
 DVCon.addLeTeConstraints(0, "iHigh")
