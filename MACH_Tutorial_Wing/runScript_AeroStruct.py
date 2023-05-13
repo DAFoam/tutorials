@@ -39,7 +39,7 @@ daOptions = {
     "solverName": "DARhoSimpleFoam",
     "primalMinResTol": 1.0e-8,
     "couplingInfo": {
-        "aerostructural": {"active": True, "pRef": p0, "couplingSurfaceGroups": {"wingGroup": ["wing"]}}
+        "aerostructural": {"active": True, "pRef": p0, "propMovement": False, "couplingSurfaceGroups": {"wingGroup": ["wing"]}}
     },  # set the ref pressure for computing force for FSI
     "primalBC": {
         "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
