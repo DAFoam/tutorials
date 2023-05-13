@@ -169,8 +169,8 @@ class Top(Multipoint):
 
         # add a scenario (flow condition) for optimization, we pass the builder
         # to the scenario to actually run the flow and adjoint
-        self.mphys_add_scenario("cruise_sa", ScenarioAerodynamic(aero_builder=dafoam_builder_sa, run_directory="SA"))
-        self.mphys_add_scenario("cruise_sst", ScenarioAerodynamic(aero_builder=dafoam_builder_sst, run_directory="SST"))
+        self.mphys_add_scenario("cruise_sa", ScenarioAerodynamic(aero_builder=dafoam_builder_sa))
+        self.mphys_add_scenario("cruise_sst", ScenarioAerodynamic(aero_builder=dafoam_builder_sst))
 
         # need to manually connect the x_aero0 between the mesh and geometry components
         # here x_aero0 means the surface coordinates of structurally undeformed mesh
