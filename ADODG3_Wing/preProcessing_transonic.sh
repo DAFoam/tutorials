@@ -28,5 +28,5 @@ echo "Generating mesh.. Done!"
 
 # copy initial and boundary condition files
 cp -r 0.orig 0
-cp -r system/fvSchemes_subsonic system/fvSchemes
-cp -r system/fvSolution_subsonic system/fvSolution
+cp -r system/fvSchemes_transonic system/fvSchemes
+cp -r system/fvSolution_transonic system/fvSolution
