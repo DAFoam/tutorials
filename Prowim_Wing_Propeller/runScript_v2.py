@@ -282,7 +282,7 @@ elif args.task == "runForwardAD":
 
 elif args.task == "deformIGS":
     # Import Optimization Values Dictionary
-    with open("./OptRef_Example.json") as f:
+    with open("./deformIGS/OptRef_Example.json") as f:
         optRef = json.load(f)
 
     # Import IGES file as geometry object
@@ -294,6 +294,27 @@ elif args.task == "deformIGS":
 
     # Deform Geometry and Output
     DVGeo.updatePyGeo(geo, "iges", "wingNew", nRefU=10, nRefV=10)
+
+elif args.task == "deformMesh":
+
+    # Import Optimization Values Dictionary
+    with open("./deformIGS/OptRef_Example.json") as f:
+        optRef = json.load(f)
+
+    # Update Design Variables
+    DVGeo.setDesignVars(optRef)
+
+    # update the DAOption to relax the flow tolerance and let the primal run for only one step
+    DASolver.setOption("primalMinResTol", 0.999999)
+    # set this to true so that we will always write meshes even the deformation gives bad quality meshes
+    DASolver.setOption("writeMinorIterations", True)
+    DASolver.updateDAOption()
+    # we need to re-initialize the solver to make the above option changes effective
+    DASolver.solverInitialized = 0
+    DASolver._initSolver()
+
+    # run the primal for one step and save the deformed mesh
+    optFuncs.runPrimal()
 
 else:
     print("task arg not found!")
