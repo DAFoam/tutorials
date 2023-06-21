@@ -15,8 +15,8 @@ fi
 case $argm in
   "v2")
     echo "Running incompressible tests"
-    find */runScript* -type f -exec sed -i '/"primalMinResTol"/c\    "primalMinResTol": 0.9,' {} \;
-    find */*/runScript* -type f -exec sed -i '/"primalMinResTol"/c\    "primalMinResTol": 0.9,' {} \;
+    find */runScript* -type f -exec sed -i '/"primalMinResTol":/c\    "primalMinResTol": 0.9,' {} \;
+    find */*/runScript* -type f -exec sed -i '/"primalMinResTol":/c\    "primalMinResTol": 0.9,' {} \;
     cd 30N30P_MultiElement_Airfoil && ./preProcessing.sh && python runScript_v2.py --task=runPrimal && cd - || exit 1
     cd CRM_Wing && ./preProcessing.sh && python runScript_v2.py --task=runPrimal && cd - || exit 1
     cd DPW4_Aircraft && ./preProcessing.sh && python runScript_v2.py --task=runPrimal && cd - || exit 1
@@ -39,8 +39,8 @@ case $argm in
     ;;
   "v3")
     echo "Running compressible tests"
-    find */runScript* -type f -exec sed -i '/"primalMinResTol"/c\    "primalMinResTol": 0.9,' {} \;
-    find */*/runScript* -type f -exec sed -i '/"primalMinResTol"/c\    "primalMinResTol": 0.9,' {} \;
+    find */runScript* -type f -exec sed -i '/"primalMinResTol":/c\    "primalMinResTol": 0.9,' {} \;
+    find */*/runScript* -type f -exec sed -i '/"primalMinResTol":/c\    "primalMinResTol": 0.9,' {} \;
     cd 30N30P_MultiElement_Airfoil && ./preProcessing.sh && python runScript.py -task=runPrimal && cd - || exit 1
     cd ADODG3_Wing && ./preProcessing.sh && python runScript.py -task=runPrimal && cd - || exit 1
     cd CRM_Wing && ./preProcessing.sh && python runScript.py -task=runPrimal && cd - || exit 1
