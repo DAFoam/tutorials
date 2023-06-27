@@ -21,7 +21,7 @@ args = parser.parse_args()
 # Input Parameters
 # =============================================================================
 
-U0 = 278
+U0 = 243
 p0 = 101325.0
 T0 = 300.0
 rho0 = p0 / T0 / 287.0
@@ -30,7 +30,7 @@ nuTilda0 = 4.5e-5
 k0 = 2.9
 epsilon0 = 1e4
 omega0 = 3.8e4
-CL_target = 0.5
+CL_target = 0.375
 aoa0 = 2.0
 A0 = 3.0
 
