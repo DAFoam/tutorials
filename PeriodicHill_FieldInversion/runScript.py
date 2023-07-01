@@ -143,6 +143,7 @@ if args.optimizer == "SNOPT":
         "Function precision": 1.0e-5,
         "Major iterations limit": 100,
         "Nonderivative linesearch": None,
+        "Linesearch tolerance": 0.999,
         "Print file": "opt_SNOPT_print.txt",
         "Summary file": "opt_SNOPT_summary.txt",
     }
