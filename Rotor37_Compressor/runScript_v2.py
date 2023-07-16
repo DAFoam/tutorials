@@ -28,7 +28,7 @@ args = parser.parse_args()
 gcomm = MPI.COMM_WORLD
 
 
-TPR_target = 1.4
+TPR_target = 1.6
 MFR_target = 0.7
 
 # Set the parameters for optimization
@@ -37,16 +37,8 @@ daOptions = {
     "useAD": {"mode": "reverse"},
     "designSurfaces": ["blade"],
     "primalMinResTol": 1e-8,
-    "primalVarBounds": {
-        "UMax": 800.0,
-        "UMin": -800.0,
-        "pMax": 1000000.0,
-        "pMin": 20000.0,
-        "hMax": 500000.0,
-        "hMin": 50000.0,
-        "rhoMax": 10.0,
-        "rhoMin": 0.2,
-    },
+    "primalMinResTolDiff": 1e4,
+    "hasIterativeBC": True,
     "objFunc": {
         "TPR": {
             "part1": {
@@ -94,7 +86,7 @@ daOptions = {
     "normalizeStates": {"U": 100.0, "p": 100000.0, "nuTilda": 1e-3, "phi": 1.0, "T": 300.0},
     "adjPartDerivFDStep": {"State": 1e-6, "FFD": 1e-3},
     "adjEqnOption": {"gmresRelTol": 1.0e-5, "pcFillLevel": 1, "jacMatReOrdering": "rcm", "gmresMaxIters": 2000, "gmresRestart": 2000},
-    "checkMeshThreshold": {"maxAspectRatio": 2000.0, "maxNonOrth": 75.0, "maxSkewness": 8.0},
+    "checkMeshThreshold": {"maxAspectRatio": 2000.0, "maxNonOrth": 78.0, "maxSkewness": 5.0},
     "transonicPCOption": 1,
     "adjPCLag": 1,
     # Design variable setup
@@ -156,8 +148,8 @@ DVGeo = DVGeometry(FFDFile)
 pts = DVGeo.getLocalIndex(0)
 indexList = pts[1:4, :, :].flatten()
 PS = geo_utils.PointSelect("list", indexList)
-DVGeo.addLocalDV("shapey", lower=-0.01, upper=0.01, axis="y", scale=1.0, pointSelect=PS)
-DVGeo.addLocalDV("shapez", lower=-0.01, upper=0.01, axis="z", scale=1.0, pointSelect=PS)
+DVGeo.addLocalDV("shapey", lower=-0.002, upper=0.002, axis="y", scale=1000, pointSelect=PS)
+DVGeo.addLocalDV("shapez", lower=-0.002, upper=0.002, axis="z", scale=1000, pointSelect=PS)
 
 
 # =============================================================================
