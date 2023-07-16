@@ -55,6 +55,7 @@ case $argm in
     cd NACA0012_Airfoil/multipoint && ./preProcessing.sh && python runScript.py -task=runPrimal && cd - || exit 1
     cd NACA0012_Airfoil/multicase && ./preProcessing.sh && python runScript.py -task=runPrimal && cd - || exit 1
     cd PeriodicHill_FieldInversion && ./preProcessing.sh && python runScript.py -task=runPrimal && cd - || exit 1
+    cd Rotor37_Compressor && ./preProcessing.sh && python runScript.py -task=runPrimal && cd - || exit 1
     ;;
   *)
     echo "Argument not valid! Options are: v2, v3"
