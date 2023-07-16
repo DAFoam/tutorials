@@ -43,8 +43,10 @@ boundaryField
     }
     inlet
     {
-        type            fixedValue;
+        type            totalTemperature;
+	T0              $internalField;
         value           $internalField;
+	gamma           1.4;
     }
     outlet
     {

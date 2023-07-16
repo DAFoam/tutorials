@@ -18,7 +18,7 @@ FoamFile
 simulationType RAS;
 RAS 
 { 
-    RASModel             SpalartAllmaras;
+    RASModel             SpalartAllmarasFv3;
 
     turbulence           on;
 
