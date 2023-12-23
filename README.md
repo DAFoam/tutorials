@@ -2,7 +2,7 @@
 
 [![api_tests](https://github.com/DAFoam/tutorials/actions/workflows/api_tests.yml/badge.svg)](https://github.com/DAFoam/tutorials/actions/workflows/api_tests.yml)
 
-This tutorial uses the latest version of [DAFoam](https://github.com/mdolab/dafoam) 
+This tutorial uses the latest version of [DAFoam](https://github.com/mdolab/dafoam)
 
 Go to one of tutorial folders and run the optimization using the following command:
 
