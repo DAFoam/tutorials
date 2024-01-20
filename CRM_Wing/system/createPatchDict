@@ -46,7 +46,7 @@ patches
 
         // How to construct: either from 'patches' or 'set'
         constructFrom patches;
-        patches (auto1);
+        patches (auto2);
     }
 
     {
@@ -61,6 +61,6 @@ patches
 
         // How to construct: either from 'patches' or 'set'
         constructFrom patches;
-        patches (auto2);
+        patches (auto1);
     }
 ); 
