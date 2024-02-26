@@ -88,7 +88,7 @@ daOptions = {
     # transonic preconditioner to speed up the adjoint convergence
     "transonicPCOption": 2,
     "designVar": {
-        "aoa": {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "y"},
+        "aoa": {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "z"},
         "twist": {"designVarType": "FFD"},
         "shape": {"designVarType": "FFD"},
     },
