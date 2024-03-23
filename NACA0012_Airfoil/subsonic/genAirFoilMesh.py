@@ -179,10 +179,9 @@ y1SS = c2SS.X[:, 1]
 
 # Since the TE is open we need to close it. Close it multiple linear segments.
 delta_y = numpy.linspace(y1PS[-1], y1SS[-1], NpTE, "d")
+delta_x = numpy.linspace(x1PS[-1], x1SS[-1], NpTE, "d")
 delta_y = delta_y[1:]
-delta_x = numpy.ones_like(delta_y, "d")
-for i in range(len(delta_x)):
-    delta_x[i] = x1SS[-1]
+delta_x = delta_x[1:]
 
 x1SS_Flip = x1SS[::-1]  # reverse the array #numpy.flip(x1SS,axis=0)
 xAll = numpy.append(x1SS_Flip, x1PS[1:])
