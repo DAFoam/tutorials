@@ -17,6 +17,7 @@ case $argm in
     echo "Running incompressible tests"
     find */runScript* -type f -exec sed -i '/"primalMinResTol":/c\    "primalMinResTol": 0.9,' {} \;
     find */*/runScript* -type f -exec sed -i '/"primalMinResTol":/c\    "primalMinResTol": 0.9,' {} \;
+    find */*/*/runScript* -type f -exec sed -i '/"primalMinResTol":/c\    "primalMinResTol": 0.9,' {} \;
     cd 30N30P_MultiElement_Airfoil && ./preProcessing.sh && python runScript_v2.py --task=runPrimal && cd - || exit 1
     cd CRM_Wing && ./preProcessing.sh && python runScript_v2.py --task=runPrimal && cd - || exit 1
     cd DPW4_Aircraft && ./preProcessing.sh && python runScript_v2.py --task=runPrimal && cd - || exit 1
@@ -36,11 +37,13 @@ case $argm in
     cd Prowim_Wing_Propeller && ./preProcessing.sh && python runScript_v2.py --task=runPrimal && cd - || exit 1
     cd Rotor37_Compressor && ./preProcessing.sh && python runScript_v2.py --task=runPrimal && cd - || exit 1
     cd UBend_Channel && ./preProcessing.sh && python runScript_v2.py --task=runPrimal && cd - || exit 1
+    cd Ramp/unsteady/train && ./preProcessing.sh && python runScript.py --task=runPrimal && cd - || exit 1
     ;;
   "v3")
     echo "Running compressible tests"
     find */runScript* -type f -exec sed -i '/"primalMinResTol":/c\    "primalMinResTol": 0.9,' {} \;
     find */*/runScript* -type f -exec sed -i '/"primalMinResTol":/c\    "primalMinResTol": 0.9,' {} \;
+    find */*/*/runScript* -type f -exec sed -i '/"primalMinResTol":/c\    "primalMinResTol": 0.9,' {} \;
     cd 30N30P_MultiElement_Airfoil && ./preProcessing.sh && python runScript.py -task=runPrimal && cd - || exit 1
     cd ADODG3_Wing && ./preProcessing.sh && python runScript.py -task=runPrimal && cd - || exit 1
     cd CRM_Wing && ./preProcessing.sh && python runScript.py -task=runPrimal && cd - || exit 1
@@ -56,6 +59,7 @@ case $argm in
     cd NACA0012_Airfoil/multicase && ./preProcessing.sh && python runScript.py -task=runPrimal && cd - || exit 1
     cd PeriodicHill_FieldInversion && ./preProcessing.sh && python runScript.py -task=runPrimal && cd - || exit 1
     cd Rotor37_Compressor && ./preProcessing.sh && python runScript.py -task=runPrimal && cd - || exit 1
+    cd Ramp/steady/train && ./preProcessing.sh && python runScript_FIML.py -task=runPrimal && cd - || exit 1
     ;;
   *)
     echo "Argument not valid! Options are: v2, v3"
