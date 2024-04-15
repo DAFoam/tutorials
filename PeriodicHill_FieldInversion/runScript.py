@@ -74,9 +74,21 @@ daOptions = {
         "phi": 1.0,
     },
     "designVar": {
-        "beta": {"designVarType": "Field", "fieldName": "betaFieldInversion", "fieldType": "scalar"},
+        "beta": {
+            "designVarType": "Field",
+            "fieldName": "betaFieldInversion",
+            "fieldType": "scalar",
+            "distributed": False,
+        },
     },
 }
+
+# define an angle of attack function to change the U direction at the far field
+def betaFieldInversion(val, DASolver):
+    for idxI, v in enumerate(val):
+        DASolver.setFieldValue4GlobalCellI(b"betaFieldInversion", v, idxI)
+        DASolver.updateBoundaryConditions(b"betaFieldInversion", b"scalar")
+
 
 # Top class to setup the optimization problem
 class Top(Multipoint):
@@ -99,12 +111,6 @@ class Top(Multipoint):
 
         # add the objective function to the cruise scenario
         self.cruise.aero_post.mphys_add_funcs()
-
-        # define an angle of attack function to change the U direction at the far field
-        def betaFieldInversion(val, DASolver):
-            for idxI, v in enumerate(val):
-                DASolver.setFieldValue4GlobalCellI(b"betaFieldInversion", v, idxI)
-                DASolver.updateBoundaryConditions(b"betaFieldInversion", b"scalar")
 
         # pass this aoa function to the cruise group
         self.cruise.coupling.solver.add_dv_func("beta", betaFieldInversion)
