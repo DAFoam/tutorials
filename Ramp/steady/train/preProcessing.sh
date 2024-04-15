@@ -16,7 +16,7 @@ function preProcess()
   # run full primal using SST as reference data
   cp constant/turbulenceProperties_SST constant/turbulenceProperties
   cp -r 0_orig 0
-  mpirun -np 4 python runPrimal.py
+  mpirun --oversubscribe -np 4 python runPrimal.py
   reconstructPar 
   rm -rf processor*
   
