@@ -40,7 +40,7 @@ daOptions = {
     "solverName": "DAPimpleFoam",
     "primalBC": {
         "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
-        "useWallFunction": True,
+        "useWallFunction": False,
     },
     "unsteadyAdjoint": {
         "mode": "timeAccurate",
@@ -91,6 +91,7 @@ daOptions = {
         "shape": {"designVarType": "FFD"},
         "aoa": {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "y"}
     },
+    "checkMeshThreshold": {"maxAspectRatio": 5000.0},
 }
 
 # mesh warping parameters, users need to manually specify the symmetry plane and their normals
