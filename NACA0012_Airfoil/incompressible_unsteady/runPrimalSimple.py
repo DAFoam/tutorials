@@ -27,7 +27,7 @@ daOptions = {
     "primalMinResTolDiff": 1.0e16,
     "primalBC": {
         "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
-        "useWallFunction": True,
+        "useWallFunction": False,
     },
     "objFunc": {
         "CD": {
@@ -56,6 +56,7 @@ daOptions = {
     "designVar": {
         "aoa": {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "y"}
     },
+    "checkMeshThreshold": {"maxAspectRatio": 5000.0},
 }
 
 
