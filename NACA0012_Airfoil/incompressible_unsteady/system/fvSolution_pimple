@@ -23,13 +23,14 @@ solvers
         tolerance        0;
         relTol           0.001;
         smoother         GaussSeidel;
-        maxIter          50;
+        maxIter          500;
         minIter          1;
     }
 
     "(p|p_rgh|G)Final"
     {
         $p;
+	relTol          0;
         tolerance       1e-8;
     }
 

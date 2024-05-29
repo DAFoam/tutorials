@@ -16,7 +16,7 @@ renumberMesh -overwrite >> logMeshGeneration.txt
 echo "Generating mesh.. Done!"
 
 # copy initial and boundary condition files
-cp -r 0.orig 0
+cp -r 0_orig 0
 
 # run simpleFoam
 cp -r system/controlDict_simple system/controlDict
