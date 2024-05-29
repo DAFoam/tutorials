@@ -31,7 +31,7 @@ U0 = 10.0
 p0 = 0.0
 nuTilda0 = 4.5e-5
 aoa0 = 15.0
-CD_max = 0.24
+CD_max = 0.2
 A0 = 0.1
 
 # Set the parameters for optimization
@@ -76,7 +76,8 @@ daOptions = {
     },
     "adjStateOrdering": "cell",
     "adjEqnOption": {
-        "gmresRelTol": 1.0e-5,
+        "gmresRelTol": 1.0e-16,
+        "gmresAbsTol": 1.0e-8,
         "pcFillLevel": 1,
         "jacMatReOrdering": "natural",
         "useNonZeroInitGuess": True,
