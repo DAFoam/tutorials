@@ -47,6 +47,8 @@ daOptions = {
         "objFuncTimeOperator": "average",
         "reduceIO": True,
         "zeroInitFields": False,
+        "objFuncStartTime": 2.0,
+        "objFuncEndTime": 5.0,
     },
     "printIntervalUnsteady": 1,
     "objFunc": {
@@ -75,8 +77,8 @@ daOptions = {
     },
     "adjStateOrdering": "cell",
     "adjEqnOption": {
-        "gmresRelTol": 1.0e-16,
-        "gmresAbsTol": 1.0e-8,
+        "gmresRelTol": 1.0e-5,
+        "gmresAbsTol": 1.0e-9,
         "pcFillLevel": 1,
         "jacMatReOrdering": "natural",
         "useNonZeroInitGuess": True,
