@@ -144,15 +144,13 @@ else:
 # Design variable setup
 # =============================================================================
 DVGeo = DVGeometry("./FFD/FFD.xyz")
-DVGeo.addRefAxis("bodyAxis", xFraction=0.25, alignIndex="k")
-
 
 # select points
 iVol = 0
 pts = DVGeo.getLocalIndex(iVol)
 indexList = pts[:, :, :].flatten()
 PS = geo_utils.PointSelect("list", indexList)
-DVGeo.addLocalDV("shape", lower=-1.0, upper=1.0, axis="x", scale=100.0, pointSelect=PS)
+DVGeo.addLocalDV("shape", lower=-10.0, upper=10.0, axis="x", scale=100.0, pointSelect=PS)
 
 # =============================================================================
 # DAFoam initialization
@@ -176,29 +174,21 @@ leList = [[-0.5 + 1e-4, 0.0, 1e-4], [-0.5 + 1e-4, 0.0, 0.1 - 1e-4]]
 teList = [[0.5 - 1e-4 - 1e-4, 0.0, 1e-4], [0.5 - 1e-4, 0.0, 0.1 - 1e-4]]
 
 # volume constraint
-DVCon.addVolumeConstraint(leList, teList, nSpan=2, nChord=10, lower=1.0, upper=3, scaled=True)
+DVCon.addVolumeConstraint(leList, teList, nSpan=2, nChord=10, lower=1.0, upper=2.0, scaled=True)
 
 # thickness constraint
-DVCon.addThicknessConstraints2D(leList, teList, nSpan=2, nChord=10, lower=0.5, upper=3.0, scaled=True)
+DVCon.addThicknessConstraints2D(leList, teList, nSpan=2, nChord=10, lower=0.3, upper=3.0, scaled=True)
 
 # Create linear constraints to link the shape change between k=0 and k=1
 nFFDs_x = pts.shape[0]
+nFFDs_y = pts.shape[1]
 indSetA = []
 indSetB = []
 for i in range(nFFDs_x):
-    for j in [0, 1]:
+    for j in range(nFFDs_y):
         indSetA.append(pts[i, j, 1])
         indSetB.append(pts[i, j, 0])
 DVCon.addLinearConstraintsShape(indSetA, indSetB, factorA=1.0, factorB=-1.0, lower=0.0, upper=0.0)
-
-# Create a linear constraint to fix the leading and trailing point.
-indSetA = []
-indSetB = []
-for i in [0, nFFDs_x - 1]:
-    for k in [0]:  # do not constrain k=1 because it is linked in the above symmetry constraint
-        indSetA.append(pts[i, 0, k])
-        indSetB.append(pts[i, 1, k])
-DVCon.addLinearConstraintsShape(indSetA, indSetB, factorA=1.0, factorB=1.0, lower=0.0, upper=0.0)
 
 # =============================================================================
 # Initialize optFuncs for optimization
