@@ -17,8 +17,8 @@ FoamFile
 startFrom       startTime;
 startTime       0;
 stopAt          endTime;
-endTime         5.0;
-deltaT          2e-2;
+endTime         3.0;
+deltaT          1e-2;
 writeControl    timeStep;
 writeInterval   1;
 purgeWrite      0;

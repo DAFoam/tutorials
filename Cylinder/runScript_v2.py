@@ -38,7 +38,7 @@ daOptions = {
     "solverName": "DAPimpleFoam",
     "primalBC": {
         "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
-        "useWallFunction": False,
+        "useWallFunction": True,
     },
     "unsteadyAdjoint": {
         "mode": "timeAccurate",
@@ -47,9 +47,10 @@ daOptions = {
         "objFuncTimeOperator": "average",
         "reduceIO": True,
         "zeroInitFields": False,
-        "objFuncStartTime": 2.0,
-        "objFuncEndTime": 5.0,
+        "objFuncStartTime": 1.0,
+        "objFuncEndTime": 3.0,
     },
+    "useConstrainHbyA": True,
     "printIntervalUnsteady": 1,
     "objFunc": {
         "CD": {
@@ -77,11 +78,13 @@ daOptions = {
     },
     "adjStateOrdering": "cell",
     "adjEqnOption": {
-        "gmresRelTol": 1.0e-5,
-        "gmresAbsTol": 1.0e-9,
+        "gmresRelTol": 1.0e-100,
+        "gmresAbsTol": 1.0e-6,
+        "gmresMaxIters": 100,
         "pcFillLevel": 1,
         "jacMatReOrdering": "natural",
-        "useNonZeroInitGuess": True,
+        "useNonZeroInitGuess": False,
+        "useMGSO": True,
     },
     "normalizeStates": {
         "U": U0,
@@ -112,7 +115,7 @@ if args.opt == "snopt":
         "Verify level": -1,
         "Function precision": 1.0e-7,
         "Major iterations limit": 50,
-        "Nonderivative linesearch": None,
+        #"Nonderivative linesearch": None,
         "Print file": "opt_SNOPT_print.txt",
         "Summary file": "opt_SNOPT_summary.txt",
     }
@@ -174,7 +177,7 @@ leList = [[-0.5 + 1e-4, 0.0, 1e-4], [-0.5 + 1e-4, 0.0, 0.1 - 1e-4]]
 teList = [[0.5 - 1e-4 - 1e-4, 0.0, 1e-4], [0.5 - 1e-4, 0.0, 0.1 - 1e-4]]
 
 # volume constraint
-DVCon.addVolumeConstraint(leList, teList, nSpan=2, nChord=10, lower=1.0, upper=2.0, scaled=True)
+DVCon.addVolumeConstraint(leList, teList, nSpan=2, nChord=10, lower=1.0, upper=1.0, scaled=True)
 
 # thickness constraint
 DVCon.addThicknessConstraints2D(leList, teList, nSpan=2, nChord=10, lower=0.3, upper=3.0, scaled=True)
@@ -188,6 +191,16 @@ for i in range(nFFDs_x):
     for j in range(nFFDs_y):
         indSetA.append(pts[i, j, 1])
         indSetB.append(pts[i, j, 0])
+DVCon.addLinearConstraintsShape(indSetA, indSetB, factorA=1.0, factorB=-1.0, lower=0.0, upper=0.0)
+
+# create linear constraints to make the change symmetry wrt y=0
+indSetA = []
+indSetB = []
+for i in range(nFFDs_x):
+    for j in range(int(nFFDs_y//2)):
+        # note we need to set it for k=0 only because k=0 and k=1 are linked in the above linear constraints
+        indSetA.append(pts[i, j, 0])
+        indSetB.append(pts[i, nFFDs_y - j - 1, 0])
 DVCon.addLinearConstraintsShape(indSetA, indSetB, factorA=1.0, factorB=-1.0, lower=0.0, upper=0.0)
 
 # =============================================================================

@@ -23,18 +23,18 @@ for line in lines:
         CL.append(float(cols[1]))
 
 fig, ax = plt.subplots(figsize=(20, 4), nrows=1)
-plt.plot(CL[-500:])
+plt.plot(CL[:])
 #plt.xlim([0, 3])
-plt.ylim([-0.5, 0.5])
+#plt.ylim([-0.5, 0.5])
 plt.xlabel("Iters")
 plt.ylabel("$C_L$")
 plt.savefig("TimeSeriesCL.pdf", bbox_inches="tight")  # save the figure to file
 plt.close()  # close the figure
 
 fig, ax = plt.subplots(figsize=(20, 4), nrows=1)
-plt.plot(CD[-500:])
+plt.plot(CD[:])
 #plt.xlim([0, 3])
-plt.ylim([0.15, 0.3])
+#plt.ylim([0.15, 0.3])
 plt.xlabel("Iters")
 plt.ylabel("$C_D$")
 plt.savefig("TimeSeriesCD.pdf", bbox_inches="tight")  # save the figure to file
