@@ -40,6 +40,6 @@ mpirun -np 4 python runScript_v2.py --task=runPrimal
 reconstructPar -latestTime
 rm -rf processor*
 rm -rf 0
-mv 20 0
+mv 10 0
 rm -rf 0/uniform 0/polyMesh
 cp -r system/controlDict_pimple system/controlDict
