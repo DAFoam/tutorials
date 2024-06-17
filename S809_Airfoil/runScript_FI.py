@@ -57,6 +57,7 @@ daOptions = {
         "nuTilda0": {"variable": "nuTilda", "patches": ["inout"], "value": [nuTilda0]},
         "k0": {"variable": "k", "patches": ["inout"], "value": [k0]},
         "omega0": {"variable": "omega", "patches": ["inout"], "value": [omega0]},
+        "thermo:mu": 3.4e-5,
         "useWallFunction": False,
     },
     "primalVarBounds": {"omegaMin": -1e16},
