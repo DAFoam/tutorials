@@ -7,6 +7,7 @@ from mpi4py import MPI
 from dafoam import PYDAFOAM
 import numpy as np
 import json
+import sys
 
 gcomm = MPI.COMM_WORLD
 
@@ -15,11 +16,11 @@ p0 = 101325.0
 T0 = 288.0
 rho0 = p0 / T0 / 287.0
 nuTilda0 = 1e-4
-k0 = 0.7
+k0 = 0.2
 omega0 = 1000.0
 A0 = 0.01
 
-outputFile = "SST.json"
+outputFile = sys.argv[1]
 
 aoas = [4.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0]
 
