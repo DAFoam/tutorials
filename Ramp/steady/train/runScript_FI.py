@@ -18,13 +18,15 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-optimizer", help="optimizer to use", type=str, default="SNOPT")
 # which task to run. Options are: opt (default), runPrimal, runAdjoint, checkTotals
 parser.add_argument("-task", help="type of run to do", type=str, default="opt")
+# which case to run
+parser.add_argument("-index", help="which case index to run", type=int, default=0)
 args = parser.parse_args()
 
 # =============================================================================
 # Input Parameters
 # =============================================================================
 
-idxI = 0
+idxI = args.index
 cases = ["c1", "c2"]
 U0s = [10.0, 20.0]
 case = cases[idxI]
