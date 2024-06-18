@@ -24,9 +24,12 @@ args = parser.parse_args()
 # Input Parameters
 # =============================================================================
 
-U0 = 10.0
+idxI=0
+cases = ["c1", "c2"]
+U0s = [10.0, 20.0]
+case = cases[idxI]
+U0 = U0s[idxI]
 nCells = 5000
-case_dir = "c1"
 
 np.random.seed(0)
 
@@ -46,20 +49,22 @@ daOptions = {
     "regressionModel": {
         "active": True,
         "model": {
-            "writeFeatures": True,
             "modelType": "neuralNetwork",
-            "inputNames": ["PoD", "VoS", "PSoSS", "pGradStream", "SCurv", "UOrth", "CoP", "KoU2", "ReWall", "TauoK"],
+            "inputNames": ["PoD", "VoS", "PSoSS", "KoU2"],
+            # set a dummy output, so the regModel will not compute the augmented field
+            # it will just write the features to the disk
             "outputName": "ADummyOutput",
-            "hiddenLayerNeurons": [2],
-            "inputShift": [0.0] * 10,
-            "inputScale": [1.0] * 10,
+            "hiddenLayerNeurons": [20, 20],
+            "inputShift": [0.0, 0.0, 0.0, 0.0],
+            "inputScale": [1.0, 1.0, 1.0, 0.1],
             "outputShift": 1.0,
             "outputScale": 1.0,
             "activationFunction": "tanh",
             "printInputInfo": True,
-            "outputUpperBound": 1e2,
-            "outputLowerBound": -1e2,
             "defaultOutputValue": 1.0,
+            "outputUpperBound": 1e1,
+            "outputLowerBound": -1e1,
+            "writeFeatures": True,
         }
     },
     "objFunc": {
@@ -169,7 +174,7 @@ class Top(Multipoint):
     def setup(self):
 
         # create the builder to initialize the DASolvers
-        dafoam_builder = DAFoamBuilder(options=daOptions, mesh_options=None, scenario="aerodynamic", run_directory=case_dir)
+        dafoam_builder = DAFoamBuilder(options=daOptions, mesh_options=None, scenario="aerodynamic", run_directory=case)
         dafoam_builder.initialize(self.comm)
 
         # add the design variable component to keep the top level design variables
