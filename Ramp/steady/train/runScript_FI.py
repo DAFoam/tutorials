@@ -24,7 +24,7 @@ args = parser.parse_args()
 # Input Parameters
 # =============================================================================
 
-idxI=0
+idxI = 0
 cases = ["c1", "c2"]
 U0s = [10.0, 20.0]
 case = cases[idxI]
@@ -65,7 +65,7 @@ daOptions = {
             "outputUpperBound": 1e1,
             "outputLowerBound": -1e1,
             "writeFeatures": True,
-        }
+        },
     },
     "objFunc": {
         "VAR": {
@@ -223,9 +223,9 @@ if args.optimizer == "SNOPT":
         "Minor feasibility tolerance": 1.0e-6,
         "Verify level": -1,
         "Function precision": 1.0e-6,
-        "Major iterations limit": 200,
+        "Major iterations limit": 50,
         "Linesearch tolerance": 0.999,
-        "Hessian updates": 200,
+        "Hessian updates": 50,
         "Nonderivative linesearch": None,
         "Print file": "opt_SNOPT_print.txt",
         "Summary file": "opt_SNOPT_summary.txt",
@@ -234,7 +234,7 @@ elif args.optimizer == "IPOPT":
     prob.driver.opt_settings = {
         "tol": 1.0e-5,
         "constr_viol_tol": 1.0e-5,
-        "max_iter": 100,
+        "max_iter": 50,
         "print_level": 5,
         "output_file": "opt_IPOPT.txt",
         "mu_strategy": "adaptive",
