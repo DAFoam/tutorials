@@ -26,6 +26,7 @@ args = parser.parse_args()
 
 U0 = 10.0
 nCells = 5000
+case_dir = "c1"
 
 np.random.seed(0)
 
@@ -127,8 +128,8 @@ daOptions = {
         "jacMatReOrdering": "natural",
     },
     "normalizeStates": {
-        "U": U0[0],
-        "p": U0[0] * U0[0] / 2.0,
+        "U": U0,
+        "p": U0 * U0 / 2.0,
         "nuTilda": 1e-3,
         "phi": 1.0,
     },
@@ -149,7 +150,7 @@ class Top(Multipoint):
     def setup(self):
 
         # create the builder to initialize the DASolvers
-        dafoam_builder = DAFoamBuilder(options=daOptions, mesh_options=None, scenario="aerodynamic", run_directory="c1")
+        dafoam_builder = DAFoamBuilder(options=daOptions, mesh_options=None, scenario="aerodynamic", run_directory=case_dir)
         dafoam_builder.initialize(self.comm)
 
         # add the design variable component to keep the top level design variables
@@ -235,10 +236,6 @@ prob.driver.hist_file = "OptView.hst"
 if args.task == "opt":
     # run the optimization
     prob.run_driver()
-
-    opt_dv = {"parameter": prob.get_val("parameter").tolist()}
-    with open("designVariable.json", "w") as f:
-        json.dump(opt_dv, f)
 elif args.task == "runPrimal":
     # just run the primal once
     prob.run_model()
