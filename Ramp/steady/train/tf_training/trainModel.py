@@ -14,7 +14,6 @@ np.random.seed(0)
 
 # Initialize pyOFM
 nCells = 5000
-os.chdir("c1")
 ofm = PYOFM(comm=MPI.COMM_WORLD)
 
 
