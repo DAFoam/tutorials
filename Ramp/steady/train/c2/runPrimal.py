@@ -49,28 +49,14 @@ daOptions = {
             "nInputs": 4,
         },
     },
-    "objFunc": {
-        "CD": {
-            "part1": {
-                "type": "force",
-                "source": "patchToFace",
-                "patches": ["bot"],
-                "directionMode": "fixedDirection",
-                "direction": [1.0, 0.0, 0.0],
-                "scale": 1.0,
-                "addToAdjoint": False,
-            }
-        },
-        "CL": {
-            "part1": {
-                "type": "force",
-                "source": "patchToFace",
-                "patches": ["bot"],
-                "directionMode": "fixedDirection",
-                "direction": [0.0, 1.0, 0.0],
-                "scale": 1.0,
-                "addToAdjoint": False,
-            }
+    "function": {
+        "drag": {
+            "type": "force",
+            "source": "patchToFace",
+            "patches": ["bot"],
+            "directionMode": "fixedDirection",
+            "direction": [1.0, 0.0, 0.0],
+            "scale": 1.0,
         },
     },
 }

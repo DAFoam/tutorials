@@ -15,9 +15,9 @@ from mphys.scenario_aerodynamic import ScenarioAerodynamic
 
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
-parser.add_argument("-optimizer", help="optimizer to use", type=str, default="SNOPT")
-# which task to run. Options are: opt (default), runPrimal, runAdjoint, checkTotals
-parser.add_argument("-task", help="type of run to do", type=str, default="opt")
+parser.add_argument("-optimizer", help="optimizer to use", type=str, default="IPOPT")
+# which task to run. Options are: run_driver (default), run_model, compute_totals, check_totals
+parser.add_argument("-task", help="type of run to do", type=str, default="run_driver")
 # which case to run
 parser.add_argument("-index", help="which case index to run", type=int, default=0)
 args = parser.parse_args()
@@ -29,8 +29,10 @@ args = parser.parse_args()
 idxI = args.index
 cases = ["c1", "c2"]
 U0s = [10.0, 20.0]
-case = cases[idxI]
+dragRefs = [0.1683459472347049, 0.7101215345814689]
+dragRef = dragRefs[idxI]
 U0 = U0s[idxI]
+case = cases[idxI]
 nCells = 5000
 
 np.random.seed(0)
@@ -48,103 +50,66 @@ daOptions = {
         "useWallFunction": True,
     },
     "primalVarBounds": {"omegaMin": -1e16},
-    "regressionModel": {
-        "active": True,
-        "model": {
-            "modelType": "neuralNetwork",
-            "inputNames": ["PoD", "VoS", "PSoSS", "KoU2"],
-            # set a dummy output, so the regModel will not compute the augmented field
-            # it will just write the features to the disk
-            "outputName": "ADummyOutput",
-            "hiddenLayerNeurons": [20, 20],
-            "inputShift": [0.0, 0.0, 0.0, 0.0],
-            "inputScale": [1.0, 1.0, 1.0, 0.1],
-            "outputShift": 1.0,
-            "outputScale": 1.0,
-            "activationFunction": "tanh",
-            "printInputInfo": True,
-            "defaultOutputValue": 1.0,
-            "outputUpperBound": 1e1,
-            "outputLowerBound": -1e1,
-            "writeFeatures": True,
+    "function": {
+        "pVar": {
+            "type": "variance",
+            "source": "patchToFace",
+            "patches": ["bot"],
+            "scale": 1.0,
+            "mode": "surface",
+            "varName": "p",
+            "varType": "scalar",
+            "timeDependentRefData": False,
         },
-    },
-    "objFunc": {
-        "VAR": {
-            "pVar": {
-                "type": "variance",
-                "source": "boxToCell",
-                "min": [-10.0, -10.0, -10.0],
-                "max": [10.0, 10.0, 10.0],
-                "scale": 1.0,
-                "mode": "surface",
-                "surfaceNames": ["bot"],
-                "varName": "p",
-                "varType": "scalar",
-                "timeDependentRefData": False,
-                "addToAdjoint": True,
-            },
-            # "UFieldVar": {
-            #    "type": "variance",
-            #    "source": "boxToCell",
-            #    "min": [-10.0, -10.0, -10.0],
-            #    "max": [10.0, 10.0, 10.0],
-            #    "scale": 0.1,
-            #    "mode": "field",
-            #    "varName": "U",
-            #    "varType": "vector",
-            #    "components": [0, 1],
-            #    "timeDependentRefData": False,
-            #    "addToAdjoint": True,
-            # },
-            # "UProbeVar": {
-            #    "type": "variance",
-            #    "source": "boxToCell",
-            #    "min": [-10.0, -10.0, -10.0],
-            #    "max": [10.0, 10.0, 10.0],
-            #    "scale": 1.0,
-            #    "mode": "probePoint",
-            #    "probePointCoords": probePointCoords["probePointCoords"],
-            #    "varName": "U",
-            #    "varType": "vector",
-            #    "components": [0, 1],
-            #    "timeDependentRefData": False,
-            #    "addToAdjoint": True,
-            # "CDError": {
-            #    "type": "force",
-            #    "source": "patchToFace",
-            #    "patches": ["bot"],
-            #    "directionMode": "fixedDirection",
-            #    "direction": [1.0, 0.0, 0.0],
-            #    "scale": 1.0,
-            #    "addToAdjoint": True,
-            #    "calcRefVar": True,
-            #    "ref": [0.0],  # we will assign this later because each case has a different ref
-            # },
-            "betaVar": {
-                "type": "variance",
-                "source": "boxToCell",
-                "min": [-10.0, -10.0, -10.0],
-                "max": [10.0, 10.0, 10.0],
-                "scale": 1.0,
-                "mode": "field",
-                "varName": "betaFIOmega",
-                "varType": "scalar",
-                "timeOperator": "average",
-                "timeDependentRefData": False,
-                "addToAdjoint": True,
-            },
+        "UFieldVar": {
+           "type": "variance",
+           "source": "boxToCell",
+           "min": [-10.0, -10.0, -10.0],
+           "max": [10.0, 10.0, 10.0],
+           "scale": 0.1,
+           "mode": "field",
+           "varName": "U",
+           "varType": "vector",
+           "components": [0, 1],
+           "timeDependentRefData": False,
         },
-        "CD": {
-            "part1": {
-                "type": "force",
-                "source": "patchToFace",
-                "patches": ["bot"],
-                "directionMode": "fixedDirection",
-                "direction": [1.0, 0.0, 0.0],
-                "scale": 1.0,
-                "addToAdjoint": False,
-            }
+        "UProbeVar": {
+           "type": "variance",
+           "source": "allCells",
+           "scale": 1.0,
+           "mode": "probePoint",
+           "probePointCoords": probePointCoords["probePointCoords"],
+           "varName": "U",
+           "varType": "vector",
+           "components": [0, 1],
+           "timeDependentRefData": False,
+        },
+        "dragVar": {
+           "type": "force",
+           "source": "patchToFace",
+           "patches": ["bot"],
+           "directionMode": "fixedDirection",
+           "direction": [1.0, 0.0, 0.0],
+           "scale": 1.0,
+           "calcRefVar": True,
+           "ref": [dragRef],
+        },
+        "betaVar": {
+            "type": "variance",
+            "source": "allCells",
+            "scale": 1.0,
+            "mode": "field",
+            "varName": "betaFIOmega",
+            "varType": "scalar",
+            "timeDependentRefData": False,
+        },
+        "drag": {
+            "type": "force",
+            "source": "patchToFace",
+            "patches": ["bot"],
+            "directionMode": "fixedDirection",
+            "direction": [1.0, 0.0, 0.0],
+            "scale": 1.0,
         },
     },
     "adjStateOrdering": "cell",
@@ -159,16 +124,16 @@ daOptions = {
         "nuTilda": 1e-3,
         "phi": 1.0,
     },
-    "designVar": {
-        "beta": {"designVarType": "Field", "fieldName": "betaFIOmega", "fieldType": "scalar", "distributed": False},
+    "inputInfo": {
+        "beta": {
+            "type": "field",
+            "fieldName": "betaFIOmega",
+            "fieldType": "scalar",
+            "distributed": False,
+            "components": ["solver", "function"],
+        },
     },
 }
-
-
-def betaFunction(val, DASolver):
-    for idxI, v in enumerate(val):
-        DASolver.setFieldValue4GlobalCellI(b"betaFIOmega", v, idxI)
-        DASolver.updateBoundaryConditions(b"betaFIOmega", b"scalar")
 
 
 # Top class to setup the optimization problem
@@ -184,28 +149,25 @@ class Top(Multipoint):
 
         # add a scenario (flow condition) for optimization, we pass the builder
         # to the scenario to actually run the flow and adjoint
-        self.mphys_add_scenario("cruise", ScenarioAerodynamic(aero_builder=dafoam_builder))
+        self.mphys_add_scenario("scenario1", ScenarioAerodynamic(aero_builder=dafoam_builder))
+
+        # setup a composite objective
+        self.add_subsystem("obj", om.ExecComp("val=error1+error2+regulation"))
 
     def configure(self):
-        # configure and setup perform a similar function, i.e., initialize the optimization.
-        # But configure will be run after setup
-
-        # add the objective function to the cruise scenario
-        self.cruise.aero_post.mphys_add_funcs()
-
-        # pass this aoa function to the cruise group
-        self.cruise.coupling.solver.add_dv_func("beta", betaFunction)
-        self.cruise.aero_post.add_dv_func("beta", betaFunction)
-
         # add the design variables to the dvs component's output
         self.dvs.add_output("beta", val=np.ones(nCells), distributed=False)
-        self.connect("beta", "cruise.beta")
+        self.connect("beta", "scenario1.beta")
 
         # define the design variables to the top level
         self.add_design_var("beta", lower=-5.0, upper=10.0, scaler=1.0)
 
         # add objective and constraints to the top level
-        self.add_objective("cruise.aero_post.VAR", scaler=1.0)
+        # we can connect any function in daOption to obj's terms
+        self.connect("scenario1.aero_post.UFieldVar", "obj.error1")
+        self.connect("scenario1.aero_post.dragVar", "obj.error2")
+        self.connect("scenario1.aero_post.betaVar", "obj.regulation")
+        self.add_objective("obj.val", scaler=1.0)
 
 
 # OpenMDAO setup
@@ -259,30 +221,22 @@ prob.driver.options["debug_print"] = ["nl_cons", "objs", "desvars"]
 prob.driver.options["print_opt_prob"] = True
 prob.driver.hist_file = "OptView.hst"
 
-if args.task == "opt":
+if args.task == "run_driver":
     # run the optimization
     prob.run_driver()
-elif args.task == "runPrimal":
+elif args.task == "run_model":
     # just run the primal once
     prob.run_model()
-elif args.task == "runAdjoint":
+elif args.task == "compute_totals":
     # just run the primal and adjoint once
     prob.run_model()
     totals = prob.compute_totals()
     if MPI.COMM_WORLD.rank == 0:
         print(totals)
-elif args.task == "checkTotals":
+elif args.task == "check_totals":
     # verify the total derivatives against the finite-difference
     prob.run_model()
-    prob.check_totals(
-        # of=["cruise.aero_post.CD", "cruise.aero_post.CL"],
-        # wrt=["shape", "aoa"],
-        compact_print=True,
-        step=1e-2,
-        form="central",
-        step_calc="abs",
-        show_progress=True,
-    )
+    prob.check_totals(compact_print=False, step=1e-3, form="central", step_calc="abs")
 else:
     print("task arg not found!")
     exit(1)
