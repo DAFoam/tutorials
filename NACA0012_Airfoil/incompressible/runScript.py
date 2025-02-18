@@ -16,7 +16,6 @@ from mphys.multipoint import Multipoint
 from dafoam.mphys import DAFoamBuilder, OptFuncs
 from mphys.scenario_aerodynamic import ScenarioAerodynamic
 from pygeo.mphys import OM_DVGEOCOMP
-from pygeo import geo_utils
 
 
 parser = argparse.ArgumentParser()
@@ -124,8 +123,6 @@ class Top(Multipoint):
         self.connect("geometry.x_aero0", "scenario1.x_aero")
 
     def configure(self):
-        # configure and setup perform a similar function, i.e., initialize the optimization.
-        # But configure will be run after setup
 
         # get the surface coordinates from the mesh component
         points = self.mesh.mphys_get_surface_mesh()
