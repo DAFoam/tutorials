@@ -87,7 +87,7 @@ daOptions = {
             "type": "patchVelocity",
             "patches": ["inout"],
             "flowAxis": "x",
-            "normalAxis": "y",
+            "normalAxis": "z",
             "components": ["solver", "function"],
         },
     },
@@ -121,14 +121,14 @@ class Top(Multipoint):
 
         # add a scenario (flow condition) for optimization, we pass the builder
         # to the scenario to actually run the flow and adjoint
-        self.mphys_add_scenario("cruise", ScenarioAerodynamic(aero_builder=dafoam_builder))
+        self.mphys_add_scenario("scenario1", ScenarioAerodynamic(aero_builder=dafoam_builder))
 
         # need to manually connect the x_aero0 between the mesh and geometry components
         # here x_aero0 means the surface coordinates of structurally undeformed mesh
         self.connect("mesh.x_aero0", "geometry.x_aero_in")
-        # need to manually connect the x_aero0 between the geometry component and the cruise
+        # need to manually connect the x_aero0 between the geometry component and the scenario1
         # scenario group
-        self.connect("geometry.x_aero0", "cruise.x_aero")
+        self.connect("geometry.x_aero0", "scenario1.x_aero")
 
     def configure(self):
 
@@ -191,19 +191,19 @@ class Top(Multipoint):
         self.dvs.add_output("twist", val=np.array([0] * (nRefAxPts - 1)))
         self.dvs.add_output("shape", val=np.array([0] * nShapes))
         self.dvs.add_output("patchV", val=np.array([U0, aoa0]))
-        # manually connect the dvs output to the geometry and cruise
+        # manually connect the dvs output to the geometry and scenario1
         self.connect("twist", "geometry.twist")
         self.connect("shape", "geometry.shape")
-        self.connect("patchV", "cruise.patchV")
+        self.connect("patchV", "scenario1.patchV")
 
         # define the design variables
-        self.add_design_var("twist", lower=-10.0, upper=10.0, scaler=1.0)
-        self.add_design_var("shape", lower=-1.0, upper=1.0, scaler=1.0)
-        self.add_design_var("patchV", lower=[U0, 0.0], upper=[U0, 10.0], scaler=1.0)
+        self.add_design_var("twist", lower=-10.0, upper=10.0, scaler=0.1)
+        self.add_design_var("shape", lower=-1.0, upper=1.0, scaler=10.0)
+        self.add_design_var("patchV", lower=[U0, 0.0], upper=[U0, 10.0], scaler=0.1)
 
         # add objective and constraints to the top level
-        self.add_objective("cruise.aero_post.CD", scaler=1.0)
-        self.add_constraint("cruise.aero_post.CL", equals=CL_target, scaler=1.0)
+        self.add_objective("scenario1.aero_post.CD", scaler=1.0)
+        self.add_constraint("scenario1.aero_post.CL", equals=CL_target, scaler=1.0)
         self.add_constraint("geometry.thickcon", lower=0.5, upper=3.0, scaler=1.0)
         self.add_constraint("geometry.volcon", lower=1.0, scaler=1.0)
         self.add_constraint("geometry.tecon", equals=0.0, scaler=1.0, linear=True)
