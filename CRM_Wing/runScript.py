@@ -13,8 +13,8 @@ from pygeo import geo_utils
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
 parser.add_argument("-optimizer", help="optimizer to use", type=str, default="IPOPT")
-# which task to run. Options are: opt (default), runPrimal, runAdjoint, checkTotals
-parser.add_argument("-task", help="type of run to do", type=str, default="opt")
+# which task to run. Options are: run_driver (default), run_model, compute_totals, check_totals
+parser.add_argument("-task", help="type of run to do", type=str, default="run_driver")
 args = parser.parse_args()
 
 # =============================================================================
@@ -41,28 +41,22 @@ daOptions = {
         "nuTilda0": {"variable": "nuTilda", "patches": ["inout"], "value": [nuTilda0]},
         "useWallFunction": True,
     },
-    "objFunc": {
+    "function": {
         "CD": {
-            "part1": {
-                "type": "force",
-                "source": "patchToFace",
-                "patches": ["wing"],
-                "directionMode": "parallelToFlow",
-                "alphaName": "aoa",
-                "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
-                "addToAdjoint": True,
-            }
+            "type": "force",
+            "source": "patchToFace",
+            "patches": ["wing"],
+            "directionMode": "parallelToFlow",
+            "patchVelocityInputName": "patchV",
+            "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
         },
         "CL": {
-            "part1": {
-                "type": "force",
-                "source": "patchToFace",
-                "patches": ["wing"],
-                "directionMode": "normalToFlow",
-                "alphaName": "aoa",
-                "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
-                "addToAdjoint": True,
-            }
+            "type": "force",
+            "source": "patchToFace",
+            "patches": ["wing"],
+            "directionMode": "normalToFlow",
+            "patchVelocityInputName": "patchV",
+            "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
         },
     },
     "adjStateOrdering": "cell",
@@ -87,10 +81,15 @@ daOptions = {
     },
     # transonic preconditioner to speed up the adjoint convergence
     "transonicPCOption": 2,
-    "designVar": {
-        "aoa": {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "z"},
-        "twist": {"designVarType": "FFD"},
-        "shape": {"designVarType": "FFD"},
+    "inputInfo": {
+        "aero_vol_coords": {"type": "volCoord", "components": ["solver", "function"]},
+        "patchV": {
+            "type": "patchVelocity",
+            "patches": ["inout"],
+            "flowAxis": "x",
+            "normalAxis": "y",
+            "components": ["solver", "function"],
+        },
     },
 }
 
@@ -101,6 +100,7 @@ meshOptions = {
     # point and normal for the symmetry plane
     "symmetryPlanes": [[[0.0, 0.0, 0.0], [0.0, 1.0, 0.0]]],
 }
+
 
 # Top class to setup the optimization problem
 class Top(Multipoint):
@@ -132,12 +132,6 @@ class Top(Multipoint):
 
     def configure(self):
 
-        # configure and setup perform a similar function, i.e., initialize the optimization.
-        # But configure will be run after setup
-
-        # add the objective function to the cruise scenario
-        self.cruise.aero_post.mphys_add_funcs()
-
         # get the surface coordinates from the mesh component
         points = self.mesh.mphys_get_surface_mesh()
 
@@ -156,18 +150,6 @@ class Top(Multipoint):
             for i in range(1, nRefAxPts):
                 geo.rot_y["wingAxis"].coef[i] = -val[i - 1]
 
-        # define an angle of attack function to change the U direction at the far field
-        def aoa(val, DASolver):
-            aoa = val[0] * np.pi / 180.0
-            U = [float(U0 * np.cos(aoa)), 0.0, float(U0 * np.sin(aoa))]
-            # we need to update the U value only
-            DASolver.setOption("primalBC", {"U0": {"value": U}})
-            DASolver.updateDAOption()
-
-        # pass this aoa function to the cruise group
-        self.cruise.coupling.solver.add_dv_func("aoa", aoa)
-        self.cruise.aero_post.add_dv_func("aoa", aoa)
-
         # add twist variable
         self.geometry.nom_addGlobalDV(dvName="twist", value=np.array([0] * (nRefAxPts - 1)), func=twist)
 
@@ -178,9 +160,10 @@ class Top(Multipoint):
         nShapes = self.geometry.nom_addLocalDV(dvName="shape", pointSelect=PS)
 
         # setup the volume and thickness constraints
-        leList = [[0.1, 0, 0.01], [7.5, 0, 13.9]]
-        teList = [[4.9, 0, 0.01], [8.9, 0, 13.9]]# NOTE: the LE and TE lists are not parallel lines anymore, these two lists define lines that
+        # NOTE: the LE and TE lists are not parallel lines anymore, these two lists define lines that
         # are close to the leading and trailing edges while being completely within the wing surface
+        leList = [[0.1, 0, 0.01], [7.5, 0, 13.9]]
+        teList = [[4.9, 0, 0.01], [8.9, 0, 13.9]]
         LE_pt = np.array([0.01, 0.01, 0.0])
         break_pt = np.array([0.848, 1.119, 0.0])
         tip_pt = np.array([2.855, 3.755, 0.0])
@@ -192,7 +175,7 @@ class Top(Multipoint):
             [break_pt[0] + 0.01 * break_chord, break_pt[1], break_pt[2]],
             [tip_pt[0] + 0.01 * tip_chord, tip_pt[1], tip_pt[2]],
         ]
-        
+
         teList = [
             [LE_pt[0] + 0.99 * root_chord, LE_pt[1], LE_pt[2]],
             [break_pt[0] + 0.99 * break_chord, break_pt[1], break_pt[2]],
@@ -207,16 +190,16 @@ class Top(Multipoint):
         # add the design variables to the dvs component's output
         self.dvs.add_output("twist", val=np.array([0] * (nRefAxPts - 1)))
         self.dvs.add_output("shape", val=np.array([0] * nShapes))
-        self.dvs.add_output("aoa", val=np.array([aoa0]))
+        self.dvs.add_output("patchV", val=np.array([U0, aoa0]))
         # manually connect the dvs output to the geometry and cruise
         self.connect("twist", "geometry.twist")
         self.connect("shape", "geometry.shape")
-        self.connect("aoa", "cruise.aoa")
+        self.connect("patchV", "cruise.patchV")
 
         # define the design variables
         self.add_design_var("twist", lower=-10.0, upper=10.0, scaler=1.0)
         self.add_design_var("shape", lower=-1.0, upper=1.0, scaler=1.0)
-        self.add_design_var("aoa", lower=0.0, upper=10.0, scaler=1.0)
+        self.add_design_var("patchV", lower=[U0, 0.0], upper=[U0, 10.0], scaler=1.0)
 
         # add objective and constraints to the top level
         self.add_objective("cruise.aero_post.CD", scaler=1.0)
@@ -280,26 +263,24 @@ prob.driver.options["print_opt_prob"] = True
 prob.driver.hist_file = "OptView.hst"
 
 
-if args.task == "opt":
+if args.task == "run_driver":
     # solve CL
-    optFuncs.findFeasibleDesign(["cruise.aero_post.CL"], ["aoa"], targets=[CL_target])
+    optFuncs.findFeasibleDesign(["scenario1.aero_post.CL"], ["patchV"], targets=[CL_target], designVarsComp=[1])
     # run the optimization
     prob.run_driver()
-elif args.task == "runPrimal":
+elif args.task == "run_model":
     # just run the primal once
     prob.run_model()
-elif args.task == "runAdjoint":
+elif args.task == "compute_totals":
     # just run the primal and adjoint once
     prob.run_model()
     totals = prob.compute_totals()
     if MPI.COMM_WORLD.rank == 0:
         print(totals)
-elif args.task == "checkTotals":
+elif args.task == "check_totals":
     # verify the total derivatives against the finite-difference
     prob.run_model()
-    prob.check_totals(
-        of=["cruise.aero_post.CD", "cruise.aero_post.CL"], wrt=["shape", "aoa"], compact_print=True, step=1e-3, form="central", step_calc="abs"
-    )
+    prob.check_totals(compact_print=False, step=1e-3, form="central", step_calc="abs")
 else:
     print("task arg not found!")
     exit(1)
