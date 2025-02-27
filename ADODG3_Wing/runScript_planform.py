@@ -8,13 +8,12 @@ from mphys.multipoint import Multipoint
 from dafoam.mphys import DAFoamBuilder, OptFuncs
 from mphys.scenario_aerodynamic import ScenarioAerodynamic
 from pygeo.mphys import OM_DVGEOCOMP
-from pygeo import geo_utils
 
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
-parser.add_argument("-optimizer", help="optimizer to use", type=str, default="SNOPT")
-# which task to run. Options are: opt (default), runPrimal, runAdjoint, checkTotals
-parser.add_argument("-task", help="type of run to do", type=str, default="opt")
+parser.add_argument("-optimizer", help="optimizer to use", type=str, default="IPOPT")
+# which task to run. Options are: run_driver (default), run_model, compute_totals, check_totals
+parser.add_argument("-task", help="type of run to do", type=str, default="run_driver")
 args = parser.parse_args()
 
 # =============================================================================
@@ -51,28 +50,22 @@ daOptions = {
         "maxSkewness": 6.0,
         "maxIncorrectlyOrientedFaces": 3,
     },
-    "objFunc": {
+    "function": {
         "CD": {
-            "part1": {
-                "type": "force",
-                "source": "patchToFace",
-                "patches": ["wing"],
-                "directionMode": "parallelToFlow",
-                "alphaName": "aoa",
-                "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
-                "addToAdjoint": True,
-            }
+            "type": "force",
+            "source": "patchToFace",
+            "patches": ["wing"],
+            "directionMode": "parallelToFlow",
+            "patchVelocityInputName": "patchV",
+            "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
         },
         "CL": {
-            "part1": {
-                "type": "force",
-                "source": "patchToFace",
-                "patches": ["wing"],
-                "directionMode": "normalToFlow",
-                "alphaName": "aoa",
-                "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
-                "addToAdjoint": True,
-            }
+            "type": "force",
+            "source": "patchToFace",
+            "patches": ["wing"],
+            "directionMode": "normalToFlow",
+            "patchVelocityInputName": "patchV",
+            "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
         },
     },
     "adjEqnOption": {
@@ -89,10 +82,15 @@ daOptions = {
         "nuTilda": 1e-3,
         "phi": 1.0,
     },
-    "designVar": {
-        "aoa": {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "y"},
-        "span": {"designVarType": "FFD"},
-        "taper": {"designVarType": "FFD"},
+    "inputInfo": {
+        "aero_vol_coords": {"type": "volCoord", "components": ["solver", "function"]},
+        "patchV": {
+            "type": "patchVelocity",
+            "patches": ["inout"],
+            "flowAxis": "x",
+            "normalAxis": "y",
+            "components": ["solver", "function"],
+        },
     },
 }
 
@@ -103,6 +101,7 @@ meshOptions = {
     # point and normal for the symmetry plane
     "symmetryPlanes": [[[0.0, 0.0, 0.0], [0.0, 0.0, 1.0]]],
 }
+
 
 # Top class to setup the optimization problem
 class Top(Multipoint):
@@ -123,22 +122,17 @@ class Top(Multipoint):
 
         # add a scenario (flow condition) for optimization, we pass the builder
         # to the scenario to actually run the flow and adjoint
-        self.mphys_add_scenario("cruise", ScenarioAerodynamic(aero_builder=dafoam_builder))
+        self.mphys_add_scenario("scenario1", ScenarioAerodynamic(aero_builder=dafoam_builder))
 
         # need to manually connect the x_aero0 between the mesh and geometry components
         # here x_aero0 means the surface coordinates of structurally undeformed mesh
         self.connect("mesh.x_aero0", "geometry.x_aero_in")
-        # need to manually connect the x_aero0 between the geometry component and the cruise
+        # need to manually connect the x_aero0 between the geometry component and the scenario1
         # scenario group
-        self.connect("geometry.x_aero0", "cruise.x_aero")
+        self.connect("geometry.x_aero0", "scenario1.x_aero")
 
     def configure(self):
 
-        # configure and setup perform a similar function, i.e., initialize the optimization.
-        # But configure will be run after setup
-
-        # add the objective function to the cruise scenario
-        self.cruise.aero_post.mphys_add_funcs()
         # get the surface coordinates from the mesh component
         points = self.mesh.mphys_get_surface_mesh()
 
@@ -181,18 +175,6 @@ class Top(Multipoint):
         # add taper variable
         self.geometry.nom_addGlobalDV(dvName="taper", value=np.array([0, 0]), func=taper)
 
-        # define an angle of attack function to change the U direction at the far field
-        def aoa(val, DASolver):
-            aoa = val[0] * np.pi / 180.0
-            U = [float(U0 * np.cos(aoa)), float(U0 * np.sin(aoa)), 0.0]
-            # we need to update the U value only
-            DASolver.setOption("primalBC", {"U0": {"value": U}})
-            DASolver.updateDAOption()
-
-        # pass this aoa function to the cruise group
-        self.cruise.coupling.solver.add_dv_func("aoa", aoa)
-        self.cruise.aero_post.add_dv_func("aoa", aoa)
-
         # setup the volume and thickness constraints
         leList = [[0.02, 0.0, 1e-3], [0.02, 0.0, 2.9]]
         teList = [[0.95, 0.0, 1e-3], [0.95, 0.0, 2.9]]
@@ -201,20 +183,21 @@ class Top(Multipoint):
         # add the design variables to the dvs component's output
         self.dvs.add_output("span", val=np.array([0]))
         self.dvs.add_output("taper", val=np.array([0, 0]))
-        self.dvs.add_output("aoa", val=np.array([aoa0]))
-        # manually connect the dvs output to the geometry and cruise
+        self.dvs.add_output("patchV", val=np.array([U0, aoa0]))
+        # manually connect the dvs output to the geometry and scenario1
         self.connect("span", "geometry.span")
         self.connect("taper", "geometry.taper")
-        self.connect("aoa", "cruise.aoa")
+        self.connect("patchV", "scenario1.patchV")
 
         # define the design variables
-        self.add_design_var("span", lower=-30.0, upper=30.0, scaler=1.0)
-        self.add_design_var("taper", lower=-30.0, upper=30.0, scaler=1.0)
-        self.add_design_var("aoa", lower=0.0, upper=10.0, scaler=1.0)
+        self.add_design_var("span", lower=-30.0, upper=30.0, scaler=0.1)
+        self.add_design_var("taper", lower=-30.0, upper=30.0, scaler=0.1)
+        self.add_design_var("patchV", lower=[U0, 0.0], upper=[U0, 10.0], scaler=0.1)
 
         # add objective and constraints to the top level
-        self.add_objective("cruise.aero_post.CD", scaler=1.0)
-        self.add_constraint("cruise.aero_post.CL", equals=CL_target, scaler=1.0)
+        self.add_objective("scenario1.aero_post.CD", scaler=1.0)
+        self.add_constraint("scenario1.aero_post.CL", equals=CL_target, scaler=1.0)
+
 
 # OpenMDAO setup
 prob = om.Problem()
@@ -269,26 +252,24 @@ prob.driver.options["print_opt_prob"] = True
 prob.driver.hist_file = "OptView.hst"
 
 
-if args.task == "opt":
+if args.task == "run_driver":
     # solve CL
-    optFuncs.findFeasibleDesign(["cruise.aero_post.CL"], ["aoa"], targets=[CL_target])
+    optFuncs.findFeasibleDesign(["scenario1.aero_post.CL"], ["patchV"], targets=[CL_target], designVarsComp=[1])
     # run the optimization
     prob.run_driver()
-elif args.task == "runPrimal":
+elif args.task == "run_model":
     # just run the primal once
     prob.run_model()
-elif args.task == "runAdjoint":
+elif args.task == "compute_totals":
     # just run the primal and adjoint once
     prob.run_model()
     totals = prob.compute_totals()
     if MPI.COMM_WORLD.rank == 0:
         print(totals)
-elif args.task == "checkTotals":
+elif args.task == "check_totals":
     # verify the total derivatives against the finite-difference
     prob.run_model()
-    prob.check_totals(
-        of=["CD", "CL"], wrt=["aoa"], compact_print=True, step=1e-3, form="central", step_calc="abs"
-    )
+    prob.check_totals(compact_print=False, step=1e-3, form="central", step_calc="abs")
 else:
     print("task arg not found!")
     exit(1)
