@@ -182,7 +182,7 @@ class Top(Multipoint):
         # define the design variables
         self.add_design_var("twist", lower=-10.0, upper=10.0, scaler=0.1)
         self.add_design_var("shape", lower=-1.0, upper=1.0, scaler=10.0)
-        self.add_design_var("patchV", lower=0.0, upper=10.0, scaler=0.1)
+        self.add_design_var("patchV", lower=[U0, 0.0], upper=[U0, 10.0], scaler=0.1)
 
         # add objective and constraints to the top level
         self.add_objective("scenario1.aero_post.CD", scaler=1.0)
