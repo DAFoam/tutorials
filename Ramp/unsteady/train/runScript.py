@@ -8,7 +8,7 @@ import numpy as np
 from mpi4py import MPI
 import openmdao.api as om
 from mphys.multipoint import Multipoint
-from dafoam.mphys import DAFoamBuilder
+from dafoam.mphys import DAFoamBuilderUnsteady
 from mphys.scenario_aerodynamic import ScenarioAerodynamic
 
 np.set_printoptions(precision=8, threshold=10000)
@@ -102,7 +102,7 @@ daOptions = {
 class Top(Multipoint):
     def setup(self):
 
-        dafoam_builder = DAFoamBuilder(daOptions, None, scenario="aerodynamic")
+        dafoam_builder = DAFoamBuilderUnsteady(daOptions, None, scenario="aerodynamic")
         dafoam_builder.initialize(self.comm)
 
         # ivc to keep the top level DVs
