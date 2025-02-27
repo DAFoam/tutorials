@@ -8,8 +8,7 @@ import numpy as np
 from mpi4py import MPI
 import openmdao.api as om
 from mphys.multipoint import Multipoint
-from dafoam.mphys import DAFoamBuilderUnsteady
-from mphys.scenario_aerodynamic import ScenarioAerodynamic
+from dafoam.mphys.mphys_dafoam import DAFoamBuilderUnsteady
 
 np.set_printoptions(precision=8, threshold=10000)
 
@@ -102,29 +101,29 @@ daOptions = {
 class Top(Multipoint):
     def setup(self):
 
-        dafoam_builder = DAFoamBuilderUnsteady(daOptions, None, scenario="aerodynamic")
-        dafoam_builder.initialize(self.comm)
-
         # ivc to keep the top level DVs
         self.add_subsystem("dvs", om.IndepVarComp(), promotes=["*"])
 
-        self.mphys_add_scenario("scenario1", ScenarioAerodynamic(aero_builder=dafoam_builder))
+        self.add_subsystem(
+            "scenario1",
+            DAFoamBuilderUnsteady(solver_options=daOptions, mesh_options=None),
+            promotes=["*"],
+        )
 
         # setup a composite objective
         self.add_subsystem("obj", om.ExecComp("val=error+regulation"))
 
     def configure(self):
 
-        nParameters = self.scenario1.coupling.solver.DASolver.getNRegressionParameters("reg_model1")
+        nParameters = self.scenario1.solver.DASolver.getNRegressionParameters("reg_model1")
         parameter0 = (np.random.rand(nParameters) - 0.5) * 0.05
         self.dvs.add_output("reg_model1", val=parameter0)
-        self.connect("reg_model1", "scenario1.reg_model1")
 
         # define the design variables to the top level
         self.add_design_var("reg_model1", lower=-100.0, upper=100.0, scaler=1.0)
         # add the objective
-        self.connect("scenario1.aero_post.pVar", "obj.error")
-        self.connect("scenario1.aero_post.betaVar", "obj.regulation")
+        self.connect("pVar", "obj.error")
+        self.connect("betaVar", "obj.regulation")
         self.add_objective("obj.val", scaler=1.0)
 
 
