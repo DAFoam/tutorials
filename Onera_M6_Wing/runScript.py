@@ -21,37 +21,70 @@ args = parser.parse_args()
 # Input Parameters
 # =============================================================================
 
+
+# global parameters
+U0 = 285.0
+p0 = 101325.0
+nuTilda0 = 4.5e-5
+T0 = 300.0
+CL_target = 0.270
+aoa0 = 3.0
+A0 = 0.7575
+rho0 = 1.0  # density for normalizing CD and CL
+
+# Set the parameters for optimization
 daOptions = {
-    "solverName": "DATurboFoam",
-    "designSurfaces": ["blade"],
-    "primalMinResTolDiff": 1e4,
-    "primalMinResTol": 1e-9,
-    "objFunc": {
-        "CMX": {
-            "type": "moment",
+    "designSurfaces": ["wing"],
+    "solverName": "DARhoSimpleCFoam",
+    "primalMinResTol": 1.0e-8,
+    "primalBC": {
+        "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
+        "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
+        "T0": {"variable": "T", "patches": ["inout"], "value": [T0]},
+        "nuTilda0": {"variable": "nuTilda", "patches": ["inout"], "value": [nuTilda0]},
+        "useWallFunction": True,
+    },
+    "function": {
+        "CD": {
+            "type": "force",
             "source": "patchToFace",
-            "patches": ["blade"],
-            "axis": [1.0, 0.0, 0.0],
-            "center": [0.0, 0.0, 0.0],
-            "scale": 1.0,
+            "patches": ["wing"],
+            "directionMode": "parallelToFlow",
+            "patchVelocityInputName": "patchV",
+            "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
+        },
+        "CL": {
+            "type": "force",
+            "source": "patchToFace",
+            "patches": ["wing"],
+            "directionMode": "normalToFlow",
+            "patchVelocityInputName": "patchV",
+            "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
         },
     },
-    "adjStateOrdering": "cell",
-    "normalizeStates": {"U": 10.0, "p": 100000.0, "nuTilda": 1e-3, "phi": 1.0, "T": 300.0},
-    "adjEqnOption": {"gmresRelTol": 1.0e-5, "pcFillLevel": 1, "jacMatReOrdering": "natural"},
-    "adjPCLag": 5,
+    "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
+    # transonic preconditioner to speed up the adjoint convergence
     "transonicPCOption": 1,
-    "checkMeshThreshold": {"maxNonOrth": 70.0, "maxSkewness": 6.0, "maxAspectRatio": 1000.0},
+    "normalizeStates": {"U": U0, "p": p0, "nuTilda": nuTilda0 * 10.0, "phi": 1.0, "T": T0},
+    "adjPCLag": 1,
     "inputInfo": {
         "aero_vol_coords": {"type": "volCoord", "components": ["solver", "function"]},
+        "patchV": {
+            "type": "patchVelocity",
+            "patches": ["inout"],
+            "flowAxis": "x",
+            "normalAxis": "y",
+            "components": ["solver", "function"],
+        },
     },
 }
 
+# Mesh deformation setup
 meshOptions = {
     "gridFile": os.getcwd(),
     "fileType": "OpenFOAM",
     # point and normal for the symmetry plane
-    "symmetryPlanes": [],
+    "symmetryPlanes": [[[0.0, 0.0, 0.0], [0.0, 0.0, 1.0]]],
 }
 
 
@@ -70,7 +103,7 @@ class Top(Multipoint):
         self.add_subsystem("mesh", dafoam_builder.get_mesh_coordinate_subsystem())
 
         # add the geometry component (FFD)
-        self.add_subsystem("geometry", OM_DVGEOCOMP(file="FFD/bodyFittedFFD.xyz", type="ffd"))
+        self.add_subsystem("geometry", OM_DVGEOCOMP(file="FFD/wingFFD.xyz", type="ffd"))
 
         # add a scenario (flow condition) for optimization, we pass the builder
         # to the scenario to actually run the flow and adjoint
@@ -91,34 +124,62 @@ class Top(Multipoint):
         # add pointset to the geometry component
         self.geometry.nom_add_discipline_coords("aero", points)
 
-        # use the shape function to define symmetry shapes for two blades
-        pts0 = self.geometry.DVGeo.getLocalIndex(0)
-        pts1 = self.geometry.DVGeo.getLocalIndex(1)
-        dir_x = np.array([1.0, 0.0, 0.0])
-        shapes = []
-        for i in range(pts0.shape[0]):
-            for j in range(pts0.shape[1]):
-                for k in range(pts0.shape[2]):
-                    # k=0 and k=1 move together to ensure symmetry
-                    shapes.append({pts0[i, j, k]: dir_x, pts1[i, j, k]: dir_x})
-        self.geometry.nom_addShapeFunctionDV(dvName="shape", shapes=shapes)
+        # set the triangular points to the geometry component for geometric constraints
+        tri_points = self.mesh.mphys_get_triangulated_surface()
+        self.geometry.nom_setConstraintSurface(tri_points)
 
-        # setup the volume and thickness constraints
+        # Create reference axis for the twist variable
+        nRefAxPts = self.geometry.nom_addRefAxis(name="wingAxis", xFraction=0.25, alignIndex="k")
+
+        # Set up global design variables. We dont change the root twist
+        def twist(val, geo):
+            for i in range(1, nRefAxPts):
+                geo.rot_z["wingAxis"].coef[i] = -val[i - 1]
+
+        # add twist variable
+        self.geometry.nom_addGlobalDV(dvName="twist", value=np.array([0] * (nRefAxPts - 1)), func=twist)
+
+        # select the FFD points to move
+        pts = self.geometry.DVGeo.getLocalIndex(0)
+        indexList = pts[:, :, :].flatten()
+        PS = geo_utils.PointSelect("list", indexList)
+        nShapes = self.geometry.nom_addLocalDV(dvName="shape", pointSelect=PS)
+
+        # NOTE: the LE and TE lists are not parallel lines anymore, these two lists define lines that
+        # are close to the leading and trailing edges while being completely within the wing surface
+        leList = [[0.01, 0.0, 1e-3], [0.7, 0.0, 1.19]]
+        teList = [[0.79, 0.0, 1e-3], [1.135, 0.0, 1.19]]
+        self.geometry.nom_addThicknessConstraints2D("thickcon", leList, teList, nSpan=10, nChord=10)
+        self.geometry.nom_addVolumeConstraint("volcon", leList, teList, nSpan=10, nChord=10)
+        # add the LE/TE constraints
+        self.geometry.nom_add_LETEConstraint("lecon", volID=0, faceID="iLow")
+        self.geometry.nom_add_LETEConstraint("tecon", volID=0, faceID="iHigh")
+
         # add the design variables to the dvs component's output
-        self.dvs.add_output("shape", val=np.array([0] * len(shapes)))
+        self.dvs.add_output("twist", val=np.array([0] * (nRefAxPts - 1)))
+        self.dvs.add_output("shape", val=np.array([0] * nShapes))
+        self.dvs.add_output("patchV", val=np.array([U0, aoa0]))
         # manually connect the dvs output to the geometry and scenario1
+        self.connect("twist", "geometry.twist")
         self.connect("shape", "geometry.shape")
+        self.connect("patchV", "scenario1.patchV")
 
         # define the design variables
-        self.add_design_var("shape", lower=-0.5, upper=0.5, scaler=10.0)
+        self.add_design_var("twist", lower=-10.0, upper=10.0, scaler=0.1)
+        self.add_design_var("shape", lower=-1.0, upper=1.0, scaler=10.0)
+        self.add_design_var("patchV", lower=[U0, 0.0], upper=[U0, 10.0], scaler=0.1)
 
         # add objective and constraints to the top level
-        self.add_objective("scenario1.aero_post.CMX", scaler=-1.0)
+        self.add_objective("scenario1.aero_post.CD", scaler=1.0)
+        self.add_constraint("scenario1.aero_post.CL", equals=CL_target, scaler=1.0)
+        self.add_constraint("geometry.thickcon", lower=0.5, upper=3.0, scaler=1.0)
+        self.add_constraint("geometry.volcon", lower=1.0, scaler=1.0)
+        self.add_constraint("geometry.tecon", equals=0.0, scaler=1.0, linear=True)
+        self.add_constraint("geometry.lecon", equals=0.0, scaler=1.0, linear=True)
 
 
 # OpenMDAO setup
 prob = om.Problem()
-
 prob.model = Top()
 prob.setup(mode="rev")
 om.n2(prob, show_browser=False, outfile="mphys.html")
@@ -171,6 +232,8 @@ prob.driver.hist_file = "OptView.hst"
 
 
 if args.task == "run_driver":
+    # solve CL
+    optFuncs.findFeasibleDesign(["scenario1.aero_post.CL"], ["patchV"], targets=[CL_target], designVarsComp=[1])
     # run the optimization
     prob.run_driver()
 elif args.task == "run_model":
