@@ -17,8 +17,8 @@ import tacsSetup
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
 parser.add_argument("-optimizer", help="optimizer to use", type=str, default="IPOPT")
-# which task to run. Options are: opt (default), runPrimal, runAdjoint, checkTotals
-parser.add_argument("-task", help="type of run to do", type=str, default="opt")
+# which task to run. Options are: run_driver (default), run_model, compute_totals, check_totals
+parser.add_argument("-task", help="type of run to do", type=str, default="run_driver")
 args = parser.parse_args()
 
 # =============================================================================
@@ -39,9 +39,6 @@ daOptions = {
     "solverName": "DARhoSimpleFoam",
     "primalMinResTol": 1.0e-8,
     "primalMinResTolDiff": 1e3,
-    "couplingInfo": {
-        "aerostructural": {"active": True, "pRef": p0, "propMovement": False, "couplingSurfaceGroups": {"wingGroup": ["wing"]}}
-    },  # set the ref pressure for computing force for FSI
     "primalBC": {
         "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
         "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
@@ -49,28 +46,22 @@ daOptions = {
         "nuTilda0": {"variable": "nuTilda", "patches": ["inout"], "value": [nuTilda0]},
         "useWallFunction": True,
     },
-    "objFunc": {
+    "function": {
         "CD": {
-            "part1": {
-                "type": "force",
-                "source": "patchToFace",
-                "patches": ["wing"],
-                "directionMode": "parallelToFlow",
-                "alphaName": "aoa",
-                "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
-                "addToAdjoint": True,
-            }
+            "type": "force",
+            "source": "patchToFace",
+            "patches": ["wing"],
+            "directionMode": "parallelToFlow",
+            "patchVelocityInputName": "patchV",
+            "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
         },
         "CL": {
-            "part1": {
-                "type": "force",
-                "source": "patchToFace",
-                "patches": ["wing"],
-                "directionMode": "normalToFlow",
-                "alphaName": "aoa",
-                "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
-                "addToAdjoint": True,
-            }
+            "type": "force",
+            "source": "patchToFace",
+            "patches": ["wing"],
+            "directionMode": "normalToFlow",
+            "patchVelocityInputName": "patchV",
+            "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
         },
     },
     "adjEqnOption": {
@@ -91,10 +82,23 @@ daOptions = {
         "maxNonOrth": 70.0,
         "maxSkewness": 5.0,
     },
-    "designVar": {
-        "aoa": {"designVarType": "AOA", "patches": ["inout"], "flowAxis": "x", "normalAxis": "y"},
-        "twist": {"designVarType": "FFD"},
-        "shape": {"designVarType": "FFD"},
+    "inputInfo": {
+        "aero_vol_coords": {"type": "volCoord", "components": ["solver", "function"]},
+        "patchV": {
+            "type": "patchVelocity",
+            "patches": ["inout"],
+            "flowAxis": "x",
+            "normalAxis": "y",
+            "components": ["solver", "function"],
+        },
+    },
+    "outputInfo": {
+        "f_aero": {
+            "type": "forceCouplingOutput",
+            "patches": ["wing"],
+            "components": ["forceCoupling"],
+            "pRef": p0,
+        },
     },
 }
 
@@ -147,7 +151,7 @@ class Top(Multipoint):
         linear_solver = om.LinearBlockGS(maxiter=25, iprint=2, use_aitken=True, rtol=1e-6, atol=1e-6)
         # add the coupling aerostructural scenario
         self.mphys_add_scenario(
-            "cruise",
+            "scenario1",
             ScenarioAeroStructural(
                 aero_builder=aero_builder, struct_builder=struct_builder, ldxfer_builder=xfer_builder
             ),
@@ -155,16 +159,16 @@ class Top(Multipoint):
             linear_solver,
         )
 
-        # need to manually connect the vars in the geo component to cruise
+        # need to manually connect the vars in the geo component to scenario1
         for discipline in ["aero"]:
-            self.connect("geometry.x_%s0" % discipline, "cruise.x_%s0_masked" % discipline)
+            self.connect("geometry.x_%s0" % discipline, "scenario1.x_%s0_masked" % discipline)
         for discipline in ["struct"]:
-            self.connect("geometry.x_%s0" % discipline, "cruise.x_%s0" % discipline)
+            self.connect("geometry.x_%s0" % discipline, "scenario1.x_%s0" % discipline)
 
         # add the structural thickness DVs
         ndv_struct = struct_builder.get_ndv()
         dvs.add_output("dv_struct", np.array(ndv_struct * [0.01]))
-        self.connect("dv_struct", "cruise.dv_struct")
+        self.connect("dv_struct", "scenario1.dv_struct")
 
         # more manual connection
         self.connect("mesh_aero.x_aero0", "geometry.x_aero_in")
@@ -174,9 +178,6 @@ class Top(Multipoint):
 
         # call this to configure the coupling solver
         super().configure()
-
-        # add the objective function to the cruise scenario
-        self.cruise.aero_post.mphys_add_funcs()
 
         # get the surface coordinates from the mesh component
         points = self.mesh_aero.mphys_get_surface_mesh()
@@ -196,18 +197,6 @@ class Top(Multipoint):
         def twist(val, geo):
             for i in range(1, nRefAxPts):
                 geo.rot_z["wingAxis"].coef[i] = -val[i - 1]
-
-        # define an angle of attack function to change the U direction at the far field
-        def aoa(val, DASolver):
-            aoa = val[0] * np.pi / 180.0
-            U = [float(U0 * np.cos(aoa)), float(U0 * np.sin(aoa)), 0]
-            # we need to update the U value only
-            DASolver.setOption("primalBC", {"U0": {"value": U}})
-            DASolver.updateDAOption()
-
-        # pass this aoa function to the cruise group
-        self.cruise.coupling.aero.solver.add_dv_func("aoa", aoa)
-        self.cruise.aero_post.add_dv_func("aoa", aoa)
 
         # add twist variable
         self.geometry.nom_addGlobalDV(dvName="twist", value=np.array([0] * (nRefAxPts - 1)), func=twist)
@@ -230,22 +219,22 @@ class Top(Multipoint):
         # add the design variables to the dvs component's output
         self.dvs.add_output("twist", val=np.array([0] * (nRefAxPts - 1)))
         self.dvs.add_output("shape", val=np.array([0] * nShapes))
-        self.dvs.add_output("aoa", val=np.array([aoa0]))
-        # manually connect the dvs output to the geometry and cruise
+        self.dvs.add_output("patchV", val=np.array([U0, aoa0]))
+        # manually connect the dvs output to the geometry and scenario1
         self.connect("twist", "geometry.twist")
         self.connect("shape", "geometry.shape")
-        self.connect("aoa", "cruise.aoa")
+        self.connect("patchV", "scenario1.patchV")
 
         # define the design variables
-        self.add_design_var("twist", lower=-10.0, upper=10.0, scaler=1.0)
-        self.add_design_var("shape", lower=-1.0, upper=1.0, scaler=1.0)
-        self.add_design_var("aoa", lower=0.0, upper=10.0, scaler=1.0)
+        self.add_design_var("twist", lower=-10.0, upper=10.0, scaler=0.1)
+        self.add_design_var("shape", lower=-1.0, upper=1.0, scaler=10.0)
+        self.add_design_var("patchV", lower=[U0, 0.0], upper=[U0, 10.0], scaler=0.1)
 
         # add constraints and the objective
-        self.add_objective("cruise.aero_post.CD", scaler=1.0)
-        self.add_constraint("cruise.aero_post.CL", equals=CL_target, scaler=1.0)
+        self.add_objective("scenario1.aero_post.CD", scaler=1.0)
+        self.add_constraint("scenario1.aero_post.CL", equals=CL_target, scaler=1.0)
         # stress constraint
-        self.add_constraint("cruise.ks_vmfailure", lower=0.0, upper=1.0, scaler=1.0)
+        self.add_constraint("scenario1.ks_vmfailure", lower=0.0, upper=1.0, scaler=1.0)
         self.add_constraint("geometry.thickcon", lower=0.5, upper=3.0, scaler=1.0)
         self.add_constraint("geometry.volcon", lower=1.0, scaler=1.0)
         self.add_constraint("geometry.tecon", equals=0.0, scaler=1.0, linear=True)
@@ -256,7 +245,7 @@ class Top(Multipoint):
 prob = om.Problem()
 prob.model = Top()
 prob.setup(mode="rev")
-om.n2(prob, show_browser=False, outfile="mphys_aero_struct.html")
+om.n2(prob, show_browser=False, outfile="mphys.html")
 
 # initialize the optimization function
 optFuncs = OptFuncs(daOptions, prob)
@@ -304,31 +293,25 @@ prob.driver.options["debug_print"] = ["nl_cons", "objs", "desvars"]
 prob.driver.options["print_opt_prob"] = True
 prob.driver.hist_file = "OptView.hst"
 
-if args.task == "opt":
+
+if args.task == "run_driver":
     # solve CL
-    optFuncs.findFeasibleDesign(["cruise.aero_post.CL"], ["aoa"], targets=[CL_target])
+    optFuncs.findFeasibleDesign(["scenario1.aero_post.CL"], ["patchV"], targets=[CL_target], designVarsComp=[1])
     # run the optimization
     prob.run_driver()
-elif args.task == "runPrimal":
+elif args.task == "run_model":
     # just run the primal once
     prob.run_model()
-elif args.task == "runAdjoint":
+elif args.task == "compute_totals":
     # just run the primal and adjoint once
     prob.run_model()
     totals = prob.compute_totals()
     if MPI.COMM_WORLD.rank == 0:
         print(totals)
-elif args.task == "checkTotals":
+elif args.task == "check_totals":
     # verify the total derivatives against the finite-difference
     prob.run_model()
-    prob.check_totals(
-        of=["cruise.aero_post.CD", "cruise.aero_post.CL"],
-        wrt=["shape", "aoa"],
-        compact_print=True,
-        step=1e-3,
-        form="central",
-        step_calc="abs",
-    )
+    prob.check_totals(compact_print=False, step=1e-3, form="central", step_calc="abs")
 else:
     print("task arg not found!")
     exit(1)
