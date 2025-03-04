@@ -19,8 +19,8 @@ from mphys.scenario_aerodynamic import ScenarioAerodynamic
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
 parser.add_argument("-optimizer", help="optimizer to use", type=str, default="IPOPT")
-# which task to run. Options are: opt (default), runPrimal, runAdjoint, checkTotals
-parser.add_argument("-task", help="type of run to do", type=str, default="opt")
+# which task to run. Options are: run_driver (default), run_model, compute_totals, check_totals
+parser.add_argument("-task", help="type of run to do", type=str, default="run_driver")
 args = parser.parse_args()
 
 # =============================================================================
@@ -40,29 +40,25 @@ daOptions = {
     "primalBC": {
         "fvSource": {"value": dp0, "comp": 0},
     },
-    "objFunc": {
-        "FI": {
-            "Ux": {
-                "type": "fieldInversion",
-                "source": "boxToCell",
-                "min": [-10.0, -10.0, -10.0],
-                "max": [10.0, 10.0, 10.0],
-                "data": "UData",
-                "scale": 1,
-                "addToAdjoint": True,
-                "weightedSum": True,
-                "weight": 1 / J0,
-            },
-            "beta": {
-                "type": "fieldInversion",
-                "source": "boxToCell",
-                "min": [-10.0, -10.0, -10.0],
-                "max": [10.0, 10.0, 10.0],
-                "data": "beta",
-                "scale": 1e-10,
-                "addToAdjoint": True,
-                "weightedSum": False,
-            },
+    "function": {
+        "UFieldVar": {
+            "type": "variance",
+            "source": "allCells",
+            "scale": 1.0,
+            "mode": "field",
+            "varName": "U",
+            "varType": "vector",
+            "components": [0, 1],
+            "timeDependentRefData": False,
+        },
+        "betaVar": {
+            "type": "variance",
+            "source": "allCells",
+            "scale": 1.0,
+            "mode": "field",
+            "varName": "betaFINuTilda",
+            "varType": "scalar",
+            "timeDependentRefData": False,
         },
     },
     "adjStateOrdering": "cell",
@@ -73,21 +69,16 @@ daOptions = {
         "nuTilda": nuTilda0 * 10.0,
         "phi": 1.0,
     },
-    "designVar": {
+    "inputInfo": {
         "beta": {
-            "designVarType": "Field",
-            "fieldName": "betaFieldInversion",
+            "type": "field",
+            "fieldName": "betaFINuTilda",
             "fieldType": "scalar",
             "distributed": False,
+            "components": ["solver", "function"],
         },
     },
 }
-
-# define an angle of attack function to change the U direction at the far field
-def betaFieldInversion(val, DASolver):
-    for idxI, v in enumerate(val):
-        DASolver.setFieldValue4GlobalCellI(b"betaFieldInversion", v, idxI)
-        DASolver.updateBoundaryConditions(b"betaFieldInversion", b"scalar")
 
 
 # Top class to setup the optimization problem
@@ -103,28 +94,24 @@ class Top(Multipoint):
 
         # add a scenario (flow condition) for optimization, we pass the builder
         # to the scenario to actually run the flow and adjoint
-        self.mphys_add_scenario("cruise", ScenarioAerodynamic(aero_builder=dafoam_builder))
+        self.mphys_add_scenario("scenario1", ScenarioAerodynamic(aero_builder=dafoam_builder))
+
+        # setup a composite objective
+        self.add_subsystem("obj", om.ExecComp("val=error+regulation"))
 
     def configure(self):
-        # configure and setup perform a similar function, i.e., initialize the optimization.
-        # But configure will be run after setup
-
-        # add the objective function to the cruise scenario
-        self.cruise.aero_post.mphys_add_funcs()
-
-        # pass this aoa function to the cruise group
-        self.cruise.coupling.solver.add_dv_func("beta", betaFieldInversion)
-        self.cruise.aero_post.add_dv_func("beta", betaFieldInversion)
-
         # add the design variables to the dvs component's output
-        self.dvs.add_output("beta", val=np.array([1] * nCells))
-        self.connect("beta", "cruise.beta")
+        self.dvs.add_output("beta", val=np.ones(nCells), distributed=False)
+        self.connect("beta", "scenario1.beta")
 
         # define the design variables to the top level
         self.add_design_var("beta", lower=-5.0, upper=10.0, scaler=1.0)
 
         # add objective and constraints to the top level
-        self.add_objective("cruise.aero_post.FI", scaler=1.0)
+        # we can connect any function in daOption to obj's terms
+        self.connect("scenario1.aero_post.UFieldVar", "obj.error")
+        self.connect("scenario1.aero_post.betaVar", "obj.regulation")
+        self.add_objective("obj.val", scaler=1.0)
 
 
 # OpenMDAO setup
@@ -133,23 +120,21 @@ prob.model = Top()
 prob.setup(mode="rev")
 om.n2(prob, show_browser=False, outfile="mphys.html")
 
-# initialize the optimization function
-optFuncs = OptFuncs(daOptions, prob)
-
 # use pyoptsparse to setup optimization
 prob.driver = om.pyOptSparseDriver()
 prob.driver.options["optimizer"] = args.optimizer
 # options for optimizers
 if args.optimizer == "SNOPT":
     prob.driver.opt_settings = {
-        "Major feasibility tolerance": 1.0e-5,
-        "Major optimality tolerance": 1.0e-5,
-        "Minor feasibility tolerance": 1.0e-5,
+        "Major feasibility tolerance": 1.0e-6,
+        "Major optimality tolerance": 1.0e-6,
+        "Minor feasibility tolerance": 1.0e-6,
         "Verify level": -1,
-        "Function precision": 1.0e-5,
-        "Major iterations limit": 100,
-        "Nonderivative linesearch": None,
+        "Function precision": 1.0e-6,
+        "Major iterations limit": 50,
         "Linesearch tolerance": 0.999,
+        "Hessian updates": 50,
+        "Nonderivative linesearch": None,
         "Print file": "opt_SNOPT_print.txt",
         "Summary file": "opt_SNOPT_summary.txt",
     }
@@ -157,7 +142,7 @@ elif args.optimizer == "IPOPT":
     prob.driver.opt_settings = {
         "tol": 1.0e-5,
         "constr_viol_tol": 1.0e-5,
-        "max_iter": 100,
+        "max_iter": 50,
         "print_level": 5,
         "output_file": "opt_IPOPT.txt",
         "mu_strategy": "adaptive",
@@ -166,37 +151,36 @@ elif args.optimizer == "IPOPT":
         "alpha_for_y": "full",
         "recalc_y": "yes",
     }
+elif args.optimizer == "SLSQP":
+    prob.driver.opt_settings = {
+        "ACC": 1.0e-5,
+        "MAXIT": 100,
+        "IFILE": "opt_SLSQP.txt",
+    }
 else:
     print("optimizer arg not valid!")
     exit(1)
 
 prob.driver.options["debug_print"] = ["nl_cons", "objs", "desvars"]
-prob.driver.options["print_opt_prob"] = False
+prob.driver.options["print_opt_prob"] = True
 prob.driver.hist_file = "OptView.hst"
 
-if args.task == "opt":
+if args.task == "run_driver":
+    # run the optimization
     prob.run_driver()
-elif args.task == "runPrimal":
+elif args.task == "run_model":
     # just run the primal once
     prob.run_model()
-elif args.task == "runAdjoint":
+elif args.task == "compute_totals":
     # just run the primal and adjoint once
     prob.run_model()
     totals = prob.compute_totals()
     if MPI.COMM_WORLD.rank == 0:
         print(totals)
-elif args.task == "checkTotals":
+elif args.task == "check_totals":
     # verify the total derivatives against the finite-difference
     prob.run_model()
-    prob.check_totals(
-        of=["cruise.aero_post.functionals.FI"],
-        wrt=["beta"],
-        compact_print=False,
-        show_progress=True,
-        step=1e-3,
-        form="central",
-        step_calc="abs",
-    )
+    prob.check_totals(compact_print=False, step=1e-3, form="central", step_calc="abs")
 else:
     print("task arg not found!")
     exit(1)
