@@ -1,15 +1,7 @@
 #!/usr/bin/env python
-"""
-DAFoam run script for the NACA0012 airfoil at low-speed
-"""
-
-# =============================================================================
-# Imports
-# =============================================================================
 import os
 import argparse
 import numpy as np
-import json
 from mpi4py import MPI
 import openmdao.api as om
 from mphys.multipoint import Multipoint
@@ -22,8 +14,8 @@ from pygeo import geo_utils
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
 parser.add_argument("-optimizer", help="optimizer to use", type=str, default="IPOPT")
-# which task to run. Options are: opt (default), runPrimal, runAdjoint, checkTotals
-parser.add_argument("-task", help="type of run to do", type=str, default="opt")
+# which task to run. Options are: run_driver (default), run_model, compute_totals, check_totals
+parser.add_argument("-task", help="type of run to do", type=str, default="run_driver")
 args = parser.parse_args()
 
 # =============================================================================
@@ -36,58 +28,53 @@ daOptions = {
     "designSurfaces": ["blade"],
     "primalMinResTol": 1e-8,
     "primalMinResTolDiff": 1e4,
-    "hasIterativeBC": True,
-    "objFunc": {
+    "maxCorrectBCCalls": 10,
+    "function": {
         "TPR": {
-            "part1": {
-                "type": "totalPressureRatio",
-                "source": "patchToFace",
-                "patches": ["inlet", "outlet"],
-                "inletPatches": ["inlet"],
-                "outletPatches": ["outlet"],
-                "scale": 1.0,
-                "addToAdjoint": True,
-            }
+            "type": "totalPressureRatio",
+            "source": "patchToFace",
+            "patches": ["inlet", "outlet"],
+            "inletPatches": ["inlet"],
+            "outletPatches": ["outlet"],
+            "scale": 1.0,
         },
         "TTR": {
-            "part1": {
-                "type": "totalTemperatureRatio",
-                "source": "patchToFace",
-                "patches": ["inlet", "outlet"],
-                "inletPatches": ["inlet"],
-                "outletPatches": ["outlet"],
-                "scale": 1.0,
-                "addToAdjoint": False,
-            }
+            "type": "totalTemperatureRatio",
+            "source": "patchToFace",
+            "patches": ["inlet", "outlet"],
+            "inletPatches": ["inlet"],
+            "outletPatches": ["outlet"],
+            "scale": 1.0,
         },
         "MFR": {
-            "part1": {
-                "type": "massFlowRate",
-                "source": "patchToFace",
-                "patches": ["inlet"],
-                "scale": -1.0,
-                "addToAdjoint": True,
-            }
+            "type": "massFlowRate",
+            "source": "patchToFace",
+            "patches": ["inlet"],
+            "scale": -1.0,
         },
         "CMZ": {
-            "part1": {
-                "type": "moment",
-                "source": "patchToFace",
-                "patches": ["blade"],
-                "axis": [0.0, 0.0, 1.0],
-                "center": [0.0, 0.0, 0.0],
-                "scale": 1.0,
-                "addToAdjoint": True,
-            }
+            "type": "moment",
+            "source": "patchToFace",
+            "patches": ["blade"],
+            "axis": [0.0, 0.0, 1.0],
+            "center": [0.0, 0.0, 0.0],
+            "scale": 1.0,
         },
     },
     "normalizeStates": {"U": 100.0, "p": 100000.0, "nuTilda": 1e-3, "phi": 1.0, "T": 300.0},
-    "adjEqnOption": {"gmresRelTol": 1.0e-5, "pcFillLevel": 1, "jacMatReOrdering": "rcm", "gmresMaxIters": 2000, "gmresRestart": 2000},
+    "adjEqnOption": {
+        "gmresRelTol": 1.0e-5,
+        "pcFillLevel": 1,
+        "jacMatReOrdering": "rcm",
+        "gmresMaxIters": 2000,
+        "gmresRestart": 2000,
+    },
     "checkMeshThreshold": {"maxAspectRatio": 2000.0, "maxNonOrth": 78.0, "maxSkewness": 5.0},
     "transonicPCOption": 1,
     "adjPCLag": 1,
-    # Design variable setup
-    "designVar": {"shapey": {"designVarType": "FFD"}, "shapez": {"designVarType": "FFD"}},
+    "inputInfo": {
+        "aero_vol_coords": {"type": "volCoord", "components": ["solver", "function"]},
+    },
     "decomposeParDict": {"preservePatches": ["per1", "per2"]},
 }
 
@@ -98,6 +85,7 @@ meshOptions = {
     # point and normal for the symmetry plane
     "symmetryPlanes": [],
 }
+
 
 # Top class to setup the optimization problem
 class Top(Multipoint):
@@ -128,11 +116,6 @@ class Top(Multipoint):
         self.connect("geometry.x_aero0", "cruise.x_aero")
 
     def configure(self):
-        # configure and setup perform a similar function, i.e., initialize the optimization.
-        # But configure will be run after setup
-
-        # add the objective function to the cruise scenario
-        self.cruise.aero_post.mphys_add_funcs()
 
         # get the surface coordinates from the mesh component
         points = self.mesh.mphys_get_surface_mesh()
@@ -161,6 +144,8 @@ class Top(Multipoint):
         self.add_constraint("cruise.aero_post.MFR", equals=0.7, scaler=1.0)
         self.add_constraint("cruise.aero_post.TPR", equals=1.6, scaler=1.0)
 
+
+# OpenMDAO setup
 prob = om.Problem()
 prob.model = Top()
 prob.setup(mode="rev")
@@ -213,26 +198,22 @@ prob.driver.options["print_opt_prob"] = True
 prob.driver.hist_file = "OptView.hst"
 
 
-if args.task == "opt":
-    # solve CL
-    # optFuncs.findFeasibleDesign(["cruise.aero_post.CL"], ["aoa"], targets=[CL_target])
+if args.task == "run_driver":
     # run the optimization
     prob.run_driver()
-elif args.task == "runPrimal":
+elif args.task == "run_model":
     # just run the primal once
     prob.run_model()
-elif args.task == "runAdjoint":
+elif args.task == "compute_totals":
     # just run the primal and adjoint once
     prob.run_model()
     totals = prob.compute_totals()
     if MPI.COMM_WORLD.rank == 0:
         print(totals)
-elif args.task == "checkTotals":
+elif args.task == "check_totals":
     # verify the total derivatives against the finite-difference
     prob.run_model()
-    prob.check_totals(
-        compact_print=True, step=1e-4, form="central", step_calc="abs"
-    )
+    prob.check_totals(compact_print=False, step=1e-3, form="central", step_calc="abs")
 else:
     print("task arg not found!")
     exit(1)
