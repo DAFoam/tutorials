@@ -38,12 +38,8 @@ daOptions = {
         "useWallFunction": False,
     },
     "primalMinResTol": 1.0e0,
-    # "primalMinResTolDiff": 1e8,
-    "primalObjStdTol": {"active": True, "objFuncName": "CL", "steps": 200, "tol": 0.0001, "tolDiff": 1e3},
-    "useMeanStates": {"active": True, "start": 0.6},
     "primalVarBounds": {"omegaMin": -1e16},
-    "useConstrainHbyA": True,
-    "objFunc": {
+    "function": {
         "CD": {
             "part1": {
                 "type": "force",
