@@ -5,7 +5,6 @@
 # =============================================================================
 import argparse
 import numpy as np
-import json, copy
 from mpi4py import MPI
 import openmdao.api as om
 from mphys.multipoint import Multipoint
@@ -16,8 +15,10 @@ from mphys.scenario_aerodynamic import ScenarioAerodynamic
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
 parser.add_argument("-optimizer", help="optimizer to use", type=str, default="IPOPT")
-# which task to run. Options are: opt (default), runPrimal, runAdjoint, checkTotals
-parser.add_argument("-task", help="type of run to do", type=str, default="opt")
+# which task to run. Options are: run_driver (default), run_model, compute_totals, check_totals
+parser.add_argument("-task", help="type of run to do", type=str, default="run_driver")
+# which case to run
+parser.add_argument("-index", help="which case index to run", type=int, default=0)
 args = parser.parse_args()
 
 # =============================================================================
@@ -49,7 +50,6 @@ daOptions = {
     "solverName": "DARhoSimpleFoam",
     "primalMinResTol": 1.0e-8,
     "primalMinResTolDiff": 1e6,
-    "useConstrainHbyA": True,
     "primalBC": {
         "U0": {"variable": "U", "patches": ["inout"], "value": inletU},
         "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
@@ -61,73 +61,49 @@ daOptions = {
         "useWallFunction": False,
     },
     "primalVarBounds": {"omegaMin": -1e16},
-    "regressionModel": {
-        "active": True,
-        "model1": {
-            "writeFeatures": True,
-            "modelType": "neuralNetwork",
-            "inputNames": ["PoD", "VoS", "chiSA", "PSoSS", "pGradStream", "SCurv", "UOrth", "CoP"],
-            "outputName": "ADummyOutput",
-            "hiddenLayerNeurons": [2],
-            "inputShift": [0.0] * 8,
-            "inputScale": [1.0] * 8,
-            "outputShift": 1.0,
-            "outputScale": 1.0,
-            "activationFunction": "tanh",
-            "printInputInfo": True,
-            "outputUpperBound": 1e2,
-            "outputLowerBound": -1e2,
-            "defaultOutputValue": 1.0,
-        }
-    },
-    "objFunc": {
-        "VAR": {
-            "CLError": {
-                "type": "force",
-                "source": "patchToFace",
-                "patches": ["wing"],
-                "directionMode": "fixedDirection",
-                "direction": normalDir,
-                "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
-                "calcRefVar": True,
-                "ref": [CLData],
+    "function": {
+        "CLError": {
+            "type": "force",
+            "source": "patchToFace",
+            "patches": ["wing"],
+            "directionMode": "fixedDirection",
+            "direction": normalDir,
+            "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
+            "calcRefVar": True,
+            "ref": [CLData],
+        },
+        "betaVar": {
+            "type": "variance",
+            "source": "boxToCell",
+            "min": [-100.0, -100.0, -100.0],
+            "max": [100.0, 100.0, 100.0],
+            "scale": 1.0,
+            "mode": "field",
+            "varName": "betaFINuTilda",
+            "varType": "scalar",
+                "timeDependentRefData": False,
+                "timeDependentRefData": False,
                 "addToAdjoint": True,
             },
-            "betaVar": {
-                "type": "variance",
-                "source": "boxToCell",
-                "min": [-100.0, -100.0, -100.0],
-                "max": [100.0, 100.0, 100.0],
-                "scale": 1.0,
-                "mode": "field",
-                "varName": "betaFINuTilda",
-                "varType": "scalar",
-                "timeOperator": "average",
-                "timeDependentRefData": False,
+            "timeDependentRefData": False,
                 "addToAdjoint": True,
             },
         },
         "CD": {
-            "part1": {
-                "type": "force",
-                "source": "patchToFace",
-                "patches": ["wing"],
-                "directionMode": "fixedDirection",
-                "direction": flowDir,
-                "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
-                "addToAdjoint": False,
-            }
+            "type": "force",
+            "source": "patchToFace",
+            "patches": ["wing"],
+            "directionMode": "fixedDirection",
+            "direction": flowDir,
+            "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
         },
         "CL": {
-            "part1": {
-                "type": "force",
-                "source": "patchToFace",
-                "patches": ["wing"],
-                "directionMode": "fixedDirection",
-                "direction": normalDir,
-                "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
-                "addToAdjoint": False,
-            }
+            "type": "force",
+            "source": "patchToFace",
+            "patches": ["wing"],
+            "directionMode": "fixedDirection",
+            "direction": normalDir,
+            "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
         },
     },
     "adjStateOrdering": "cell",
@@ -143,21 +119,19 @@ daOptions = {
         "p": p0,
         "T": T0,
         "nuTilda": 1e-3,
-        "k": 1.0,
-        "omega": 100.0,
         "phi": 1.0,
     },
     "checkMeshThreshold": {"maxAspectRatio": 10000.0},
-    "designVar": {
-        "beta": {"designVarType": "Field", "fieldName": "betaFINuTilda", "fieldType": "scalar", "distributed": False},
+    "inputInfo": {
+        "beta": {
+            "type": "field",
+            "fieldName": "betaFINuTilda",
+            "fieldType": "scalar",
+            "distributed": False,
+            "components": ["solver", "function"],
+        },
     },
 }
-
-
-def betaFunction(val, DASolver):
-    for idxI, v in enumerate(val):
-        DASolver.setFieldValue4GlobalCellI(b"betaFINuTilda", v, idxI)
-        DASolver.updateBoundaryConditions(b"betaFINuTilda", b"scalar")
 
 
 # Top class to setup the optimization problem
@@ -173,28 +147,24 @@ class Top(Multipoint):
 
         # add a scenario (flow condition) for optimization, we pass the builder
         # to the scenario to actually run the flow and adjoint
-        self.mphys_add_scenario("cruise", ScenarioAerodynamic(aero_builder=dafoam_builder))
+        self.mphys_add_scenario("scenario1", ScenarioAerodynamic(aero_builder=dafoam_builder))
+
+        # setup a composite objective
+        self.add_subsystem("obj", om.ExecComp("val=error+regulation"))
 
     def configure(self):
-        # configure and setup perform a similar function, i.e., initialize the optimization.
-        # But configure will be run after setup
-
-        # add the objective function to the cruise scenario
-        self.cruise.aero_post.mphys_add_funcs()
-
-        # pass this aoa function to the cruise group
-        self.cruise.coupling.solver.add_dv_func("beta", betaFunction)
-        self.cruise.aero_post.add_dv_func("beta", betaFunction)
-
         # add the design variables to the dvs component's output
         self.dvs.add_output("beta", val=np.ones(nCells), distributed=False)
-        self.connect("beta", "cruise.beta")
+        self.connect("beta", "scenario1.beta")
 
         # define the design variables to the top level
         self.add_design_var("beta", lower=-5.0, upper=10.0, scaler=1.0)
 
         # add objective and constraints to the top level
-        self.add_objective("cruise.aero_post.VAR", scaler=1.0)
+        # we can connect any function in daOption to obj's terms
+        self.connect("scenario1.aero_post.CLError", "obj.error")
+        self.connect("scenario1.aero_post.betaVar", "obj.regulation")
+        self.add_objective("obj.val", scaler=1.0)
 
 
 # OpenMDAO setup
@@ -248,34 +218,22 @@ prob.driver.options["debug_print"] = ["nl_cons", "objs", "desvars"]
 prob.driver.options["print_opt_prob"] = True
 prob.driver.hist_file = "OptView.hst"
 
-if args.task == "opt":
+if args.task == "run_driver":
     # run the optimization
     prob.run_driver()
-
-    opt_dv = {"parameter": prob.get_val("parameter")}
-    with open("designVariable.json", "w") as f:
-        json.dump(opt_dv, f)
-elif args.task == "runPrimal":
+elif args.task == "run_model":
     # just run the primal once
     prob.run_model()
-elif args.task == "runAdjoint":
+elif args.task == "compute_totals":
     # just run the primal and adjoint once
     prob.run_model()
     totals = prob.compute_totals()
     if MPI.COMM_WORLD.rank == 0:
         print(totals)
-elif args.task == "checkTotals":
+elif args.task == "check_totals":
     # verify the total derivatives against the finite-difference
     prob.run_model()
-    prob.check_totals(
-        # of=["cruise.aero_post.CD", "cruise.aero_post.CL"],
-        # wrt=["shape", "aoa"],
-        compact_print=True,
-        step=1e-2,
-        form="central",
-        step_calc="abs",
-        show_progress=True,
-    )
+    prob.check_totals(compact_print=False, step=1e-3, form="central", step_calc="abs")
 else:
     print("task arg not found!")
     exit(1)
