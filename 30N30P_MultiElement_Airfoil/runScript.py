@@ -21,7 +21,7 @@ from pygeo import geo_utils
 
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
-parser.add_argument("-optimizer", help="optimizer to use", type=str, default="IPOPT")
+parser.add_argument("-optimizer", help="optimizer to use", type=str, default="SLSQP")
 # which task to run. Options are: run_driver (default), run_model, compute_totals, check_totals
 parser.add_argument("-task", help="type of run to do", type=str, default="run_driver")
 args = parser.parse_args()
@@ -56,7 +56,7 @@ daOptions = {
         "CD": {
             "type": "force",
             "source": "patchToFace",
-            "patches": ["main"],
+            "patches": ["main", "slat", "flap"],
             "directionMode": "parallelToFlow",
             "patchVelocityInputName": "patchV",
             "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
@@ -64,7 +64,7 @@ daOptions = {
         "CL": {
             "type": "force",
             "source": "patchToFace",
-            "patches": ["main"],
+            "patches": ["main", "slat", "flap"],
             "directionMode": "normalToFlow",
             "patchVelocityInputName": "patchV",
             "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
@@ -84,7 +84,8 @@ daOptions = {
             "scale": 1.0,
         },
     },
-    "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
+    "adjStateOrdering": "cell",
+    "adjEqnOption": {"gmresMaxIters": 2000, "gmresRestart": 2000, "gmresTolDiff": 1e3, "gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "natural"},
     "normalizeStates": {
         "U": U0,
         "p": p0,
@@ -249,7 +250,7 @@ class Top(Multipoint):
 
         # define the design variables to the top level
         self.add_design_var("shape", lower=-1.0, upper=1.0, scaler=10.0)
-        self.add_design_var("patchV", lower=[U0, 0.0], upper=[U0, 10.0], scaler=0.1)
+        self.add_design_var("patchV", lower=[U0, 0.0], upper=[U0, 20.0], scaler=0.1)
         self.add_design_var("twistslat", lower=-10.0, upper=10.0, scaler=1.0)
         self.add_design_var("translateslat", lower=[-0.1, 0.0], upper=[0.0, 0.1], scaler=1.0)
         self.add_design_var("twistflap", lower=-10.0, upper=10.0, scaler=1.0)
@@ -257,7 +258,7 @@ class Top(Multipoint):
 
         # add objective and constraints to the top level
         self.add_objective("scenario1.aero_post.CD", scaler=1.0)
-        self.add_constraint("scenario1.aero_post.CL", equals=CL_target, scaler=1.0)
+        self.add_constraint("scenario1.aero_post.CL", lower=CL_target, scaler=1.0)
         self.add_constraint("scenario1.aero_post.skewness", upper=6.0, scaler=1.0)
         self.add_constraint("scenario1.aero_post.nonOrtho", upper=70.0, scaler=1.0)
         self.add_constraint("geometry.thickcon_main", lower=0.5, upper=3.0, scaler=1.0)
