@@ -31,7 +31,7 @@ k0 = 0.375
 epsilon0 = 168.75
 omega0 = 5000.0
 CL_target = 0.375
-aoa0 = 2.0
+aoa0 = 4.9202844
 A0 = 3.0
 
 daOptions = {
