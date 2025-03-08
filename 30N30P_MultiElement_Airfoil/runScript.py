@@ -205,7 +205,7 @@ class Top(Multipoint):
         self.geometry.nom_addGlobalDV(dvName="translateflap", value=np.zeros(2), func=translateflap)
 
         # use the shape function to define shape variables for 2D airfoil
-        pts = self.geometry.DVGeo.getLocalIndex(0)
+        pts = self.geometry.DVGeo.getLocalIndex(1)
         dir_y = np.array([0.0, 1.0, 0.0])
         shapes = []
         for i in range(1, pts.shape[0] - 1):
