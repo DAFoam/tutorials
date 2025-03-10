@@ -106,7 +106,7 @@ class Top(Multipoint):
         self.add_subsystem("dvs", om.IndepVarComp(), promotes=["*"])
 
         # add the geometry component (FFD)
-        self.add_subsystem("geometry", OM_DVGEOCOMP(file="FFD/FFD.xyz", type="ffd"))
+        self.add_subsystem("geometry", OM_DVGEOCOMP(file="FFD/FFD.xyz", type="ffd"), promotes=["*"])
 
         # add a scenario (flow condition) for optimization, we pass the builder
         # to the scenario to actually run the flow and adjoint
@@ -121,19 +121,24 @@ class Top(Multipoint):
     def configure(self):
 
         # get the surface coordinates from the mesh component
-        points = self.mesh.mphys_get_surface_mesh()
+        points = self.scenario1.get_surface_mesh()
 
         # add pointset to the geometry component
         self.geometry.nom_add_discipline_coords("aero", points)
 
+        # set the triangular points to the geometry component for geometric constraints
+        tri_points = self.scenario1.DASolver.getTriangulatedMeshSurface()
+        self.geometry.nom_setConstraintSurface(tri_points)
+
         # use the shape function to define shape variables for 2D
         pts = self.geometry.DVGeo.getLocalIndex(0)
-        dir_y = np.array([0.0, 1.0, 0.0])
+        dir_x = np.array([1.0, 0.0, 0.0])
         shapes = []
-        for i in range(1, pts.shape[0] - 1):
-            # k=0 and k=1 move together to ensure symmetry in z direction
-            # j=0 and j=1 move in opposite direction to ensure symmetry wrt y=0
-            shapes.append({pts[i, 0, 0]: dir_y, pts[i, 0, 1]: dir_y, pts[i, 1, 0]: -dir_y, pts[i, 1, 1]: -dir_y})
+        for j in [0, 1]:
+            for i in [0, 1]:
+                # k=0 and k=1 move together to ensure symmetry in z direction
+                # j and 3 - j move together direction to ensure symmetry wrt y=0
+                shapes.append({pts[i, j, 0]: dir_x, pts[i, j, 1]: dir_x, pts[i, 3 - j, 0]: dir_x, pts[i, 3 - j, 1]: dir_x})
         self.geometry.nom_addShapeFunctionDV(dvName="shape", shapes=shapes)
 
         # setup the volume and thickness constraints
@@ -144,16 +149,15 @@ class Top(Multipoint):
 
         # add the design variables to the dvs component's output
         self.dvs.add_output("shape", val=np.array([0] * len(shapes)))
-        # manually connect the dvs output to the geometry and scenario1
-        self.connect("shape", "geometry.shape")
+        self.dvs.add_output("x_aero_in", val=points, distributed=True)
 
         # define the design variables
         self.add_design_var("shape", lower=-1.0, upper=1.0, scaler=10.0)
 
         # add objective and constraints to the top level
-        self.add_objective("scenario1.aero_post.CD", scaler=1.0)
-        self.add_constraint("geometry.thickcon", lower=0.3, upper=3.0, scaler=1.0)
-        self.add_constraint("geometry.volcon", lower=1.0, scaler=1.0)
+        self.add_objective("CD", scaler=1.0)
+        self.add_constraint("thickcon", lower=0.3, upper=3.0, scaler=1.0)
+        self.add_constraint("volcon", upper=1.0, scaler=1.0)
 
 
 # OpenMDAO setup
