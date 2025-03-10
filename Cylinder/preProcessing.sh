@@ -36,7 +36,7 @@ rm -rf 0/uniform 0/polyMesh
 cp -r system/controlDict_pimple_long system/controlDict
 cp -r system/fvSchemes_pimple system/fvSchemes
 cp -r system/fvSolution_pimple system/fvSolution
-mpirun -np 4 python runScript_v2.py --task=runPrimal
+mpirun -np 4 python runScript.py -task=run_model
 reconstructPar -latestTime
 rm -rf processor*
 rm -rf 0
