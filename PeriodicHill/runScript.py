@@ -37,8 +37,12 @@ daOptions = {
     "solverName": "DASimpleFoam",
     "primalMinResTol": 1.0e-8,
     "primalMinResTolDiff": 1e5,
-    "primalBC": {
-        "fvSource": {"value": dp0, "comp": 0},
+    "fvSource": {
+        "gradP":{
+            "type": "uniformPressureGradient",
+            "value": dp0,
+            "direction": [1.0, 0.0, 0.0],
+        },
     },
     "function": {
         "UFieldVar": {
