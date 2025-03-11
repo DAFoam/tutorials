@@ -19,7 +19,7 @@ simulationType RAS;
 
 RAS
 {
-    RASModel        SpalartAllmarasFv3FieldInversion;
+    RASModel        SpalartAllmaras;
 
     turbulence      on;
 
