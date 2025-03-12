@@ -3,26 +3,35 @@
 # =============================================================================
 # Imports
 # =============================================================================
+import argparse
+import numpy as np
+import json, copy
 from mpi4py import MPI
-from dafoam import PYDAFOAM
-import json
+import openmdao.api as om
+from mphys.multipoint import Multipoint
+from dafoam.mphys import DAFoamBuilder
+from mphys.scenario_aerodynamic import ScenarioAerodynamic
 
-gcomm = MPI.COMM_WORLD
-
-U0 = 15.0
+# =============================================================================
+# Input Parameters
+# =============================================================================
 
 with open("./designVariable.json") as f:
     parameter0 = json.load(f)
 
-# Set the parameters for optimization
+
+U0 = 15.0
+
+# Input parameters for DAFoam
 daOptions = {
     "solverName": "DASimpleFoam",
-    "primalMinResTol": 1.0e-12,
-    "primalMinResTolDiff": 1e10,
+    "primalMinResTol": 1.0e-8,
+    "primalMinResTolDiff": 1e3,
     "primalBC": {
         "U0": {"variable": "U", "patches": ["inlet"], "value": [U0, 0, 0]},
         "useWallFunction": True,
     },
+    "primalVarBounds": {"omegaMin": -1e16},
     "regressionModel": {
         "active": True,
         "model1": {
@@ -56,9 +65,9 @@ daOptions = {
             "outputUpperBound": 1e1,
             "outputLowerBound": -1e1,
             "writeFeatures": True,
-        }
+        },
     },
-    "objFunc": {
+    "function": {
         "CD": {
             "part1": {
                 "type": "force",
@@ -67,24 +76,60 @@ daOptions = {
                 "directionMode": "fixedDirection",
                 "direction": [1.0, 0.0, 0.0],
                 "scale": 1.0,
-                "addToAdjoint": True,
             }
+        },
+    },
+    "inputInfo": {
+        "betaK": {
+            "type": "field",
+            "fieldName": "betaFIK",
+            "fieldType": "scalar",
+            "distributed": False,
+            "components": ["solver", "function"],
+        },
+        "betaOmega": {
+            "type": "field",
+            "fieldName": "betaFIOmega",
+            "fieldType": "scalar",
+            "distributed": False,
+            "components": ["solver", "function"],
         },
     },
 }
 
 
-def regModel1(val, DASolver):
-    for idxI in range(len(val)):
-        val1 = float(val[idxI])
-        DASolver.setRegressionParameter("model1", idxI, val1)
+# Top class to setup the optimization problem
+class Top(Multipoint):
+    def setup(self):
 
-def regModel2(val, DASolver):
-    for idxI in range(len(val)):
-        val1 = float(val[idxI])
-        DASolver.setRegressionParameter("model2", idxI, val1)
+        # create the builders to initialize the DASolvers
 
-DASolver = PYDAFOAM(options=daOptions, comm=gcomm)
-DASolver.addInternalDV("parameter1", parameter0["parameter1"], regModel1, lower=-100, upper=100, scale=1.0)
-DASolver.addInternalDV("parameter2", parameter0["parameter2"], regModel2, lower=-100, upper=100, scale=1.0)
-DASolver()
+        builder = DAFoamBuilder(options=daOptions, mesh_options=None, scenario="aerodynamic")
+        builder.initialize(self.comm)
+
+        # add the design variable component to keep the top level design variables
+        self.add_subsystem("dvs", om.IndepVarComp(), promotes=["*"])
+
+        self.mphys_add_scenario("c1", ScenarioAerodynamic(aero_builder=builder))
+
+    def configure(self):
+        # configure and setup perform a similar function, i.e., initialize the optimization.
+        # But configure will be run after setup
+        self.dvs.add_output("parameter1", val=parameter0["model1"])
+        self.dvs.add_output("parameter2", val=parameter0["model2"])
+
+        self.connect("parameter1", "c1.parameter1")
+        self.connect("parameter2", "c1.parameter2")
+
+        # define the design variables to the top level
+        self.add_design_var("parameter1", lower=-10.0, upper=10.0, scaler=1.0)
+        self.add_design_var("parameter2", lower=-10.0, upper=10.0, scaler=1.0)
+
+
+# OpenMDAO setup
+prob = om.Problem()
+prob.model = Top()
+prob.setup(mode="rev")
+om.n2(prob, show_browser=False, outfile="mphys.html")
+
+prob.run_model()
