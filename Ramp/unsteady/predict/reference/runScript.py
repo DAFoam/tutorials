@@ -13,21 +13,15 @@ daOptions = {
     "solverName": "DAPimpleFoam",
     "primalBC": {"useWallFunction": False},
     "printIntervalUnsteady": 1,
-    "unsteadyAdjoint": {
-        "mode": "timeAccurate",
-        "objFuncTimeOperator": "average",
-    },
-    "objFunc": {
+    "function": {
         "CD": {
-            "part1": {
-                "type": "force",
-                "source": "patchToFace",
-                "patches": ["bot"],
-                "directionMode": "fixedDirection",
-                "direction": [1.0, 0.0, 0.0],
-                "scale": 1.0,
-                "addToAdjoint": True,
-            }
+            "type": "force",
+            "source": "patchToFace",
+            "patches": ["bot"],
+            "directionMode": "fixedDirection",
+            "direction": [1.0, 0.0, 0.0],
+            "scale": 1.0,
+            "timeOp": "average"
         },
     },
 }

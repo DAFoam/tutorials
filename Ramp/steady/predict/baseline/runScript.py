@@ -16,17 +16,14 @@ daOptions = {
     "primalMinResTol": 1.0e-12,
     "primalMinResTolDiff": 1e10,
     "primalBC": {"U0": {"variable": "U", "patches": ["inlet"], "value": [U0, 0, 0]}, "useWallFunction": True},
-    "objFunc": {
+    "function": {
         "CD": {
-            "part1": {
-                "type": "force",
-                "source": "patchToFace",
-                "patches": ["bot"],
-                "directionMode": "fixedDirection",
-                "direction": [1.0, 0.0, 0.0],
-                "scale": 1.0,
-                "addToAdjoint": True,
-            }
+            "type": "force",
+            "source": "patchToFace",
+            "patches": ["bot"],
+            "directionMode": "fixedDirection",
+            "direction": [1.0, 0.0, 0.0],
+            "scale": 1.0,
         },
     },
 }

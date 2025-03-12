@@ -6,6 +6,7 @@
 import argparse
 import numpy as np
 from mpi4py import MPI
+import json
 import openmdao.api as om
 from mphys.multipoint import Multipoint
 from dafoam.mphys.mphys_dafoam import DAFoamBuilderUnsteady
@@ -181,6 +182,11 @@ prob.driver.hist_file = "OptView.hst"
 if args.task == "run_driver":
     # run the optimization
     prob.run_driver()
+    opt_dv = {
+        "reg_model1": prob.get_val("reg_model1").tolist(),
+    }
+    with open("designVariable.json", "w") as f:
+        json.dump(opt_dv, f)
 elif args.task == "run_model":
     # just run the primal once
     prob.run_model()
