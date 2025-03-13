@@ -11,14 +11,18 @@ import openmdao.api as om
 from mphys.multipoint import Multipoint
 from dafoam.mphys import DAFoamBuilder
 from mphys.scenario_aerodynamic import ScenarioAerodynamic
+
 np.set_printoptions(precision=8, threshold=10000)
 
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
-parser.add_argument("-optimizer", help="optimizer to use", type=str, default="SNOPT")
-# which task to run. Options are: opt (default), runPrimal, runAdjoint, checkTotals
-parser.add_argument("-task", help="type of run to do", type=str, default="opt")
+parser.add_argument("-optimizer", help="optimizer to use", type=str, default="IPOPT")
+# which task to run. Options are: run_driver (default), run_model, compute_totals, check_totals
+parser.add_argument("-task", help="type of run to do", type=str, default="run_driver")
+# which case to run
+parser.add_argument("-index", help="which case index to run", type=int, default=0)
 args = parser.parse_args()
+
 
 # =============================================================================
 # Input Parameters
@@ -28,8 +32,7 @@ np.random.seed(1)
 
 cases = ["c1", "c2"]
 U0 = [10, 20.0]
-CDScaling = 100.0
-CDData = np.array([0.1683, 0.7101]) * CDScaling
+CDData = np.array([0.1683, 0.7101])
 
 
 with open("./probePointCoords.json") as f:
@@ -78,86 +81,69 @@ daOptions = {
             "outputUpperBound": 1e1,
             "outputLowerBound": -1e1,
             "writeFeatures": True,
-        }
+        },
     },
-    "objFunc": {
-        "VAR": {
-            "pVar": {
-                "type": "variance",
-                "source": "boxToCell",
-                "min": [-10.0, -10.0, -10.0],
-                "max": [10.0, 10.0, 10.0],
-                "scale": 0.1,
-                "mode": "surface",
-                "surfaceNames": ["bot"],
-                "varName": "p",
-                "varType": "scalar",
-                "timeDependentRefData": False,
-                "addToAdjoint": True,
-            },
-            # "UFieldVar": {
-            #    "type": "variance",
-            #    "source": "boxToCell",
-            #    "min": [-10.0, -10.0, -10.0],
-            #    "max": [10.0, 10.0, 10.0],
-            #    "scale": 0.1,
-            #    "mode": "field",
-            #    "varName": "U",
-            #    "varType": "vector",
-            #    "components": [0, 1],
-            #    "timeDependentRefData": False,
-            #    "addToAdjoint": True,
-            # },
-            # "UProbeVar": {
-            #    "type": "variance",
-            #    "source": "boxToCell",
-            #    "min": [-10.0, -10.0, -10.0],
-            #    "max": [10.0, 10.0, 10.0],
-            #    "scale": 1.0,
-            #    "mode": "probePoint",
-            #    "probePointCoords": probePointCoords["probePointCoords"],
-            #    "varName": "U",
-            #    "varType": "vector",
-            #    "components": [0, 1],
-            #    "timeDependentRefData": False,
-            #    "addToAdjoint": True,
-            "CDError": {
-                "type": "force",
-                "source": "patchToFace",
-                "patches": ["bot"],
-                "directionMode": "fixedDirection",
-                "direction": [1.0, 0.0, 0.0],
-                "scale": CDScaling,
-                "addToAdjoint": True,
-                "calcRefVar": True,
-                "ref": [0.0],  # we will assign this later because each case has a different ref
-            },
-            "betaKVar": {
-                "type": "variance",
-                "source": "boxToCell",
-                "min": [-10.0, -10.0, -10.0],
-                "max": [10.0, 10.0, 10.0],
-                "scale": 1.0,
-                "mode": "field",
-                "varName": "betaFIK",
-                "varType": "scalar",
-                "timeOperator": "average",
-                "timeDependentRefData": False,
-                "addToAdjoint": True,
-            },
-            "betaOmegaVar": {
-                "type": "variance",
-                "source": "boxToCell",
-                "min": [-10.0, -10.0, -10.0],
-                "max": [10.0, 10.0, 10.0],
-                "scale": 1.0,
-                "mode": "field",
-                "varName": "betaFIOmega",
-                "varType": "scalar",
-                "timeOperator": "average",
-                "timeDependentRefData": False,
-                "addToAdjoint": True,
-            },
+    "function": {
+        "pVar": {
+            "type": "variance",
+            "source": "patchToFace",
+            "patches": ["bot"],
+            "scale": 1.0,
+            "mode": "surface",
+            "varName": "p",
+            "varType": "scalar",
+            "timeDependentRefData": False,
+        },
+        "UFieldVar": {
+            "type": "variance",
+            "source": "boxToCell",
+            "min": [-10.0, -10.0, -10.0],
+            "max": [10.0, 10.0, 10.0],
+            "scale": 0.1,
+            "mode": "field",
+            "varName": "U",
+            "varType": "vector",
+            "components": [0, 1],
+            "timeDependentRefData": False,
+        },
+        "UProbeVar": {
+            "type": "variance",
+            "source": "allCells",
+            "scale": 1.0,
+            "mode": "probePoint",
+            "probePointCoords": probePointCoords["probePointCoords"],
+            "varName": "U",
+            "varType": "vector",
+            "components": [0, 1],
+            "timeDependentRefData": False,
+        },
+        "CDError": {
+            "type": "force",
+            "source": "patchToFace",
+            "patches": ["bot"],
+            "directionMode": "fixedDirection",
+            "direction": [1.0, 0.0, 0.0],
+            "scale": 1.0,
+            "calcRefVar": True,
+            "ref": [0.0],  # we will assign this laterbecause each case has a different ref
+        },
+        "betaKVar": {
+            "type": "variance",
+            "source": "allCells",
+            "scale": 1.0,
+            "mode": "field",
+            "varName": "betaFIK",
+            "varType": "scalar",
+            "timeDependentRefData": False,
+        },
+        "betaOmegaVar": {
+            "type": "variance",
+            "source": "allCells",
+            "scale": 1.0,
+            "mode": "field",
+            "varName": "betaFIOmega",
+            "varType": "scalar",
+            "timeDependentRefData": False,
         },
         "CD": {
             "part1": {
@@ -166,8 +152,7 @@ daOptions = {
                 "patches": ["bot"],
                 "directionMode": "fixedDirection",
                 "direction": [1.0, 0.0, 0.0],
-                "scale": CDScaling,
-                "addToAdjoint": False,
+                "scale": 1.0,
             }
         },
     },
@@ -183,22 +168,24 @@ daOptions = {
         "nuTilda": 1e-3,
         "phi": 1.0,
     },
-    "designVar": {
-        "parameter1": {"designVarType": "RegPar", "modelName": "model1"},
-        "parameter2": {"designVarType": "RegPar", "modelName": "model2"},
+    "inputInfo": {
+        "betaK": {
+            "type": "field",
+            "fieldName": "betaFIK",
+            "fieldType": "scalar",
+            "distributed": False,
+            "components": ["solver", "function"],
+        },
+        "betaOmega": {
+            "type": "field",
+            "fieldName": "betaFIOmega",
+            "fieldType": "scalar",
+            "distributed": False,
+            "components": ["solver", "function"],
+        },
     },
 }
 
-
-def regModel1(val, DASolver):
-    for idxI in range(len(val)):
-        val1 = float(val[idxI])
-        DASolver.setRegressionParameter("model1", idxI, val1)
-
-def regModel2(val, DASolver):
-    for idxI in range(len(val)):
-        val1 = float(val[idxI])
-        DASolver.setRegressionParameter("model2", idxI, val1)
 
 # Top class to setup the optimization problem
 class Top(Multipoint):
@@ -209,7 +196,7 @@ class Top(Multipoint):
         for idxI, case in enumerate(cases):
             options = copy.deepcopy(daOptions)
             options["primalBC"]["U0"]["value"] = [U0[idxI], 0.0, 0.0]
-            options["objFunc"]["VAR"]["CDError"]["ref"] = [float(CDData[idxI])]
+            options["function"]["CDError"]["ref"] = [float(CDData[idxI])]
             builders[case] = DAFoamBuilder(
                 options=options, mesh_options=None, scenario="aerodynamic", run_directory=case
             )
@@ -223,20 +210,11 @@ class Top(Multipoint):
         for case in cases:
             self.scenarios[case] = self.mphys_add_scenario(case, ScenarioAerodynamic(aero_builder=builders[case]))
 
-        self.add_subsystem("obj", om.ExecComp("value=0.5*c1+0.5*c2"))
+        self.add_subsystem("obj", om.ExecComp("value=c1+c2"))
 
     def configure(self):
         # configure and setup perform a similar function, i.e., initialize the optimization.
         # But configure will be run after setup
-
-        for case in cases:
-            # add the objective function to the cruise scenario
-            self.scenarios[case].aero_post.mphys_add_funcs()
-            # pass this aoa function to the cruise group
-            self.scenarios[case].coupling.solver.add_dv_func("parameter1", regModel1)
-            self.scenarios[case].aero_post.add_dv_func("parameter1", regModel1)
-            self.scenarios[case].coupling.solver.add_dv_func("parameter2", regModel2)
-            self.scenarios[case].aero_post.add_dv_func("parameter2", regModel2)
 
         # setup dv for the idv component
         nParameters1 = self.c1.coupling.solver.DASolver.getNRegressionParameters("model1")
@@ -251,7 +229,7 @@ class Top(Multipoint):
         for case in cases:
             self.connect("parameter1", "%s.parameter1" % case)
             self.connect("parameter2", "%s.parameter2" % case)
-            self.connect("%s.aero_post.VAR" % case, "obj.%s" % case)
+            self.connect("%s.aero_post.pVar" % case, "obj.%s" % case)
 
         # define the design variables to the top level
         self.add_design_var("parameter1", lower=-10.0, upper=10.0, scaler=1.0)
@@ -273,14 +251,12 @@ prob.driver.options["optimizer"] = args.optimizer
 # options for optimizers
 if args.optimizer == "SNOPT":
     prob.driver.opt_settings = {
-        "Major feasibility tolerance": 1.0e-6,
-        "Major optimality tolerance": 1.0e-6,
-        "Minor feasibility tolerance": 1.0e-6,
+        "Major feasibility tolerance": 1.0e-5,
+        "Major optimality tolerance": 1.0e-5,
+        "Minor feasibility tolerance": 1.0e-5,
         "Verify level": -1,
-        "Function precision": 1.0e-6,
-        "Major iterations limit": 200,
-        "Linesearch tolerance": 0.9,
-        #"Hessian updates": 200,
+        "Function precision": 1.0e-5,
+        "Major iterations limit": 100,
         "Nonderivative linesearch": None,
         "Print file": "opt_SNOPT_print.txt",
         "Summary file": "opt_SNOPT_summary.txt",
@@ -312,37 +288,28 @@ prob.driver.options["debug_print"] = ["nl_cons", "objs", "desvars"]
 prob.driver.options["print_opt_prob"] = True
 prob.driver.hist_file = "OptView.hst"
 
-if args.task == "opt":
+if args.task == "run_driver":
     # run the optimization
     prob.run_driver()
-
     opt_dv = {
         "parameter1": prob.get_val("parameter1").tolist(),
         "parameter2": prob.get_val("parameter2").tolist(),
     }
     with open("designVariable.json", "w") as f:
         json.dump(opt_dv, f)
-elif args.task == "runPrimal":
+elif args.task == "run_model":
     # just run the primal once
     prob.run_model()
-elif args.task == "runAdjoint":
+elif args.task == "compute_totals":
     # just run the primal and adjoint once
     prob.run_model()
     totals = prob.compute_totals()
     if MPI.COMM_WORLD.rank == 0:
         print(totals)
-elif args.task == "checkTotals":
+elif args.task == "check_totals":
     # verify the total derivatives against the finite-difference
     prob.run_model()
-    prob.check_totals(
-        # of=["cruise.aero_post.CD", "cruise.aero_post.CL"],
-        # wrt=["shape", "aoa"],
-        compact_print=True,
-        step=1e-2,
-        form="central",
-        step_calc="abs",
-        show_progress=True,
-    )
+    prob.check_totals(compact_print=False, step=1e-3, form="central", step_calc="abs")
 else:
     print("task arg not found!")
     exit(1)
