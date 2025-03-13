@@ -162,14 +162,14 @@ class Top(Multipoint):
         
         # Create the actual reference axis
         c1 = Curve(X=sweep_ref, k=2)
-        self.geometry.nom_addRefAxis(name="wing", c1, volumes=[0, 5])
+        self.geometry.nom_addRefAxis(name="wing", curve=c1, volumes=[0, 5])
 
         # Now the tail reference axis
         x = np.array([2365.0, 2365.0]) * 0.0254
         y = np.array([0, 840 / 2.0]) * 0.0254
         z = np.array([255.0, 255.0]) * 0.0254
         c2 = Curve(x=x, y=y, z=z, k=2)
-        self.geometry.nom_addRefAxis(name="tail", c2, volumes=[25])
+        self.geometry.nom_addRefAxis(name="tail", curve=c2, volumes=[25])
 
         # Set up global design variables. We dont change the root twist
         def wingTwist(val, geo):
