@@ -16,7 +16,7 @@ import tacsSetup
 
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
-parser.add_argument("-optimizer", help="optimizer to use", type=str, default="IPOPT")
+parser.add_argument("-optimizer", help="optimizer to use", type=str, default="SLSQP")
 # which task to run. Options are: run_driver (default), run_model, compute_totals, check_totals
 parser.add_argument("-task", help="type of run to do", type=str, default="run_driver")
 args = parser.parse_args()
@@ -160,9 +160,7 @@ class Top(Multipoint):
         )
 
         # need to manually connect the vars in the geo component to scenario1
-        for discipline in ["aero"]:
-            self.connect("geometry.x_%s0" % discipline, "scenario1.x_%s0_masked" % discipline)
-        for discipline in ["struct"]:
+        for discipline in ["aero", "struct"]:
             self.connect("geometry.x_%s0" % discipline, "scenario1.x_%s0" % discipline)
 
         # add the structural thickness DVs
