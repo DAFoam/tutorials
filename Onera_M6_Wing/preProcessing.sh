@@ -17,10 +17,10 @@ else
   wget https://github.com/dafoam/files/releases/download/v1.0.0/m6_surfaceMesh_fine.cgns.tar.gz
 fi
 tar -xvf m6_surfaceMesh_fine.cgns.tar.gz
-# coarsen the surface mesh three times
+# coarsen the surface mesh two times
 cgns_utils coarsen m6_surfaceMesh_fine.cgns surfaceMesh.cgns
 cgns_utils coarsen surfaceMesh.cgns
-cgns_utils coarsen surfaceMesh.cgns
+#cgns_utils coarsen surfaceMesh.cgns
 python genWingMesh.py &> logMeshGeneration.txt
 plot3dToFoam -noBlank volumeMesh.xyz >> logMeshGeneration.txt
 autoPatch 60 -overwrite >> logMeshGeneration.txt

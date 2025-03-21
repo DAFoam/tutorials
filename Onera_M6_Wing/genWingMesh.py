@@ -21,8 +21,8 @@ options = {
     # ---------------------------
     #        Grid Parameters
     # ---------------------------
-    "N": 25,  # number of layers to march
-    "s0": 1.0e-3,  # first layer thickness
+    "N": 65,  # number of layers to march
+    "s0": 1.0e-4,  # first layer thickness
     "marchDist": 12.0,  # distance to march
     # ---------------------------
     #   Pseudo Grid Parameters
