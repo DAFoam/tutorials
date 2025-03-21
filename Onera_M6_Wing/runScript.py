@@ -12,7 +12,7 @@ from pygeo import geo_utils
 
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
-parser.add_argument("-optimizer", help="optimizer to use", type=str, default="IPOPT")
+parser.add_argument("-optimizer", help="optimizer to use", type=str, default="SLSQP")
 # which task to run. Options are: run_driver (default), run_model, compute_totals, check_totals
 parser.add_argument("-task", help="type of run to do", type=str, default="run_driver")
 args = parser.parse_args()
@@ -28,7 +28,7 @@ p0 = 101325.0
 nuTilda0 = 4.5e-5
 T0 = 300.0
 CL_target = 0.270
-aoa0 = 3.0
+aoa0 = 2.75
 A0 = 0.7575
 rho0 = 1.0  # density for normalizing CD and CL
 
@@ -62,11 +62,12 @@ daOptions = {
             "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
         },
     },
-    "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
+    "adjStateOrdering": "cell",
+    "adjEqnOption": {"gmresRelTol": 1.0e-5, "pcFillLevel": 1, "jacMatReOrdering": "natural"},
     # transonic preconditioner to speed up the adjoint convergence
-    "transonicPCOption": 1,
+    "transonicPCOption": 2,
     "normalizeStates": {"U": U0, "p": p0, "nuTilda": nuTilda0 * 10.0, "phi": 1.0, "T": T0},
-    "adjPCLag": 1,
+    "adjPCLag": 5,
     "inputInfo": {
         "aero_vol_coords": {"type": "volCoord", "components": ["solver", "function"]},
         "patchV": {
@@ -233,7 +234,7 @@ prob.driver.hist_file = "OptView.hst"
 
 if args.task == "run_driver":
     # solve CL
-    optFuncs.findFeasibleDesign(["scenario1.aero_post.CL"], ["patchV"], targets=[CL_target], designVarsComp=[1])
+    #optFuncs.findFeasibleDesign(["scenario1.aero_post.CL"], ["patchV"], targets=[CL_target], designVarsComp=[1])
     # run the optimization
     prob.run_driver()
 elif args.task == "run_model":
