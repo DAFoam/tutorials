@@ -245,7 +245,7 @@ elif args.optimizer == "IPOPT":
     }
 elif args.optimizer == "SLSQP":
     prob.driver.opt_settings = {
-        "ACC": 1.0e-5,
+        "ACC": 1.0e-6,
         "MAXIT": 100,
         "IFILE": "opt_SLSQP.txt",
     }
