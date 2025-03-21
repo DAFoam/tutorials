@@ -33,20 +33,22 @@ daOptions = {
     "designSurfaces": ["hole", "wallx", "wally"],
     "primalMinResTol": 1e-10,
     "primalMinResTolDiff": 1e10,
-    "objFunc": {
+    "function": {
         "VMS": {
             "type": "vonMisesStressKS",
-            "source": "boxToCell",
-            "min": [-10.0, -10.0, -10.0],
-            "max": [10.0, 10.0, 10.0],
+            "source": "allCells",
             "scale": 1.0,
             "coeffKS": 2.0e-3,
         },
         "M": {
-            "type": "mass",
-            "source": "boxToCell",
-            "min": [-10.0, -10.0, -10.0],
-            "max": [10.0, 10.0, 10.0],
+            "type": "variableVolSum",
+            "source": "allCells",
+            "varName": "solid:rho",
+            "varType": "scalar",
+            "component": 0,
+            "isSquare": 0,
+            "multiplyVol": 1,
+            "divByTotalVol": 0,
             "scale": 1.0,
         },
     },
@@ -83,7 +85,7 @@ class Top(Multipoint):
         self.add_subsystem("mesh", dafoam_builder.get_mesh_coordinate_subsystem())
 
         # add the geometry component (FFD)
-        self.add_subsystem("geometry", OM_DVGEOCOMP(file="FFD/wingFFD.xyz", type="ffd"))
+        self.add_subsystem("geometry", OM_DVGEOCOMP(file="FFD/plateFFD.xyz", type="ffd"))
 
         # add a scenario (flow condition) for optimization, we pass the builder
         # to the scenario to actually run the flow and adjoint
@@ -118,11 +120,12 @@ class Top(Multipoint):
             for j in [2, 4]:
                 # k=0 and k=1 move together to ensure symmetry
                 shapesY.append({pts[i, j, 0]: dir_y, pts[i, j, 1]: dir_y})
-        self.geometry.nom_addShapeFunctionDV(dvName="shapeX", shapes=shapesX)
+        self.geometry.nom_addShapeFunctionDV(dvName="shapeY", shapes=shapesY)
         for i in [2, 4]:
             for j in range(2, 5):
                 # k=0 and k=1 move together to ensure symmetry
-                shapesY.append({pts[i, j, 0]: dir_x, pts[i, j, 1]: dir_x})
+                shapesX.append({pts[i, j, 0]: dir_x, pts[i, j, 1]: dir_x})
+        self.geometry.nom_addShapeFunctionDV(dvName="shapeX", shapes=shapesX)
 
         # add the design variables to the dvs component's output
         self.dvs.add_output("shapeX", val=np.array([0] * len(shapesX)))
