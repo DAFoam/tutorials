@@ -26,7 +26,7 @@ daOptions = {
     "designSurfaces": ["blade"],
     "primalMinResTolDiff": 1e4,
     "primalMinResTol": 1e-9,
-    "objFunc": {
+    "function": {
         "CMX": {
             "type": "moment",
             "source": "patchToFace",
