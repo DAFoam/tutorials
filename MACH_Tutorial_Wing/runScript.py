@@ -30,7 +30,7 @@ p0 = 101325.0
 nuTilda0 = 4.5e-5
 T0 = 300.0
 CL_target = 0.5
-aoa0 = 2.0
+aoa0 = 4.65
 rho0 = p0 / T0 / 287.0
 A0 = 45.5
 
@@ -69,6 +69,7 @@ daOptions = {
         "pcFillLevel": 1,
         "jacMatReOrdering": "rcm",
         "useNonZeroInitGuess": True,
+        "dynAdjustTol": True,
     },
     "normalizeStates": {
         "U": U0,
