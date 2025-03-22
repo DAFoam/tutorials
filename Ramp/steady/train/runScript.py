@@ -130,7 +130,7 @@ daOptions = {
         "betaKVar": {
             "type": "variance",
             "source": "allCells",
-            "scale": 1.0,
+            "scale": 0.01,
             "mode": "field",
             "varName": "betaFIK",
             "varType": "scalar",
@@ -139,7 +139,7 @@ daOptions = {
         "betaOmegaVar": {
             "type": "variance",
             "source": "allCells",
-            "scale": 1.0,
+            "scale": 0.01,
             "mode": "field",
             "varName": "betaFIOmega",
             "varType": "scalar",
