@@ -24,7 +24,7 @@ function preProcess()
   getFIData -refFieldName U -refFieldType vector -time 9999
   getFIData -refFieldName p -refFieldType scalar -time 9999
   
-  mv */*Data.gz 0/
+  cp -r */*Data.gz 0/
   rm -rf {1..9}*
   
   # get ready for the KW run
