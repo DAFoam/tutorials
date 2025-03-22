@@ -178,7 +178,7 @@ class Top(Multipoint):
         nShapes = self.geometry.nom_addLocalDV(dvName="shape", pointSelect=PS)
 
         # setup the volume and thickness constraints
-        leList = [[0.01, 0.0, 1e-3], [0.01, 0.0, 0.63]]
+        leList = [[0.005, 0.0, 1e-3], [0.005, 0.0, 0.63]]
         teList = [[0.235, 0.0, 1e-3], [0.235, 0.0, 0.63]]
         self.geometry.nom_addThicknessConstraints2D("thickcon", leList, teList, nSpan=10, nChord=10)
         self.geometry.nom_addVolumeConstraint("volcon", leList, teList, nSpan=10, nChord=10)
