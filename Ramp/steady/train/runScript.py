@@ -167,18 +167,12 @@ daOptions = {
         "phi": 1.0,
     },
     "inputInfo": {
-        "betaK": {
-            "type": "field",
-            "fieldName": "betaFIK",
-            "fieldType": "scalar",
-            "distributed": False,
+        "model1": {
+            "type": "regressionPar",
             "components": ["solver", "function"],
         },
-        "betaOmega": {
-            "type": "field",
-            "fieldName": "betaFIOmega",
-            "fieldType": "scalar",
-            "distributed": False,
+        "model2": {
+            "type": "regressionPar",
             "components": ["solver", "function"],
         },
     },
@@ -225,8 +219,8 @@ class Top(Multipoint):
 
         # manually connect the dvs output to the geometry and cruise
         for case in cases:
-            self.connect("parameter1", "%s.parameter1" % case)
-            self.connect("parameter2", "%s.parameter2" % case)
+            self.connect("parameter1", "%s.model1" % case)
+            self.connect("parameter2", "%s.model2" % case)
             self.connect("%s.aero_post.pVar" % case, "obj.%s" % case)
 
         # define the design variables to the top level
