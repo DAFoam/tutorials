@@ -40,7 +40,7 @@ daOptions = {
             "outputName": "betaFIK",
             "hiddenLayerNeurons": [20, 20],
             "inputShift": [0.0, 0.0, 0.0, 0.0],
-            "inputScale": [1.0, 1.0, 1.0, 0.1],
+            "inputScale": [1.0, 1.0, 1.0, 1.0],
             "outputShift": 1.0,
             "outputScale": 1.0,
             "activationFunction": "tanh",
@@ -56,7 +56,7 @@ daOptions = {
             "outputName": "betaFIOmega",
             "hiddenLayerNeurons": [20, 20],
             "inputShift": [0.0, 0.0, 0.0, 0.0],
-            "inputScale": [1.0, 1.0, 1.0, 0.1],
+            "inputScale": [1.0, 1.0, 1.0, 1.0],
             "outputShift": 1.0,
             "outputScale": 1.0,
             "activationFunction": "tanh",
@@ -80,14 +80,14 @@ daOptions = {
         },
     },
     "inputInfo": {
-        "betaK": {
+        "model1": {
             "type": "field",
             "fieldName": "betaFIK",
             "fieldType": "scalar",
             "distributed": False,
             "components": ["solver", "function"],
         },
-        "betaOmega": {
+        "model2": {
             "type": "field",
             "fieldName": "betaFIOmega",
             "fieldType": "scalar",
@@ -115,11 +115,11 @@ class Top(Multipoint):
     def configure(self):
         # configure and setup perform a similar function, i.e., initialize the optimization.
         # But configure will be run after setup
-        self.dvs.add_output("parameter1", val=parameter0["model1"])
-        self.dvs.add_output("parameter2", val=parameter0["model2"])
+        self.dvs.add_output("parameter1", val=parameter0["parameter1"])
+        self.dvs.add_output("parameter2", val=parameter0["parameter2"])
 
-        self.connect("parameter1", "c1.parameter1")
-        self.connect("parameter2", "c1.parameter2")
+        self.connect("parameter1", "c1.model1")
+        self.connect("parameter2", "c1.model2")
 
         # define the design variables to the top level
         self.add_design_var("parameter1", lower=-10.0, upper=10.0, scaler=1.0)
