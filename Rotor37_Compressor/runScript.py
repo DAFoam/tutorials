@@ -13,7 +13,7 @@ from pygeo import geo_utils
 
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
-parser.add_argument("-optimizer", help="optimizer to use", type=str, default="IPOPT")
+parser.add_argument("-optimizer", help="optimizer to use", type=str, default="SLSQP")
 # which task to run. Options are: run_driver (default), run_model, compute_totals, check_totals
 parser.add_argument("-task", help="type of run to do", type=str, default="run_driver")
 args = parser.parse_args()
@@ -21,6 +21,9 @@ args = parser.parse_args()
 # =============================================================================
 # Input Parameters
 # =============================================================================
+
+TPR0 = 1.5927
+MFR0 = 0.59763
 
 # Input parameters for DAFoam
 daOptions = {
@@ -141,8 +144,8 @@ class Top(Multipoint):
 
         # add objective and constraints to the top level
         self.add_objective("cruise.aero_post.CMZ", scaler=1.0)
-        self.add_constraint("cruise.aero_post.MFR", equals=0.7, scaler=1.0)
-        self.add_constraint("cruise.aero_post.TPR", equals=1.6, scaler=1.0)
+        self.add_constraint("cruise.aero_post.MFR", equals=MFR0, scaler=1.0)
+        self.add_constraint("cruise.aero_post.TPR", lower=TPR0, scaler=1.0)
 
 
 # OpenMDAO setup
