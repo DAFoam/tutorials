@@ -1,6 +1,6 @@
 #!/bin/bash
-cd baseline && mpirun --oversubscribe -np 4 python runScript.py && cd ..
-cd reference && mpirun --oversubscribe -np 4 python runScript.py && cd ..
-cd trained && mpirun --oversubscribe -np 4 python runScript.py && cd ..
+cd baseline && mpirun -np 2 python runScript.py && cd ..
+cd reference && mpirun -np 2 python runScript.py && cd ..
+cd trained && mpirun -np 2 python runScript.py && cd ..
 
 
