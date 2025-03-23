@@ -17,7 +17,7 @@ cp constant/turbulenceProperties_SST constant/turbulenceProperties
 cp system/controlDict_spinup system/controlDict
 rm -rf 0
 cp -r 0_orig 0
-mpirun --oversubscribe -np 4 python runPrimal.py
+mpirun -np 2 python runPrimal.py
 reconstructPar 
 rm -rf 0.1/polyMesh 0.1/uniform
 cp 0_orig/betaFINuTildaData 0.1/
@@ -28,7 +28,7 @@ cp constant/turbulenceProperties_SA constant/turbulenceProperties
 cp system/controlDict_spinup system/controlDict
 rm -rf 0
 cp -r 0_orig 0
-mpirun --oversubscribe -np 4 python runPrimal.py
+mpirun -np 2 python runPrimal.py
 reconstructPar 
 rm -rf 0.1/polyMesh 0.1/uniform
 cp 0_orig/betaFINuTildaData 0.1/
@@ -40,7 +40,7 @@ cp constant/turbulenceProperties_SST constant/turbulenceProperties
 cp system/controlDict_full system/controlDict
 rm -rf 0
 cp -r 0_SST 0
-mpirun --oversubscribe -np 4 python runPrimal.py
+mpirun -np 2 python runPrimal.py
 reconstructPar 
 rm -rf processor*
 
