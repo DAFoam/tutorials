@@ -4,7 +4,7 @@
 # Imports
 # =============================================================================
 from mpi4py import MPI
-from dafoam import PYDAFOAM, optFuncs
+from dafoam import PYDAFOAM
 
 gcomm = MPI.COMM_WORLD
 
@@ -24,7 +24,6 @@ daOptions = {
             "directionMode": "fixedDirection",
             "direction": [1.0, 0.0, 0.0],
             "scale": 1.0,
-            "addToAdjoint": True,
             "timeOp": "average",
         }
     },
