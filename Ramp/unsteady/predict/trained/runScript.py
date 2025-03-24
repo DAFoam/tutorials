@@ -21,7 +21,7 @@ np.set_printoptions(precision=8, threshold=10000)
 
 with open("./designVariable.json") as f:
     dv = json.load(f)
-parameter0 = dv["reg_model1"]
+parameter0 = dv["parameter"]
 
 # Set the parameters for optimization
 daOptions = {
