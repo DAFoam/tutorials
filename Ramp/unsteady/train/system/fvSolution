@@ -66,7 +66,7 @@ PIMPLE
 {
     nNonOrthogonalCorrectors 0;
     nCorrectors         2;
-    nOuterCorrectors 100;
+    nOuterCorrectors 10;
 
     residualControl
     {
