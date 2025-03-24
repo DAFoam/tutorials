@@ -85,7 +85,6 @@ daOptions = {
         "gmresAbsTol": 1.0e-6,
         "pcFillLevel": 1,
         "jacMatReOrdering": "rcm",
-        "useNonZeroInitGuess": False,
     },
     "normalizeStates": {
         "U": 10,
@@ -96,6 +95,7 @@ daOptions = {
     "inputInfo": {
         "reg_model1": {"type": "regressionPar", "components": ["solver", "function"]},
     },
+    "decomposeParDict": {"args": ["-time", "0:"],}
 }
 
 
