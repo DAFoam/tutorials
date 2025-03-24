@@ -81,13 +81,7 @@ daOptions = {
             "mode": "field",
             "varName": "betaFINuTilda",
             "varType": "scalar",
-                "timeDependentRefData": False,
-                "timeDependentRefData": False,
-                "addToAdjoint": True,
-            },
             "timeDependentRefData": False,
-                "addToAdjoint": True,
-            },
         },
         "CD": {
             "type": "force",
