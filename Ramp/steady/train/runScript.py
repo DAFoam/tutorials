@@ -103,7 +103,7 @@ daOptions = {
             "mode": "field",
             "varName": "U",
             "varType": "vector",
-            "components": [0, 1],
+            "indices": [0, 1],
             "timeDependentRefData": False,
         },
         "UProbeVar": {
@@ -114,7 +114,7 @@ daOptions = {
             "probePointCoords": probePointCoords["probePointCoords"],
             "varName": "U",
             "varType": "vector",
-            "components": [0, 1],
+            "indices": [0, 1],
             "timeDependentRefData": False,
         },
         "CDError": {

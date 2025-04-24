@@ -45,7 +45,7 @@ daOptions = {
             "source": "allCells",
             "varName": "solid:rho",
             "varType": "scalar",
-            "component": 0,
+            "index": 0,
             "isSquare": 0,
             "multiplyVol": 1,
             "divByTotalVol": 0,
