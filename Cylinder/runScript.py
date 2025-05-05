@@ -87,6 +87,9 @@ daOptions = {
         "aero_vol_coords": {"type": "volCoord", "components": ["solver", "function"]},
     },
     "checkMeshThreshold": {"maxAspectRatio": 5000.0},
+    "unsteadyCompOutput": {
+        "obj": ["CD"],
+    },
 }
 
 # mesh warping parameters, users need to manually specify the symmetry plane and their normals
@@ -155,7 +158,7 @@ class Top(Multipoint):
         self.add_design_var("shape", lower=-1.0, upper=1.0, scaler=10.0)
 
         # add objective and constraints to the top level
-        self.add_objective("CD", scaler=1.0)
+        self.add_objective("obj", scaler=1.0)
         self.add_constraint("thickcon", lower=0.3, upper=3.0, scaler=1.0)
         self.add_constraint("volcon", upper=1.0, scaler=1.0)
 
