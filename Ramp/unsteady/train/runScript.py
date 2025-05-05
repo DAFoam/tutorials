@@ -95,6 +95,9 @@ daOptions = {
     "inputInfo": {
         "reg_model1": {"type": "regressionPar", "components": ["solver", "function"]},
     },
+    "unsteadyCompOutput": {
+        "obj": ["pVar", "betaVar"],
+    },
     "decomposeParDict": {"args": ["-time", "0:"],}
 }
 
@@ -111,9 +114,6 @@ class Top(Multipoint):
             promotes=["*"],
         )
 
-        # setup a composite objective
-        self.add_subsystem("obj", om.ExecComp("val=error+regulation"))
-
     def configure(self):
 
         nParameters = self.scenario1.solver.DASolver.getNRegressionParameters("reg_model1")
@@ -123,9 +123,7 @@ class Top(Multipoint):
         # define the design variables to the top level
         self.add_design_var("reg_model1", lower=-100.0, upper=100.0, scaler=1.0)
         # add the objective
-        self.connect("pVar", "obj.error")
-        self.connect("betaVar", "obj.regulation")
-        self.add_objective("obj.val", scaler=1.0)
+        self.add_objective("obj", scaler=1.0)
 
 
 # OpenMDAO setup
