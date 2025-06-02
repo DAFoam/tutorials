@@ -18,8 +18,8 @@ gcomm = MPI.COMM_WORLD
 U0 = 20.0
 A0 = 0.1
 aoa0 = 20.0
-Ux = U0 * np.cos(aoa0 * np.pi / 180.0)
-Uy = U0 * np.sin(aoa0 * np.pi / 180.0)
+Ux = float(U0 * np.cos(aoa0 * np.pi / 180.0))
+Uy = float(U0 * np.sin(aoa0 * np.pi / 180.0))
 
 # Set the parameters for optimization
 daOptions = {
