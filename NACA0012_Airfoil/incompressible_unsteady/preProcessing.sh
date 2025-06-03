@@ -6,6 +6,23 @@ if [ -z "$WM_PROJECT" ]; then
   exit
 fi
 
+# ************* cruise ****************
+# generate mesh
+cd cruise
+echo "Generating mesh.."
+python genAirFoilMesh.py &> logMeshGeneration.txt
+plot3dToFoam -noBlank volumeMesh.xyz >> logMeshGeneration.txt
+autoPatch 30 -overwrite >> logMeshGeneration.txt
+createPatch -overwrite >> logMeshGeneration.txt
+renumberMesh -overwrite >> logMeshGeneration.txt
+echo "Generating mesh.. Done!"
+
+# copy initial and boundary condition files
+cp -r 0.orig 0
+
+
+# ************* maxLift ****************
+cd ../maxLift
 # generate mesh
 echo "Generating mesh.."
 python genAirFoilMesh.py &> logMeshGeneration.txt
@@ -34,11 +51,16 @@ rm -rf 0/uniform 0/polyMesh
 # run the pimpleFoam primal to get equilibrium initial fields
 cp -r system/controlDict_pimple_long system/controlDict
 cp -r system/fvSchemes_pimple system/fvSchemes
+sed -i "s/meshWaveFrozen;/meshWave;/g" system/fvSchemes
 cp -r system/fvSolution_pimple system/fvSolution
-mpirun -np 4 python runScript.py -task=run_model
+decomposePar
+mpirun -np 4 pimpleFoam -parallel
+sed -i "s/meshWave;/meshWaveFrozen;/g" system/fvSchemes
 reconstructPar -latestTime
 rm -rf processor*
 rm -rf 0
-mv 2 0
+mv 1 0
 rm -rf 0/uniform 0/polyMesh
 cp -r system/controlDict_pimple system/controlDict
+
+cd ../

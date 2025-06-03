@@ -12,8 +12,9 @@ from mpi4py import MPI
 import json
 import openmdao.api as om
 from mphys.multipoint import Multipoint
-from dafoam.mphys.mphys_dafoam import DAFoamBuilderUnsteady
+from dafoam.mphys.mphys_dafoam import DAFoamBuilderUnsteady, DAFoamBuilder
 from pygeo.mphys import OM_DVGEOCOMP
+from mphys.scenario_aerodynamic import ScenarioAerodynamic
 
 np.set_printoptions(precision=8, threshold=10000)
 
@@ -28,18 +29,73 @@ parser.add_argument("-task", help="type of run to do", type=str, default="run_dr
 args = parser.parse_args()
 
 # Define the global parameters here
-U0 = 20.0
+U0Cruise = 20.0
+U0MaxLift = 10.0
 p0 = 0.0
 nuTilda0 = 4.5e-5
-aoa0 = 20.0
-CD_max = 0.2
+aoa0MaxLift = 20.0
+aoa0Cruise = 3.0
+CLCruise = 0.5
+CLMaxLift = 1.0
 A0 = 0.1
+rho0 = 1.0
+
 
 # Set the parameters for optimization
-daOptions = {
+daOptionsCruise = {
+    "designSurfaces": ["wing"],
+    "solverName": "DASimpleFoam",
+    "primalMinResTol": 1.0e-8,
+    "primalBC": {
+        "U0": {"variable": "U", "patches": ["inout"], "value": [U0Cruise, 0.0, 0.0]},
+        "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
+        "nuTilda0": {"variable": "nuTilda", "patches": ["inout"], "value": [nuTilda0]},
+        "useWallFunction": True,
+    },
+    "function": {
+        "CD": {
+            "type": "force",
+            "source": "patchToFace",
+            "patches": ["wing"],
+            "directionMode": "parallelToFlow",
+            "patchVelocityInputName": "patchV",
+            "scale": 1.0 / (0.5 * U0Cruise * U0Cruise * A0 * rho0),
+        },
+        "CL": {
+            "type": "force",
+            "source": "patchToFace",
+            "patches": ["wing"],
+            "directionMode": "normalToFlow",
+            "patchVelocityInputName": "patchV",
+            "scale": 1.0 / (0.5 * U0Cruise * U0Cruise * A0 * rho0),
+        },
+    },
+    "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
+    "normalizeStates": {
+        "U": U0Cruise,
+        "p": U0Cruise * U0Cruise / 2.0,
+        "nuTilda": nuTilda0 * 10.0,
+        "phi": 1.0,
+    },
+    "inputInfo": {
+        "aero_vol_coords": {"type": "volCoord", "components": ["solver", "function"]},
+        "patchV": {
+            "type": "patchVelocity",
+            "patches": ["inout"],
+            "flowAxis": "x",
+            "normalAxis": "y",
+            "components": ["solver", "function"],
+        },
+    },
+}
+
+daOptionsMaxLift = {
     "designSurfaces": ["wing"],
     "solverName": "DAPimpleFoam",
     "primalBC": {
+        "U0": {"variable": "U", "patches": ["inout"], "value": [U0MaxLift, 0.0, 0.0]},
+        "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
+        "nuTilda0": {"variable": "nuTilda", "patches": ["inout"], "value": [nuTilda0]},
         "useWallFunction": True,
     },
     "unsteadyAdjoint": {
@@ -47,6 +103,7 @@ daOptions = {
         "PCMatPrecomputeInterval": 50,
         "PCMatUpdateInterval": 100000,
         "reduceIO": True,
+        "readZeroFields": False,
     },
     "printIntervalUnsteady": 1,
     "function": {
@@ -56,7 +113,7 @@ daOptions = {
             "patches": ["wing"],
             "directionMode": "parallelToFlow",
             "patchVelocityInputName": "patchV",
-            "scale": 1.0 / (0.5 * U0 * U0 * A0),
+            "scale": 1.0 / (0.5 * U0MaxLift * U0MaxLift * A0 * rho0),
         },
         "CL": {
             "type": "force",
@@ -64,7 +121,7 @@ daOptions = {
             "patches": ["wing"],
             "directionMode": "normalToFlow",
             "patchVelocityInputName": "patchV",
-            "scale": 1.0 / (0.5 * U0 * U0 * A0),
+            "scale": 1.0 / (0.5 * U0MaxLift * U0MaxLift * A0 * rho0),
         },
     },
     "adjStateOrdering": "cell",
@@ -77,8 +134,8 @@ daOptions = {
         "dynAdjustTol": True,
     },
     "normalizeStates": {
-        "U": U0,
-        "p": U0 * U0 / 2.0,
+        "U": U0MaxLift,
+        "p": U0MaxLift * U0MaxLift / 2.0,
         "nuTilda": nuTilda0 * 10.0,
         "phi": 1.0,
     },
@@ -108,41 +165,48 @@ meshOptions = {
 }
 
 
-
 class Top(Multipoint):
     def setup(self):
 
         # ivc to keep the top level DVs
         self.add_subsystem("dvs", om.IndepVarComp(), promotes=["*"])
 
-        # add the geometry component, we dont need a builder because we do it here.
-        self.add_subsystem("geometry", OM_DVGEOCOMP(file="FFD/wingFFD.xyz", type="ffd"), promotes=["*"])
+        # add the max_lift scenario (unsteady)
+        self.add_subsystem("geometry_max_lift", OM_DVGEOCOMP(file="cruise/FFD/wingFFD.xyz", type="ffd"))
 
         self.add_subsystem(
-            "scenario1",
-            DAFoamBuilderUnsteady(solver_options=daOptions, mesh_options=meshOptions),
-            promotes=["*"],
+            "scenario_max_lift",
+            DAFoamBuilderUnsteady(solver_options=daOptionsMaxLift, mesh_options=meshOptions, run_directory="maxLift"),
         )
+        self.connect("geometry_max_lift.x_aero0", "scenario_max_lift.x_aero")
 
-        self.connect("x_aero0", "x_aero")
+        # add the cruise scenario (steady)
+        cruise_builder = DAFoamBuilder(daOptionsCruise, meshOptions, scenario="aerodynamic", run_directory="cruise")
+        cruise_builder.initialize(self.comm)
+
+        self.add_subsystem("mesh_cruise", cruise_builder.get_mesh_coordinate_subsystem())
+        self.add_subsystem("geometry_cruise", OM_DVGEOCOMP(file="cruise/FFD/wingFFD.xyz", type="ffd"))
+        self.mphys_add_scenario("scenario_cruise", ScenarioAerodynamic(aero_builder=cruise_builder))
+        self.connect("mesh_cruise.x_aero0", "geometry_cruise.x_aero_in")
+        self.connect("geometry_cruise.x_aero0", "scenario_cruise.x_aero")
 
     def configure(self):
 
         # create geometric DV setup
-        points = self.scenario1.get_surface_mesh()
+        points_max_lift = self.scenario_max_lift.get_surface_mesh()
+        points_cruise = self.mesh_cruise.mphys_get_surface_mesh()
 
         # add pointset
-        self.geometry.nom_add_discipline_coords("aero", points)
+        self.geometry_max_lift.nom_add_discipline_coords("aero", points_max_lift)
+        self.geometry_cruise.nom_add_discipline_coords("aero", points_cruise)
 
         # set the triangular points to the geometry component for geometric constraints
-        tri_points = self.scenario1.DASolver.getTriangulatedMeshSurface()
-        self.geometry.nom_setConstraintSurface(tri_points)
-
-        # add the dv_geo object to the builder solver. This will be used to write deformed FFDs
-        self.scenario1.solver.add_dvgeo(self.geometry.DVGeo)
+        tri_points = self.scenario_max_lift.DASolver.getTriangulatedMeshSurface()
+        self.geometry_max_lift.nom_setConstraintSurface(tri_points)
+        # no need to set the cruise constraint because the max_lift and cruise have the same airfoil geo
 
         # use the shape function to define shape variables for 2D airfoil
-        pts = self.geometry.DVGeo.getLocalIndex(0)
+        pts = self.geometry_max_lift.DVGeo.getLocalIndex(0)
         dir_y = np.array([0.0, 1.0, 0.0])
         shapes = []
         for i in range(1, pts.shape[0] - 1):
@@ -153,28 +217,37 @@ class Top(Multipoint):
         # the LE/TE are fixed
         for i in [0, pts.shape[0] - 1]:
             shapes.append({pts[i, 0, 0]: dir_y, pts[i, 0, 1]: dir_y, pts[i, 1, 0]: -dir_y, pts[i, 1, 1]: -dir_y})
-        self.geometry.nom_addShapeFunctionDV(dvName="shape", shapes=shapes)
+        self.geometry_max_lift.nom_addShapeFunctionDV(dvName="shape", shapes=shapes)
+        self.geometry_cruise.nom_addShapeFunctionDV(dvName="shape", shapes=shapes)
 
         # setup the volume and thickness constraints
         leList = [[1e-4, 0.0, 1e-4], [1e-4, 0.0, 0.1 - 1e-4]]
         teList = [[0.998 - 1e-4, 0.0, 1e-4], [0.998 - 1e-4, 0.0, 0.1 - 1e-4]]
-        self.geometry.nom_addThicknessConstraints2D("thickcon", leList, teList, nSpan=2, nChord=10)
-        self.geometry.nom_addVolumeConstraint("volcon", leList, teList, nSpan=2, nChord=10)
-        self.geometry.nom_addLERadiusConstraints("rcon", leList, 2, [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0])
+        self.geometry_max_lift.nom_addThicknessConstraints2D("thickcon", leList, teList, nSpan=2, nChord=10)
+        self.geometry_max_lift.nom_addVolumeConstraint("volcon", leList, teList, nSpan=2, nChord=10)
+        self.geometry_max_lift.nom_addLERadiusConstraints("rcon", leList, 2, [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0])
         # NOTE: we no longer need to define the sym and LE/TE constraints
         # because these constraints are defined in the above shape function
 
         self.dvs.add_output("shape", val=np.zeros(len(shapes)))
-        self.dvs.add_output("x_aero_in", val=points, distributed=True)
-        self.dvs.add_output("patchV", val=np.array([U0, aoa0]))
+        self.dvs.add_output("x_aero_in", val=points_max_lift, distributed=True)
+        self.dvs.add_output("patchV_cruise", val=np.array([U0Cruise, aoa0Cruise]))
+        self.dvs.add_output("patchV_maxLift", val=np.array([U0MaxLift, aoa0MaxLift]))
+        self.connect("x_aero_in", "geometry_max_lift.x_aero_in")
+        self.connect("shape", "geometry_max_lift.shape")
+        self.connect("shape", "geometry_cruise.shape")
+        self.connect("patchV_maxLift", "scenario_max_lift.patchV")
+        self.connect("patchV_cruise", "scenario_cruise.patchV")
         # define the design variables to the top level
         self.add_design_var("shape", lower=-0.1, upper=0.1, scaler=10.0)
-        self.add_design_var("patchV", lower=[U0, 0.0], upper=[U0, 10.0], scaler=0.1)
-        self.add_objective("CL", scaler=-1.0)
-        self.add_constraint("CD", upper=CD_max)
-        self.add_constraint("thickcon", lower=0.5, upper=3.0, scaler=1.0)
-        self.add_constraint("volcon", lower=1.0, scaler=1.0)
-        self.add_constraint("rcon", lower=0.8, scaler=1.0)
+        self.add_design_var("patchV_cruise", lower=[U0Cruise, 0.0], upper=[U0Cruise, 10.0], scaler=0.1)
+        self.add_design_var("patchV_maxLift", lower=[U0MaxLift, 0.0], upper=[U0MaxLift, 50.0], scaler=0.1)
+        self.add_objective("scenario_cruise.aero_post.CD", scaler=-1.0)
+        self.add_constraint("scenario_cruise.aero_post.CL", lower=CLCruise)
+        self.add_constraint("scenario_max_lift.CL", lower=CLMaxLift)
+        self.add_constraint("geometry_max_lift.thickcon", lower=0.5, upper=3.0, scaler=1.0)
+        self.add_constraint("geometry_max_lift.volcon", lower=1.0, scaler=1.0)
+        self.add_constraint("geometry_max_lift.rcon", lower=0.8, scaler=1.0)
 
 
 # OpenMDAO setup
