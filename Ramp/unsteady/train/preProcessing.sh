@@ -34,7 +34,7 @@ cp constant/turbulenceProperties_SST constant/turbulenceProperties
 cp system/controlDict_full system/controlDict
 rm -rf 0
 cp -rf 0_SST 0
-mpirun -np 2 python runPrimal.py
+mpirun -np 2 python runPrimal.py 2>&1 | tee sst-ref.txt
 reconstructPar 
 rm -rf processor*
 
