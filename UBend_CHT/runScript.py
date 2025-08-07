@@ -23,8 +23,8 @@ from pygeo.mphys import OM_DVGEOCOMP
 # Input Parameters
 # =============================================================================
 parser = argparse.ArgumentParser()
-parser.add_argument("-optimizer" , help = "optimizer to use"  , type = str , default = "SNOPT")
-parser.add_argument("-task"      , help = "type of run to do" , type = str , default = "primal")
+parser.add_argument("-optimizer" , help = "optimizer to use" , type = str , default = "IPOPT")
+parser.add_argument("-task" , help = "type of run to do" , type = str , default = "run_driver")
 args = parser.parse_args()
 gcomm = MPI.COMM_WORLD
 
@@ -415,20 +415,20 @@ prob.driver.options["print_opt_prob"] = True
 prob.driver.hist_file = "OptView.hst"
 
 #---------- Run Task Parameters ----------
-if args.task == "opt":
+if args.task == "run_driver":
     prob.run_driver()
 
-elif args.task == "primal":
+elif args.task == "run_model":
     prob.run_model()
 
-elif args.task == "adjoint":
+elif args.task == "compute_totals":
     prob.run_model()
     totals = prob.compute_totals()
 
     if MPI.COMM_WORLD.rank == 0:
         print(totals)
 
-elif args.task == "checkTotals":
+elif args.task == "check_totals":
     prob.run_model()
     results       = prob.check_totals(
     of            = ["OBJ.val"],
