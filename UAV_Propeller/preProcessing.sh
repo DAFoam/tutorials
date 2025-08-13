@@ -9,10 +9,10 @@ fi
 if [ -f "constant/polyMesh" ]; then
   echo "Mesh already exists."
 else
-  echo "Downloading mesh polyMesh_UAV_Propeller.tar.gz"
-  wget https://github.com/dafoam/files/releases/download/v1.0.0/polyMesh_UAV_Propeller.tar.gz
+  echo "Downloading mesh polyMesh_UAV_Propeller.tar"
+  wget https://github.com/dafoam/files/releases/download/v1.0.0/polyMesh_UAV_Propeller.tar
 fi
-tar -xvf polyMesh_UAV_Propeller.tar.gz
+tar -xvf polyMesh_UAV_Propeller.tar
 mv polyMesh constant/
 
 echo "Generating mesh.. Done!"
