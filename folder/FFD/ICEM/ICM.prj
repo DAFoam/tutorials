@@ -1,0 +1,383 @@
+# ICEM CFD Project Settings
+# Saved by phe on dg1d6r53 on Fri Aug 04 11:54:24 AM Central Daylight Time 2023
+# ICEM CFD - version 22.1 - Release date: Nov 15 2021
+
+array set file_name {
+    catia_dir U:/Research/Propeller_Benchmark/FFD
+    parts_dir U:/Research/Propeller_Benchmark/FFD
+    domain_loaded 1
+    cart_file_loaded 0
+    cart_file {}
+    archive {}
+    med_replay {}
+    subface_proj ICM.spr
+    topology_dir U:/Research/Propeller_Benchmark/FFD
+    ugparts_dir U:/Research/Propeller_Benchmark/FFD
+    icons {{$env(ICEM_ACN)/lib/ai_env/icons} {$env(ICEM_ACN)/lib/va/EZCAD/icons} {$env(ICEM_ACN)/lib/icons} {$env(ICEM_ACN)/lib/va/CABIN/icons}}
+    tetin ICM.tin
+    family_boco ICM.fbc
+    prism_params ICM.prism_params
+    iges_dir U:/Research/Propeller_Benchmark/FFD
+    solver_params_loaded 1
+    attributes_loaded 1
+    project_lock {}
+    attributes ICM.atr
+    domain ICM.Multiblock
+    domains_dir U:/Research/Propeller_Benchmark/FFD
+    settings_loaded 1
+    settings ICM.prj
+    blocking ICM.blk
+    upstream_data U:/Research/Propeller_Benchmark/ICEM/iDesignLab_V1_Blade.igs
+    hexa_replay {}
+    transfer_dir U:/Research/Propeller_Benchmark/FFD
+    mesh_dir U:/Research/Propeller_Benchmark/FFD
+    family_topo ICM.fto
+    gemsparts_dir U:/Research/Propeller_Benchmark/FFD
+    family_boco_loaded 1
+    tetin_loaded 1
+    project_dir U:/Research/Propeller_Benchmark/FFD
+    topo_mulcad_out ICM.top
+    solver_params {}
+}
+array set options {
+    expert 1
+    remote_path {}
+    tree_disp_quad 2
+    tree_disp_pyra 0
+    evaluate_diagnostic 0
+    histo_show_default 1
+    select_toggle_corners 0
+    remove_all 0
+    keep_existing_file_names 0
+    record_journal 0
+    edit_wait 0
+    face_mode all
+    select_mode all
+    med_save_emergency_tetin 1
+    user_name phe
+    diag_which all
+    uns_warn_if_display 500000
+    bubble_delay 1000
+    external_num 1
+    tree_disp_tri 2
+    apply_all 0
+    default_solver Plot3d
+    temporary_directory {}
+    flood_select_angle 0
+    home_after_load 1
+    project_active 0
+    histo_color_by_quality_default 1
+    undo_logging 1
+    tree_disp_hexa 0
+    histo_solid_default 1
+    host_name dg1d6r53
+    xhidden_full 1
+    replay_internal_editor 1
+    editor {}
+    mouse_color orange
+    clear_undo 1
+    remote_acn {}
+    remote_sh csh
+    tree_disp_penta 0
+    n_processors 1
+    remote_host {}
+    save_to_new 0
+    quality_info Quality
+    tree_disp_node 0
+    med_save_emergency_mesh 1
+    redtext_color red
+    tree_disp_line 0
+    select_edge_mode 0
+    use_dlremote 0
+    max_mesh_map_size 1024
+    show_tris 1
+    remote_user {}
+    enable_idle 0
+    auto_save_views 1
+    max_cad_map_size 512
+    display_origin 0
+    uns_warn_user_if_display 1000000
+    detail_info 0
+    win_java_help 0
+    show_factor 1
+    boundary_mode all
+    clean_up_tmp_files 1
+    auto_fix_uncovered_faces 1
+    med_save_emergency_blocking 1
+    max_binary_tetin 0
+    tree_disp_tetra 0
+}
+array set disp_options {
+    uns_dualmesh 0
+    uns_warn_if_display 500000
+    uns_normals_colored 0
+    uns_icons 0
+    uns_locked_elements 0
+    uns_shrink_npos 0
+    uns_node_type None
+    uns_icons_normals_vol 0
+    uns_bcfield 0
+    backup Wire
+    uns_nodes 0
+    uns_only_edges 0
+    uns_surf_bounds 0
+    uns_wide_lines 0
+    uns_vol_bounds 0
+    uns_orientation 0
+    uns_directions 0
+    uns_thickness 0
+    uns_shell_diagnostic 0
+    uns_normals 0
+    uns_couplings 0
+    uns_periodicity 0
+    uns_single_surfaces 0
+    uns_midside_nodes 1
+    uns_shrink 100
+    uns_multiple_surfaces 0
+    uns_no_inner 0
+    uns_enums 0
+    uns_disp Wire
+    uns_bcfield_name {}
+    uns_color_by_quality 0
+    uns_changes 0
+    uns_cut_delay_count 1000
+}
+set icon_size1 24
+set icon_size2 35
+set thickness_defined 0
+set solver_type 1
+set solver_setup -1
+array set prism_values {
+    n_triangle_smoothing_steps 5
+    min_smoothing_steps 6
+    first_layer_smoothing_steps 1
+    new_volume {}
+    height {}
+    prism_height_limit {}
+    interpolate_heights 0
+    n_tetra_smoothing_steps 10
+    do_checks {}
+    delete_standalone 1
+    ortho_weight 0.50
+    max_aspect_ratio {}
+    ratio_max {}
+    incremental_write 0
+    total_height {}
+    use_prism_v10 0
+    intermediate_write 1
+    delete_base_triangles {}
+    ratio_multiplier {}
+    verbosity_level 1
+    refine_prism_boundary 1
+    max_size_ratio {}
+    triangle_quality {}
+    max_prism_angle 180
+    tetra_smooth_limit 0.30000001
+    max_jump_factor 5
+    use_existing_quad_layers 0
+    layers 3
+    fillet 0.1
+    into_orphan 0
+    init_dir_from_prev {}
+    blayer_2d 0
+    do_not_allow_sticking {}
+    top_family {}
+    law exponential
+    min_smoothing_val 0.1
+    auto_reduction 0
+    stop_columns 1
+    stair_step 1
+    smoothing_steps 12
+    side_family {}
+    min_prism_quality 0.0099999998
+    ratio 1.2
+}
+set aie_current_flavor {}
+array set vid_options {
+    wb_import_tritol 0.001
+    wb_import_cad_att_pre {SDFEA;DDM}
+    wb_NS_to_subset 0
+    wb_import_mat_points 0
+    wb_import_mix_res -1
+    wb_import_save_pmdb {}
+    composite_tolerance 1.0
+    wb_import_save_partfile 0
+    wb_NS_to_entity_parts 0
+    wb_import_reference_key 0
+    replace 0
+    tdv_axes 1
+    vid_mode 0
+    auxiliary 0
+    wb_import_surface_bodies 1
+    show_name 0
+    wb_import_cad_att_trans 0
+    wb_import_solid_bodies 1
+    default_part GEOM
+    wb_import_mix_res_solid 0
+    new_srf_topo 1
+    DelPerFlag 0
+    wb_import_associativity_model_name {}
+    show_item_name 0
+    wb_import_work_points 0
+    wb_import_sel_proc 0
+    wb_NS_only 0
+    wb_import_scale_geo Default
+    wb_import_lcs 0
+    same_pnt_tol 1e-4
+    wb_import_transfer_file_scale 1.0
+    DelBlkPerFlag 0
+    wb_import_mesh 0
+    wb_import_mix_res_surface 0
+    wb_import_analysis_type 3
+    wb_import_geom 1
+    wb_import_refresh_pmdb 0
+    wb_import_load_pmdb {}
+    wb_import_mix_res_line 0
+    wb_import_delete_solids 0
+    inherit 1
+    wb_import_line_bodies 0
+    wb_run_mesher tetra
+    wb_import_en_sym_proc 1
+    wb_import_pluginname {}
+    wb_import_mix_res_point 0
+    wb_import_create_solids 0
+    wb_import_sel_pre {}
+    wb_import_cad_associativity 1
+}
+set savedTreeVisibility {geomNode 1 geom_subsetNode 0 geomPointNode 0 geomCurveNode 2 geomSurfNode 0 meshNode 1 mesh_subsetNode 2 mesh_domainNode 0 mesh_subfaceNode 0 mesh_edgeNode 0 mesh_vertexNode 0 blockingNode 1 block_subsetNode 2 block_vertNode 0 block_edgeNode 2 block_faceNode 0 block_blockNode 0 block_meshNode 0 topoNode 2 topo-root 2 partNode 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_10 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_10/IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_10__1 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_11 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_11/IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_11__1 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_12 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_12/IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_12__1 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_13 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_13/IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_13__1 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_1_1 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_2 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_2/IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_2__1 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_3 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_3/IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_3__1 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_4 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_4/IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_4__1 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_5 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_5/IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_5__1 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_6 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_6/IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_6__1 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_7 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_7/IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_7__1 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_8 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_8/IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_8__1 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_9 2 part-IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_9/IDESIGNLAB_V1_BLADE-FREEPARTS_SINGLE_BLADE_9__1 2 part-ORFN 2 part-SOLID 2 part-VORFN 0}
+set last_view {rot {-0.118319466403 -0.658890666034 -0.0926878186484 0.737070256057} scale {6124.27915958 6124.27915958 6124.27915958} center {0.0 0.00035765 0.0681405} pos {-106.10607558 167.738375557 0}}
+array set cut_info {
+    active 0
+    whole 1
+}
+array set hex_option {
+    default_bunching_ratio 2.0
+    floating_grid 0
+    project_to_topo 0
+    n_tetra_smoothing_steps 20
+    sketching_mode 0
+    trfDeg 1
+    wr_hexa7 0
+    hexa_projection_mode 0
+    smooth_ogrid 0
+    find_worst 1-3
+    hexa_verbose_mode 0
+    old_eparams 0
+    uns_face_mesh_method uniform_quad
+    multigrid_level 0
+    uns_face_mesh one_tri
+    check_blck 0
+    proj_limit 0
+    check_inv 0
+    project_bspline 0
+    hexa_update_mode 1
+    default_bunching_law BiGeometric
+    worse_criterion Quality
+}
+array set saved_views {
+    views {}
+}
+
+#------------- DEZ Data ------------------
+
+namespace eval ::AIEnv::GUIManagement::DEZ {
+    array set meshPrismDEZ_data {
+        this meshPrismDEZ
+        type DEZ
+        n_triangle_smoothing_steps 5
+        triangle_quality {}
+        __meshPrismTriQuality_Last_Index 0
+        n_tetra_smoothing_steps 10
+        smoothing_steps 12
+        first_layer_smoothing_steps 1
+        loadmesh 0
+    }
+    array set moveBVertexDEZ_data {
+        this moveBVertexDEZ
+        type DEZ
+        moveBVertexmainVal 0
+        MoveVertexOptions {Single Multiple}
+        MVHow Single
+        __MVtype_Last_Index 0
+        moveVerts {}
+        mv_fixx 0
+        mv_fixy 0
+        mv_fixz 1
+        moveVertsDirGGVal 0
+        dirEdge {}
+        mv_normal 0
+        mv_depend 0
+        SetPostitionOptions {"Set Position" "Increment Position"}
+        SLHow {Set Position}
+        __SLtype_Last_Index 0
+        refLocTypeVal 0
+        ref_vertex {}
+        ref_point {}
+        SetLocCsysVal 0
+        SetLocBVertexXVal 0
+        X 0.00598650565
+        SetLocBVertexYVal 0
+        Y 0.0139968768
+        SetLocBVertexZVal 1
+        Z 0.01
+        SetLocBVertexNVal 0
+        Normal {}
+        SetLocCylRVal 0
+        SetLocCylTVal 0
+        SetLocCylZVal 0
+        vertices {{  21  } {  37  } {  25  } {  41  }}
+        edge {}
+        vertex {}
+        AlignVertCsysVal 0
+        AlignVertexGGVal 0
+        AlignVertexPlaneMethod 1
+        Plane {}
+        AlignVertCylParVal 0
+        alignDir {}
+        vertList {}
+        edgeList {}
+        length {}
+        edgeLenGGVal 0
+        moveFacesEGVal 0
+        faceList {}
+        moveFaceGGVal 0
+        vector {}
+        vecList {}
+        center {}
+        angle {}
+        moveVertsGGVal 0
+    }
+    array set hexMeshOptsDEZ_data {
+        this hexMeshOptsDEZ
+        type DEZ
+        mgLevel 0
+        displayLevel 0
+        projLimit 0
+        lawList {Uniform Hyperbolic BiGeometric Poisson}
+        meshLaw BiGeometric
+        __hexMeshOptsMLaw_Last_Index 0
+        ratio 2.0
+        find_worst 1-3
+        smoothOgrid 0
+        floatGrid 0
+        proj 0
+        check_blck 0
+        check_inv 0
+        wr_hexa7 0
+        project_to_topo 0
+        hexa_verbose_mode 0
+        hexa_update_mode 1
+        trfDeg 1
+        refTopo {}
+        unsTypeList {{Tri (STL like)} {All Tri} {All Quad} {Quad Dominant} {Quad w/one Tri}}
+        unsType {Quad w/one Tri}
+        __hexMeshOptsUns_Last_Index 0
+        unsMethodList {{ICEM CFD Quad} {Gambit Pave} Auto}
+        unsMethod {ICEM CFD Quad}
+        __hexMeshOptsMet_Last_Index 0
+        hexEntTypes {"Vertices" "Edges" "Faces" "Struct. & Swept Blocks" "All Blocks"}
+        what_to_mesh {All Blocks}
+        __hexMeshOptsDim_Last_Index 0
+        nTetSmooth 20
+    }
+}
