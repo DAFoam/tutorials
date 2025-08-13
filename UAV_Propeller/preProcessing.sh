@@ -1,32 +1,20 @@
 #!/bin/bash
 
+# Check if the OpenFOAM enviroments are loaded
 if [ -z "$WM_PROJECT" ]; then
   echo "OpenFOAM environment not found, forgot to source the OpenFOAM bashrc?"
   exit
 fi
 
-# pre-processing
-
-# get the geometry
-if [ -f "mdolab_UAV_prop_CFDmesh.cgns.tar.gz" ]; then
-  echo "Surface geometry mdolab_UAV_prop_CFDmesh.cgns.tar.gz already exists."
+if [ -f "constant/polyMesh" ]; then
+  echo "Mesh already exists."
 else
-  echo "Downloading surface geometry mdolab_wing_surface_mesh.cgns.tar.gz"
-  wget https://github.com/dafoam/files/releases/download/v1.0.0/mdolab_UAV_prop_CFDmesh.cgns.tar.gz
+  echo "Downloading mesh polyMesh_UAV_Propeller.tar.gz"
+  wget https://github.com/dafoam/files/releases/download/v1.0.0/polyMesh_UAV_Propeller.tar.gz
 fi
-tar -xvf mdolab_UAV_prop_CFDmesh.cgns.tar.gz
+tar -xvf polyMesh_UAV_Propeller.tar.gz
+mv polyMesh constant/
 
-# generate mesh
-echo "Generating mesh.."
-
-# coarsen the surface mesh three times
-cgns_utils coarsen mdolab_UAV_prop_CFDmesh.cgns surfaceMesh.cgns
-#cgns_utils coarsen surfaceMesh.cgns
-python genWingMesh.py &> logMeshGeneration.txt
-plot3dToFoam -noBlank volumeMesh.xyz >> logMeshGeneration.txt
-autoPatch 60 -overwrite >> logMeshGeneration.txt
-createPatch -overwrite >> logMeshGeneration.txt
-renumberMesh -overwrite >> logMeshGeneration.txt
 echo "Generating mesh.. Done!"
 
 # copy initial and boundary condition files
