@@ -9,7 +9,7 @@ fi
 if [ -f "triSurface.tar.gz" ]; then
   echo "Surface geometry triSurface.tar.gz already exists."
 else
-  echo "Downloading surface geometry NREL6_triSurface.tar.gz"
+  echo "Downloading surface geometry triSurface.tar.gz"
   wget https://github.com/dafoam/files/releases/download/v1.0.0/triSurface.tar.gz
 fi
 tar -xvf triSurface.tar.gz
