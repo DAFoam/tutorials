@@ -28,18 +28,15 @@ args = parser.parse_args()
 # =============================================================================
 # Input Parameters
 # =============================================================================
-U0 = 255.0
+U0 = 248.0
 p0 = 101325.0
 T0 = 300.0
 nuTilda0 = 4.5e-5
-CL_target = 0.5
-aoa0 = 2.0
+CL_target = 0.75
+twist0 = 2.0
 A0 = 0.01
 # rho is used for normalizing CD and CL
 rho0 = p0 / T0 / 287
-
-Ux = float(U0 * np.cos(aoa0 * np.pi / 180))
-Uy = float(U0 * np.sin(aoa0 * np.pi / 180))
 
 # Input parameters for DAFoam
 daOptions = {
@@ -57,8 +54,6 @@ daOptions = {
             "type": "force",
             "source": "patchToFace",
             "patches": ["wing"],
-            # "directionMode": "parallelToFlow",
-            # "patchVelocityInputName": "patchV",
             "directionMode": "fixedDirection",
             "direction": [1.0, 0.0, 0.0],
             "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
@@ -67,8 +62,6 @@ daOptions = {
             "type": "force",
             "source": "patchToFace",
             "patches": ["wing"],
-            # "directionMode": "normalToFlow",
-            # "patchVelocityInputName": "patchV",
             "directionMode": "fixedDirection",
             "direction": [0.0, 1.0, 0.0],
             "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
@@ -76,7 +69,7 @@ daOptions = {
     },
     "adjStateOrdering": "cell",
     "adjEqnOption": {
-        "gmresRelTol": 1.0e-4,
+        "gmresRelTol": 1.0e-6,
         "pcFillLevel": 1,
         "jacMatReOrdering": "natural",
         "gmresMaxIters": 2000,
@@ -165,7 +158,7 @@ class Top(Multipoint):
             for i in range(2):
                 geo.rot_z["wingAxis"].coef[i] = -val[0]
 
-        self.geometry.nom_addGlobalDV(dvName="twist", value=np.ones(1) * aoa0, func=twist)
+        self.geometry.nom_addGlobalDV(dvName="twist", value=np.ones(1) * twist0, func=twist)
 
         # setup the volume and thickness constraints
         leList = [[1e-3, 0.0, 1e-3], [1e-3, 0.0, 0.01 - 1e-3]]
@@ -178,7 +171,7 @@ class Top(Multipoint):
 
         # add the design variables to the dvs component's output
         self.dvs.add_output("shape", val=np.array([0] * len(shapes)))
-        self.dvs.add_output("twist", val=np.ones(1) * aoa0)
+        self.dvs.add_output("twist", val=np.ones(1) * twist0)
 
         # manually connect the dvs output to the geometry and scenario1
 
@@ -251,7 +244,7 @@ prob.driver.hist_file = "OptView.hst"
 
 if args.task == "run_driver":
     # solve CL
-    # optFuncs.findFeasibleDesign(["scenario1.aero_post.CL"], ["patchV"], targets=[CL_target], designVarsComp=[1])
+    optFuncs.findFeasibleDesign(["scenario1.aero_post.CL"], ["twist"], targets=[CL_target], designVarsComp=[0])
     # run the optimization
     prob.run_driver()
 elif args.task == "run_model":

@@ -15,7 +15,10 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-fluxScheme           AUSMPlusUp;
+fluxScheme           JST; // AUSMPlusUp;
+jst_k2  0.5;
+jst_k4  0.02;
+sensorName pressure;
 lowMachAusm          false;
 
 ddtSchemes
@@ -25,7 +28,7 @@ ddtSchemes
 
 gradSchemes
 {
-    default          Gauss linear;
+    default          faceLeastSquares linear;
     grad(nuTilda)    Gauss linear;
 }
 
