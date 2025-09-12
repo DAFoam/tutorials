@@ -16,9 +16,9 @@ FoamFile
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 fluxScheme           JST; // AUSMPlusUp;
-jst_k2  0.25;
-jst_k4  0.016;
-sensorName entropy;
+jst_k2  0.5;
+jst_k4  0.02;
+sensorName pressure;
 lowMachAusm          false;
 
 ddtSchemes

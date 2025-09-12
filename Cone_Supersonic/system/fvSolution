@@ -65,7 +65,7 @@ flowSolver
 
 pseudoTime
 {
-    pseudoTol          1e-8 (1e-8 1e-8 1e-8) 1e-8;
+    pseudoTol          1e-10 (1e-10 1e-10 1e-10) 1e-10;
     pseudoCoNum        1.0;
     pseudoCoNumMax     5.0;
     localTimestepping  true;

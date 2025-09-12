@@ -16,7 +16,7 @@ from pygeo.mphys import OM_DVGEOCOMP
 
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
-parser.add_argument("-optimizer", help="optimizer to use", type=str, default="IPOPT")
+parser.add_argument("-optimizer", help="optimizer to use", type=str, default="SLSQP")
 # which task to run. Options are: run_driver (default), run_model, compute_totals, check_totals
 parser.add_argument("-task", help="type of run to do", type=str, default="run_driver")
 args = parser.parse_args()
@@ -61,20 +61,12 @@ daOptions = {
     },
     "adjEqnOption": {
         "hisaUsePCFlux": 1,
-        "gmresRelTol": 1.0e-3,
+        "gmresRelTol": 1.0e-5,
         "pcFillLevel": 1,
-        "gmresTolDiff": 5e2,
         "jacMatReOrdering": "natural",
-        "gmresMaxIters": 2000,
-        "gmresRestart": 2000,
-        # "KSPCalcEigen": 1,
-        # "KSPCalcSingularVal": 1,
-        "useMGSO": 1,
     },
-    # "adjPCLag": 1,
     "adjStateOrdering": "cell",
     "normalizeStates": {"U": U0, "p": p0, "T": T0},
-    "adjPartDerivFDStep": {"State": 1e-5},
     "checkMeshThreshold": {"maxNonOrth": 70.0, "maxSkewness": 6.0, "maxAspectRatio": 5000.0},
     "inputInfo": {
         "aero_vol_coords": {"type": "volCoord", "components": ["solver", "function"]},
@@ -222,7 +214,7 @@ elif args.task == "compute_totals":
 elif args.task == "check_totals":
     # verify the total derivatives against the finite-difference
     prob.run_model()
-    prob.check_totals(compact_print=False, step=1e-3, form="central", step_calc="abs")
+    prob.check_totals(compact_print=False, step=1e-2, form="central", step_calc="abs")
 else:
     print("task arg not found!")
     exit(1)

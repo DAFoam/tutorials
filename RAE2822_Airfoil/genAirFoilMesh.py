@@ -34,7 +34,7 @@ dXMaxSS = 0.015  # max dx for SS
 NpTE = 5  # number of points for blunt TE
 # 3D
 NpExtrude = 65  # how many points to extrude for the 3D volume mesh in y
-yWall = 1e-4  # first layer mesh length
+yWall = 1e-5  # first layer mesh length
 marchDist = 30.0  # march distance for extruding
 ########## user input ################
 
