@@ -51,11 +51,9 @@ rm -rf 0/uniform 0/polyMesh
 # run the pimpleFoam primal to get equilibrium initial fields
 cp -r system/controlDict_pimple_long system/controlDict
 cp -r system/fvSchemes_pimple system/fvSchemes
-sed -i "s/meshWaveFrozen;/meshWave;/g" system/fvSchemes
 cp -r system/fvSolution_pimple system/fvSolution
 decomposePar
 mpirun -np 4 pimpleFoam -parallel
-sed -i "s/meshWave;/meshWaveFrozen;/g" system/fvSchemes
 reconstructPar -latestTime
 rm -rf processor*
 rm -rf 0
