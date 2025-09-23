@@ -32,8 +32,8 @@ U0 = 248.0
 p0 = 101325.0
 T0 = 300.0
 nuTilda0 = 4.5e-5
-CL_target = 0.75
-twist0 = 2.0
+CL_target = 0.7
+twist0 = 2.52517169
 A0 = 0.01
 # rho is used for normalizing CD and CL
 rho0 = p0 / T0 / 287
@@ -81,6 +81,7 @@ daOptions = {
         "T": T0,
         "nuTilda": nuTilda0 * 10.0,
     },
+    "checkMeshThreshold": {"maxNonOrth": 70.0, "maxSkewness": 6.0, "maxAspectRatio": 5000.0},
     "inputInfo": {
         "aero_vol_coords": {"type": "volCoord", "components": ["solver", "function"]},
     },
@@ -244,7 +245,7 @@ prob.driver.hist_file = "OptView.hst"
 
 if args.task == "run_driver":
     # solve CL
-    optFuncs.findFeasibleDesign(["scenario1.aero_post.CL"], ["twist"], targets=[CL_target], designVarsComp=[0])
+    optFuncs.findFeasibleDesign(["scenario1.aero_post.CL"], ["twist"], targets=[CL_target], designVarsComp=[0], epsFD=[1e-1])
     # run the optimization
     prob.run_driver()
 elif args.task == "run_model":
