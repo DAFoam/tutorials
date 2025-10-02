@@ -20,7 +20,7 @@ from pygeo.mphys import OM_DVGEOCOMP
 
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
-parser.add_argument("-optimizer", help="optimizer to use", type=str, default="IPOPT")
+parser.add_argument("-optimizer", help="optimizer to use", type=str, default="SNOPT")
 # which task to run. Options are: run_driver (default), run_model, compute_totals, check_totals
 parser.add_argument("-task", help="type of run to do", type=str, default="run_driver")
 args = parser.parse_args()
@@ -48,6 +48,18 @@ daOptions = {
             "mode": "surface",
             "varName": "p",
             "varType": "scalar",
+            "timeDependentRefData": False,
+        },
+        "UVar": {
+            "type": "variance",
+            "source": "patchToFace",
+            "patches": ["inlet"],
+            "scale": 1.0,
+            "mode": "surface",
+            "varName": "U",
+            "varType": "vector",
+            "indices": [0],
+            "useGeoWeight": 1,
             "timeDependentRefData": False,
         },
     },
@@ -97,6 +109,9 @@ class Top(Multipoint):
         # to the scenario to actually run the flow and adjoint
         self.mphys_add_scenario("scenario1", ScenarioAerodynamic(aero_builder=dafoam_builder))
 
+        # setup a composite objective
+        self.add_subsystem("obj", om.ExecComp("val=UVar+pVar"))
+
     def configure(self):
 
         # add the design variables to the dvs component's output
@@ -108,7 +123,9 @@ class Top(Multipoint):
         self.add_design_var("u_in_field", lower=0, upper=100, scaler=1.0)
 
         # add objective and constraints to the top level
-        self.add_objective("scenario1.aero_post.pVar", scaler=1.0)
+        self.connect("scenario1.aero_post.pVar", "obj.pVar")
+        self.connect("scenario1.aero_post.UVar", "obj.UVar")
+        self.add_objective("obj.val", scaler=1.0)
 
 
 # OpenMDAO setup

@@ -25,4 +25,5 @@ getFIData -refFieldName U -refFieldType vector -time 9999
 
 # copy the data to the 0 folder and clean up
 cp -rf */*Data.gz 0/
+mv 0/UData.gz 0/UTrue.gz
 rm -rf {1..9}*
