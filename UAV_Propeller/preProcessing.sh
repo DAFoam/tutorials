@@ -15,6 +15,14 @@ fi
 tar -xvf polyMesh_UAV_Propeller.tar
 mv polyMesh constant/
 
+if [ -f "Structure.bdf" ]; then
+  echo "Mesh already exists."
+else
+  echo "Downloading mesh StructMesh.bdf.tar.gz"
+  wget https://github.com/dafoam/files/releases/download/v1.0.0/StructMesh.bdf.tar.gz
+fi
+
+
 echo "Generating mesh.. Done!"
 
 # copy initial and boundary condition files
