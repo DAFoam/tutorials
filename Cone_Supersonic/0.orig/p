@@ -1,0 +1,53 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1812                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      p;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+#include         "include/freestreamConditions"
+dimensions      [1 -1 -2 0 0 0 0];
+
+internalField   uniform $p;
+
+boundaryField
+{
+    inlet
+    {
+        type            characteristicFarfieldPressure;
+        #include        "include/freestreamConditions"
+        value           $internalField;
+    }
+    outlet
+    {
+        type            characteristicFarfieldPressure;
+        #include        "include/freestreamConditions"
+        value           $internalField;
+    }
+    cone
+    {
+        type            characteristicWallPressure;
+        value           $internalField;
+    }
+    top_bot
+    {
+        type            characteristicFarfieldPressure;
+        #include        "include/freestreamConditions"
+        value           $internalField;
+    }
+    syms
+    {
+        type            symmetry;
+    }
+
+}
+
+// ************************************************************************* //

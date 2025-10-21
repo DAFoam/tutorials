@@ -50,6 +50,25 @@ daOptions = {
         "useWallFunction": True,
     },
     "primalVarBounds": {"omegaMin": -1e16},
+    "regressionModel": {
+        "active": True,
+        "model": {
+            "modelType": "neuralNetwork",
+            "inputNames": ["PoD", "VoS", "PSoSS", "KoU2"],
+            "outputName": "dummy",
+            "hiddenLayerNeurons": [20, 20],
+            "inputShift": [0.0, 0.0, 0.0, 0.0],
+            "inputScale": [1.0, 1.0, 1.0, 1.0],
+            "outputShift": 1.0,
+            "outputScale": 1.0,
+            "activationFunction": "tanh",
+            "printInputInfo": True,
+            "defaultOutputValue": 1.0,
+            "outputUpperBound": 1e1,
+            "outputLowerBound": -1e1,
+            "writeFeatures": True,
+        }
+    },
     "function": {
         "pVar": {
             "type": "variance",

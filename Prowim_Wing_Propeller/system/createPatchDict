@@ -21,21 +21,6 @@ patches
 (
     {
         // Name of new patch
-        name wing;
-
-        // Dictionary to construct new patch from
-        patchInfo
-        {
-            type wall;
-        }
-
-        // How to construct: either from 'patches' or 'set'
-        constructFrom patches;
-        patches ( "wing_.*" auto0 auto3 );
-    }
-
-    {
-        // Name of new patch
         name inout;
 
         // Dictionary to construct new patch from
@@ -46,9 +31,8 @@ patches
 
         // How to construct: either from 'patches' or 'set'
         constructFrom patches;
-        patches ( "farfield_.*" auto2);
+        patches ( "farfield_.*");
     }
-
     {
         // Name of new patch
         name sym;
