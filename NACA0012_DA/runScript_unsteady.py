@@ -41,7 +41,7 @@ nuTilda0 = 4.5e-5
 daOptions = {
     "solverName": "DAPimpleFoam",
     "primalBC": {
-        "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 1.7, 0.0]},
+        "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
         "useWallFunction": True,
     },
     "unsteadyAdjoint": {
@@ -158,7 +158,7 @@ class Top(Multipoint):
         if args.patchV is not None:
             patchV0 = args.patchV
         else:
-            patchV0 = [U0, 0.0]
+            patchV0 = [U0, 10.0]
 
         # add outputs for dvs
         self.dvs.add_output("shape", val=shape0)
@@ -168,7 +168,7 @@ class Top(Multipoint):
         # define the design variables to the top level
         self.add_design_var("shape", lower=-0.1, upper=0.1, scaler=1.0)
         # here we fix the U0 magnitude and allows the aoa to change
-        self.add_design_var("patchV", lower=[10.0, -50.0], upper=[10.0, 50.0], scaler=0.1)
+        self.add_design_var("patchV", lower=[10.0, 0.0], upper=[10.0, 50.0], scaler=0.1)
 
         # add objective and constraints to the top level
         self.add_objective("obj", scaler=1.0)
