@@ -6,15 +6,13 @@ DAFoam run script for the NACA0012 airfoil at low-speed
 # =============================================================================
 # Imports
 # =============================================================================
-import os
 import argparse
+import os
 import numpy as np
-import json
 from mpi4py import MPI
 import openmdao.api as om
 from mphys.multipoint import Multipoint
-from dafoam.mphys import DAFoamBuilder, OptFuncs
-from mphys.scenario_aerodynamic import ScenarioAerodynamic
+from dafoam.mphys.mphys_dafoam import DAFoamBuilderUnsteady
 from pygeo.mphys import OM_DVGEOCOMP
 
 
@@ -41,26 +39,41 @@ nuTilda0 = 4.5e-5
 
 # Input parameters for DAFoam
 daOptions = {
-    "solverName": "DASimpleFoam",
-    "primalMinResTol": 1.0e-8,
-    "primalMinResTolDiff": 1.0e4,
+    "solverName": "DAPimpleFoam",
     "primalBC": {
-        "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 0.0, 0.0]},
+        "U0": {"variable": "U", "patches": ["inout"], "value": [U0, 1.7, 0.0]},
         "useWallFunction": True,
+    },
+    "unsteadyAdjoint": {
+        "mode": "timeAccurate",
+        "PCMatPrecomputeInterval": 100,
+        "PCMatUpdateInterval": 1,
+        "reduceIO": True,
+        "zeroInitFields": True,
     },
     "function": {
         "pVar": {
             "type": "variance",
             "source": "patchToFace",
             "patches": ["wing"],
-            "scale": 0.001,
+            "scale": 1.0,
             "mode": "surface",
             "varName": "p",
             "varType": "scalar",
-            "timeDependentRefData": False,
+            "timeOp": "average",
+            "timeDependentRefData": True,
         },
     },
-    "adjEqnOption": {"gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "rcm"},
+    "adjStateOrdering": "cell",
+    "adjEqnOption": {
+        "gmresRelTol": 1.0e-100,
+        "gmresAbsTol": 1.0e-3,
+        "gmresMaxIters": 100,
+        "pcFillLevel": 1,
+        "jacMatReOrdering": "natural",
+        "useNonZeroInitGuess": False,
+        "useMGSO": True,
+    },
     "normalizeStates": {
         "U": U0,
         "p": U0 * U0 / 2.0,
@@ -77,6 +90,13 @@ daOptions = {
             "components": ["solver", "function"],
         },
     },
+    "unsteadyCompOutput": {
+        "obj": ["pVar"],
+    },
+    # decompose all times
+    "decomposeParDict": {
+        "args": ["-time", "0:"],
+    },
 }
 
 # Mesh deformation setup
@@ -92,34 +112,26 @@ meshOptions = {
 class Top(Multipoint):
     def setup(self):
 
-        # create the builder to initialize the DASolvers
-        dafoam_builder = DAFoamBuilder(daOptions, meshOptions, scenario="aerodynamic")
-        dafoam_builder.initialize(self.comm)
-
         # add the design variable component to keep the top level design variables
         self.add_subsystem("dvs", om.IndepVarComp(), promotes=["*"])
 
-        # add the mesh component
-        self.add_subsystem("mesh", dafoam_builder.get_mesh_coordinate_subsystem())
-
         # add the geometry component (FFD)
-        self.add_subsystem("geometry", OM_DVGEOCOMP(file="FFD/wingFFD.xyz", type="ffd"))
+        self.add_subsystem("geometry", OM_DVGEOCOMP(file="FFD/wingFFD.xyz", type="ffd"), promotes=["*"])
 
         # add a scenario (flow condition) for optimization, we pass the builder
         # to the scenario to actually run the flow and adjoint
-        self.mphys_add_scenario("scenario1", ScenarioAerodynamic(aero_builder=dafoam_builder))
+        self.add_subsystem(
+            "scenario1",
+            DAFoamBuilderUnsteady(solver_options=daOptions, mesh_options=meshOptions),
+            promotes=["*"],
+        )
 
-        # need to manually connect the x_aero0 between the mesh and geometry components
-        # here x_aero0 means the surface coordinates of structurally undeformed mesh
-        self.connect("mesh.x_aero0", "geometry.x_aero_in")
-        # need to manually connect the x_aero0 between the geometry component and the scenario1
-        # scenario group
-        self.connect("geometry.x_aero0", "scenario1.x_aero")
+        self.connect("x_aero0", "x_aero")
 
     def configure(self):
 
         # get the surface coordinates from the mesh component
-        points = self.mesh.mphys_get_surface_mesh()
+        points = self.scenario1.get_surface_mesh()
 
         # add pointset to the geometry component
         self.geometry.nom_add_discipline_coords("aero", points)
@@ -147,19 +159,19 @@ class Top(Multipoint):
             patchV0 = args.patchV
         else:
             patchV0 = [U0, 0.0]
+
+        # add outputs for dvs
         self.dvs.add_output("shape", val=shape0)
         self.dvs.add_output("patchV", val=patchV0)
-        # manually connect the dvs output to the geometry and scenario1
-        self.connect("patchV", "scenario1.patchV")
-        self.connect("shape", "geometry.shape")
+        self.dvs.add_output("x_aero_in", val=points, distributed=True)
 
         # define the design variables to the top level
         self.add_design_var("shape", lower=-0.1, upper=0.1, scaler=1.0)
         # here we fix the U0 magnitude and allows the aoa to change
-        self.add_design_var("patchV", lower=[0.1, -10.0], upper=[50.0, 10.0], scaler=0.1)
+        self.add_design_var("patchV", lower=[10.0, -50.0], upper=[10.0, 50.0], scaler=0.1)
 
         # add objective and constraints to the top level
-        self.add_objective("scenario1.aero_post.pVar", scaler=1.0)
+        self.add_objective("obj", scaler=1.0)
 
 
 # OpenMDAO setup
@@ -167,9 +179,6 @@ prob = om.Problem()
 prob.model = Top()
 prob.setup(mode="rev")
 om.n2(prob, show_browser=False, outfile="mphys.html")
-
-# initialize the optimization function
-optFuncs = OptFuncs(daOptions, prob)
 
 # use pyoptsparse to setup optimization
 prob.driver = om.pyOptSparseDriver()
