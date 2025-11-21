@@ -11,6 +11,7 @@ cd preparation-pitch-05/mesh/
 ./genMesh.sh
 cp -r constant/polyMesh/ ../sa-pre/constant
 cp -r constant/polyMesh/ ../sst-pre/constant
+cd ../
 
 # simulation preparation
 ./simPre.sh
