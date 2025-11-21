@@ -80,20 +80,6 @@ model.compile(
 
 model.fit(inputs, outputs, epochs=500, batch_size=500, validation_split=0.2)
 
-# verify if the mse is consistent with training
-#outputs_v = model.predict(inputs, verbose=0)[:, 0]
-#s = (outputs - outputs_v) ** 2
-#mse = np.mean(s)
-#print("mse ", mse)
-
 # save the model coeffs to files
 model.save("dummy_nn_model")
 
-
-#outputs_out = np.zeros_like(outputs_v, dtype="d")
-#for idx, v in enumerate(outputs_v):
-    #outputs_out[idx] = v
-
-# save the predicted beta from NN for debugging
-#ofm.writeField("betaFIOmegaNN_C1", "volScalarField", outputs_out[:nCells])
-#ofm.writeField("betaFIOmegaNN_C2", "volScalarField", outputs_out[nCells:])
