@@ -1,0 +1,63 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1812                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSchemes;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+ddtSchemes
+{
+    default         backward;
+}
+
+gradSchemes
+{
+    default         Gauss linear;
+}
+
+divSchemes
+{
+    default                                             none;
+    div(phi,U)                                           Gauss linearUpwindV grad(U);
+    div(phi,T)                                           Gauss upwind;
+    div(phi,nuTilda)                                     Gauss upwind;
+    div(phi,gammaInt)                                     Gauss upwind;
+    div(phi,ReThetat)                                     Gauss upwind;
+    div(phi,k)                                           Gauss upwind;
+    div(phi,omega)                                       Gauss upwind;
+    div(phi,epsilon)                                     Gauss upwind;
+    div((nuEff*dev2(T(grad(U)))))                        Gauss linear;
+    div(pc)                                              Gauss upwind;
+}
+
+laplacianSchemes
+{
+    default         Gauss linear corrected;
+}
+
+interpolationSchemes
+{
+    default         linear;
+}
+
+snGradSchemes
+{
+    default         corrected;
+}
+
+wallDist
+{
+    method                                              meshWave;
+}
+
+// ************************************************************************* //
