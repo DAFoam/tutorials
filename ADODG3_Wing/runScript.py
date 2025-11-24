@@ -93,6 +93,7 @@ daOptions = {
             "components": ["solver", "function"],
         },
     },
+    "checkMeshThreshold": {"maxAspectRatio": 500000.0, "maxNonOrth": 89.9, "maxSkewness": 30.0},
 }
 
 # Mesh deformation setup
