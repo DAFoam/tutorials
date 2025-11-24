@@ -6,3 +6,7 @@
 
 # PyCharm specific
 /.idea
+*.bdf
+*.gz
+*.cgns
+*.stl
