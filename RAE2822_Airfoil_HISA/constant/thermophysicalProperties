@@ -1,0 +1,50 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+|                                                                             |
+|    HiSA: High Speed Aerodynamic solver                                      |
+|    Copyright (C) 2014-2017 Johan Heyns - CSIR, South Africa                 |
+|    Copyright (C) 2014-2017 Oliver Oxtoby - CSIR, South Africa               |
+|                                                                             |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      thermophysicalProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+thermoType
+{
+    type            hePsiThermo;
+    mixture         pureMixture;
+    transport       const;
+    thermo          hConst;
+    equationOfState perfectGas;
+    specie          specie;
+    energy          sensibleInternalEnergy;
+}
+
+
+mixture
+{
+   specie
+   {
+       nMoles          1;
+       molWeight       28.966;
+   }
+   thermodynamics
+   {
+       Cp              1005;
+       Hf              0;
+   }
+   transport
+   {
+        mu                  1.8e-5; 
+        Pr                  0.700000; 
+        TRef                300.000000; 
+   }
+}
+
+// ************************************************************************* //
