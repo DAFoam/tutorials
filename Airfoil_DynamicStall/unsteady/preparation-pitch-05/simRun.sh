@@ -15,6 +15,7 @@ done
 rm -r processor*
 cp -r 0/. ../../train/field-inversion/0/
 cp -r constant/polyMesh/ ../../train/field-inversion/constant/
+cp -r constant/polyMesh/ ../../train/machine-learning/constant/
 cp -r 0/. ../../predict/predict-pitch-rate-0.5/fiml/0/
 cp -r constant/polyMesh/ ../../predict/predict-pitch-rate-0.5/fiml/constant/
 
@@ -26,5 +27,5 @@ done
 rm -r processor*
 cp sst-ref.txt ../../train/field-inversion/
 
-
+cd ../
 
