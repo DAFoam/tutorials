@@ -148,7 +148,7 @@ class Top(Multipoint):
 
         # primal and adjoint solution options, i.e., nonlinear block Gauss-Seidel for aerostructural analysis
         # and linear block Gauss-Seidel for the coupled adjoint
-        nonlinear_solver = om.NonlinearBlockGS(maxiter=25, iprint=2, use_aitken=True, rtol=1e-8, atol=1e-8)
+        nonlinear_solver = om.NonlinearBlockGS(maxiter=25, iprint=2, use_aitken=True, rtol=1e-8, atol=1.0)
         linear_solver = om.LinearBlockGS(maxiter=25, iprint=2, use_aitken=True, rtol=1e-6, atol=1e-6)
         # add the coupling aerostructural scenario
         self.mphys_add_scenario(
@@ -280,7 +280,7 @@ elif args.optimizer == "IPOPT":
     }
 elif args.optimizer == "SLSQP":
     prob.driver.opt_settings = {
-        "ACC": 1.0e-5,
+        "ACC": 1.0e-6,
         "MAXIT": 100,
         "IFILE": "opt_SLSQP.txt",
     }
