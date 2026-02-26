@@ -6,13 +6,16 @@ from dafoam.pyDAFoam import surrogateOptimization
 
 # define design variables (name & size)
 dvNames = ["twist", "shape", "patchV"]
-dvSizes = [1, 20, 2]
+dvSizes = [1, 120, 2]
 
 # prescribe bounds on design variables
-xlimits = np.array([[-0.05, 0.05]] * 23)
+xlimits = np.array([[-0.05, 0.05]] * 123)
 
-# adjust bounds for AOA, fix velocity to 10m/s                         
-xlimits[-1] = [10, 10 + 1e-9]                  
+# adjust bounds for AOA, fix velocity to 10m/s
+xlimits[-1] = [10, 10 + 1e-10]
+xlimits[20 : 60] = [0 , 1e-10]
+xlimits[80 : 100] = [0 , 1e-10]
+#xlimits[0]
 
 objFunc = 'scenario1.aero_post.CD'
 cons = ['scenario1.aero_post.CL', 'geometry.thickcon', 'geometry.volcon', 'geometry.tecon', 'geometry.lecon']
