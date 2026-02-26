@@ -132,7 +132,7 @@ class Top(Multipoint):
         self.add_subsystem("mesh_aero" , dafoam_builder.get_mesh_coordinate_subsystem())
 
         # add geometry component
-        self.add_subsystem("geometry_aero" , OM_DVGEOCOMP(file = "FFD/testFFD.xyz" , type = "ffd"))
+        self.add_subsystem("geometry_aero" , OM_DVGEOCOMP(file = "FFD/UBendDuctFFDSym.xyz" , type = "ffd"))
 
         # add a scenario (flow condition) for optimization. For no themal (solid) use ScenarioAerodynamic, for thermal (solid) use ScenarioAerothermal
         self.mphys_add_scenario("scenario" , ScenarioAerodynamic(aero_builder = dafoam_builder))
