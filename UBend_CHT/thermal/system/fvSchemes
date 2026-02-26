@@ -34,7 +34,9 @@ divSchemes
 laplacianSchemes
 {
     default         none;
+    // add both k and kappa for backward compatibility
     laplacian(kappa,T)  Gauss linear corrected;
+    laplacian(k,T)  Gauss linear corrected;
 }
 
 interpolationSchemes
