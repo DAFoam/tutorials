@@ -31,7 +31,7 @@ writeCompression on;
 timeFormat      general;
 timePrecision   8;
 runTimeModifiable false;
-HiSAPrint 0;
+HisaPrintInterval 100;
 
 DebugSwitches
 {
