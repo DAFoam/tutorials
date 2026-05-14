@@ -17,7 +17,6 @@ from mphys.scenario_aerodynamic import ScenarioAerodynamic
 from pygeo.mphys import OM_DVGEOCOMP
 from pygeo import geo_utils
 
-
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
 parser.add_argument("-optimizer", help="optimizer to use", type=str, default="IPOPT")
@@ -33,37 +32,43 @@ p0 = 101325.0
 T0 = 300.0
 nuTilda0 = 4.5e-5
 CL_target = 0.7
-twist0 = 2.52517169
+aoa0 = 2.52517169
 A0 = 0.01
 # rho is used for normalizing CD and CL
 rho0 = p0 / T0 / 287
+
+Ux = float(U0 * np.cos(np.radians(aoa0)))
+Uy = float(U0 * np.sin(np.radians(aoa0)))
 
 # Input parameters for DAFoam
 daOptions = {
     "designSurfaces": ["wing"],
     "solverName": "DAHisaFoam",
-    # "primalInitCondition": {"U": [Ux, Uy, 0.0], "p": p0, "T": T0},
-    # "primalBC": {
-    #    "U0": {"variable": "U", "patches": ["inout"], "value": [Ux, Uy, 0.0]},
-    #    "p0": {"variable": "p", "patches": ["inout"], "value": [p0]},
-    #    "T0": {"variable": "T", "patches": ["inout"], "value": [T0]},
-    #    "useWallFunction": True,
-    # },
+    "primalInitCondition": {"U": [Ux, Uy, 0.0], "p": p0, "T": T0},
+    "primalBC": {
+        "charFarFieldBC": [Ux, Uy, 0.0, p0, T0],
+        "useWallFunction": False,
+    },
+    "primalFuncStdTol": {
+        "tol": 1e-5,
+        "funcName": "CD",
+        "nStepsFrac": 0.2,
+    },
     "function": {
         "CD": {
             "type": "force",
             "source": "patchToFace",
             "patches": ["wing"],
-            "directionMode": "fixedDirection",
-            "direction": [1.0, 0.0, 0.0],
+            "directionMode": "parallelToFlow",
+            "patchVelocityInputName": "patchV",
             "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
         },
         "CL": {
             "type": "force",
             "source": "patchToFace",
             "patches": ["wing"],
-            "directionMode": "fixedDirection",
-            "direction": [0.0, 1.0, 0.0],
+            "directionMode": "normalToFlow",
+            "patchVelocityInputName": "patchV",
             "scale": 1.0 / (0.5 * U0 * U0 * A0 * rho0),
         },
     },
@@ -84,6 +89,13 @@ daOptions = {
     "checkMeshThreshold": {"maxNonOrth": 70.0, "maxSkewness": 6.0, "maxAspectRatio": 5000.0},
     "inputInfo": {
         "aero_vol_coords": {"type": "volCoord", "components": ["solver", "function"]},
+        "patchV": {
+            "type": "patchVelocity",
+            "patches": ["inout"],
+            "flowAxis": "x",
+            "normalAxis": "y",
+            "components": ["solver", "function"],
+        },
     },
 }
 
@@ -137,9 +149,6 @@ class Top(Multipoint):
         tri_points = self.mesh.mphys_get_triangulated_surface()
         self.geometry.nom_setConstraintSurface(tri_points)
 
-        # Create reference axis for the twist variable
-        self.geometry.nom_addRefAxis(name="wingAxis", xFraction=0.25, alignIndex="k")
-
         # use the shape function to define shape variables for 2D airfoil
         pts = self.geometry.DVGeo.getLocalIndex(0)
         dir_y = np.array([0.0, 1.0, 0.0])
@@ -154,13 +163,6 @@ class Top(Multipoint):
             shapes.append({pts[i, 0, 0]: dir_y, pts[i, 0, 1]: dir_y, pts[i, 1, 0]: -dir_y, pts[i, 1, 1]: -dir_y})
         self.geometry.nom_addShapeFunctionDV(dvName="shape", shapes=shapes)
 
-        # Set up global design variables. We dont change the root twist
-        def twist(val, geo):
-            for i in range(2):
-                geo.rot_z["wingAxis"].coef[i] = -val[0]
-
-        self.geometry.nom_addGlobalDV(dvName="twist", value=np.ones(1) * twist0, func=twist)
-
         # setup the volume and thickness constraints
         leList = [[1e-3, 0.0, 1e-3], [1e-3, 0.0, 0.01 - 1e-3]]
         teList = [[0.961, 0.005, 1e-3], [0.961, 0.005, 0.01 - 1e-3]]
@@ -172,19 +174,18 @@ class Top(Multipoint):
 
         # add the design variables to the dvs component's output
         self.dvs.add_output("shape", val=np.array([0] * len(shapes)))
-        self.dvs.add_output("twist", val=np.ones(1) * twist0)
-
+        self.dvs.add_output("patchV", val=np.array([U0, aoa0]))
         # manually connect the dvs output to the geometry and scenario1
-
+        self.connect("patchV", "scenario1.patchV")
         self.connect("shape", "geometry.shape")
-        self.connect("twist", "geometry.twist")
 
         # define the design variables to the top level
         self.add_design_var("shape", lower=-1.0, upper=1.0, scaler=10.0)
-        self.add_design_var("twist", lower=-10.0, upper=10.0, scaler=0.1)
+        # here we fix the U0 magnitude and allows the aoa to change
+        self.add_design_var("patchV", lower=[U0, 0.0], upper=[U0, 10.0], scaler=0.1)
 
         # add objective and constraints to the top level
-        self.add_objective("scenario1.aero_post.CD", scaler=1.0)
+        self.add_objective("scenario1.aero_post.CD", scaler=10.0)
         self.add_constraint("scenario1.aero_post.CL", equals=CL_target, scaler=1.0)
         self.add_constraint("geometry.thickcon", lower=0.5, upper=3.0, scaler=1.0)
         self.add_constraint("geometry.volcon", lower=1.0, scaler=1.0)
@@ -245,7 +246,9 @@ prob.driver.hist_file = "OptView.hst"
 
 if args.task == "run_driver":
     # solve CL
-    optFuncs.findFeasibleDesign(["scenario1.aero_post.CL"], ["twist"], targets=[CL_target], designVarsComp=[0], epsFD=[1e-1])
+    optFuncs.findFeasibleDesign(
+        ["scenario1.aero_post.CL"], ["patchV"], targets=[CL_target], designVarsComp=[1], epsFD=[1e-1]
+    )
     # run the optimization
     prob.run_driver()
 elif args.task == "run_model":
