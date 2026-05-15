@@ -13,7 +13,7 @@ import json
 from mpi4py import MPI
 import openmdao.api as om
 from mphys.multipoint import Multipoint
-from dafoam.mphys import DAFoamBuilder, OptFuncs
+from dafoam.mphys import DAFoamBuilder, OptFuncs, DAFoamLinearConstraint, DAFoamVSPVolume
 from mphys.scenario_aerodynamic import ScenarioAerodynamic
 from pygeo.mphys import OM_DVGEOCOMP
 
@@ -35,6 +35,7 @@ aoa0 = 2.0
 A0 = 0.1
 # rho is used for normalizing CD and CL
 rho0 = 1.0
+n_cst_coeffs = 7
 
 # Input parameters for DAFoam
 daOptions = {
@@ -122,9 +123,45 @@ class Top(Multipoint):
         # scenario group
         self.connect("geometry.x_aero0", "scenario1.x_aero")
 
-        self.add_subsystem("thickness_constraint", om.ExecComp("val=root-tip"))
-        self.add_subsystem("camber_loc_constraint", om.ExecComp("val=root-tip"))
-        self.add_subsystem("camber_constraint", om.ExecComp("val=root-tip"))
+        # thickness constraint
+        varA = []
+        varB = []
+        for j in range(n_cst_coeffs):
+            varA.append(f"UpperCoeff_{j}")
+            varB.append(f"LowerCoeff_{j}")
+        self.add_subsystem(
+            "thickness",
+            DAFoamLinearConstraint(varA=varA, coeffA=1.0, varB=varB, coeffB=-1.0, size=1, output_name="thickness_val"),
+            promotes=["*"],
+        )
+
+        # LE C1 continuity constraint
+        self.add_subsystem(
+            "le_c1",
+            DAFoamLinearConstraint(
+                varA=["UpperCoeff_0"], coeffA=1.0, varB=["LowerCoeff_0"], coeffB=1.0, size=1, output_name="le_c1_val"
+            ),
+            promotes=["*"],
+        )
+
+        # add volume constraint
+        vsp_vars = []
+        for i in range(2):
+            for j in range(n_cst_coeffs):
+                vsp_vars.append(f"NACA:UpperCoeff_{i}:Au_{j}")
+                vsp_vars.append(f"NACA:LowerCoeff_{i}:Al_{j}")
+        self.add_subsystem(
+            "volume",
+            DAFoamVSPVolume(
+                vsp_file="airfoil.vsp3",
+                vsp_vars=vsp_vars,
+                slice_dir="x",
+                n_slices=10,
+                output_name="volume_val",
+                step=1e-3,
+                relativeStep=False,
+            ),
+        )
 
     def configure(self):
 
@@ -139,45 +176,48 @@ class Top(Multipoint):
         self.geometry.nom_setConstraintSurface(tri_points)
 
         for i in range(2):
-            self.geometry.nom_addVSPVariable("NACA", f"XSecCurve_{i}", "ThickChord", scaledStep=False)
-            self.geometry.nom_addVSPVariable("NACA", f"XSecCurve_{i}", "Camber", scaledStep=False)
-            self.geometry.nom_addVSPVariable("NACA", f"XSecCurve_{i}", "CamberLoc", scaledStep=False)
+            for j in range(n_cst_coeffs):
+                self.geometry.nom_addVSPVariable("NACA", f"UpperCoeff_{i}", f"Au_{j}", scaledStep=False, dh=1e-3)
+                self.geometry.nom_addVSPVariable("NACA", f"LowerCoeff_{i}", f"Al_{j}", scaledStep=False, dh=1e-3)
 
         # add the design variables to the dvs component's output
-        for i in range(2):
-            self.dvs.add_output(f"NACA:XSecCurve_{i}:ThickChord", val=0.12)
-            self.dvs.add_output(f"NACA:XSecCurve_{i}:Camber", val=0.02)
-            self.dvs.add_output(f"NACA:XSecCurve_{i}:CamberLoc", val=0.04)
-            self.connect(f"NACA:XSecCurve_{i}:ThickChord", f"geometry.NACA:XSecCurve_{i}:ThickChord")
-            self.connect(f"NACA:XSecCurve_{i}:Camber", f"geometry.NACA:XSecCurve_{i}:Camber")
-            self.connect(f"NACA:XSecCurve_{i}:CamberLoc", f"geometry.NACA:XSecCurve_{i}:CamberLoc")
-        self.dvs.add_output("patchV", val=np.array([U0, aoa0]))
-        # manually connect the dvs output to the geometry and scenario1
-        self.connect("patchV", "scenario1.patchV")
+        # these are for NACA0012
+        CST = np.array([0.17299, 0.15121, 0.16626, 0.13844, 0.14289, 0.13999, 0.14070])
+        for j in range(n_cst_coeffs):
+            self.dvs.add_output(f"UpperCoeff_{j}", val=CST[j])
+            self.connect(f"UpperCoeff_{j}", f"geometry.NACA:UpperCoeff_0:Au_{j}")
+            self.connect(f"UpperCoeff_{j}", f"geometry.NACA:UpperCoeff_1:Au_{j}")
+            self.connect(f"UpperCoeff_{j}", f"volume.NACA:UpperCoeff_0:Au_{j}")
+            self.connect(f"UpperCoeff_{j}", f"volume.NACA:UpperCoeff_1:Au_{j}")
+            self.dvs.add_output(f"LowerCoeff_{j}", val=-CST[j])
+            self.connect(f"LowerCoeff_{j}", f"geometry.NACA:LowerCoeff_0:Al_{j}")
+            self.connect(f"LowerCoeff_{j}", f"geometry.NACA:LowerCoeff_1:Al_{j}")
+            self.connect(f"LowerCoeff_{j}", f"volume.NACA:LowerCoeff_0:Al_{j}")
+            self.connect(f"LowerCoeff_{j}", f"volume.NACA:LowerCoeff_1:Al_{j}")
 
         # define the design variables to the top level
-        for i in range(2):
-            self.add_design_var(f"NACA:XSecCurve_{i}:ThickChord", lower=0.1, upper=1.0, scaler=1.0)
-            self.add_design_var(f"NACA:XSecCurve_{i}:Camber", lower=0.0, upper=1.0, scaler=1.0)
-            self.add_design_var(f"NACA:XSecCurve_{i}:CamberLoc", lower=0.0, upper=1.0, scaler=1.0)
-        self.connect("NACA:XSecCurve_0:ThickChord", "thickness_constraint.root")
-        self.connect("NACA:XSecCurve_1:ThickChord", "thickness_constraint.tip")
+        for j in range(n_cst_coeffs):
+            self.add_design_var(f"UpperCoeff_{j}", lower=-1.0, upper=1.0, scaler=1.0)
+            self.add_design_var(f"LowerCoeff_{j}", lower=-1.0, upper=1.0, scaler=1.0)
 
-        self.connect("NACA:XSecCurve_0:Camber", "camber_constraint.root")
-        self.connect("NACA:XSecCurve_1:Camber", "camber_constraint.tip")
-
-        self.connect("NACA:XSecCurve_0:CamberLoc", "camber_loc_constraint.root")
-        self.connect("NACA:XSecCurve_1:CamberLoc", "camber_loc_constraint.tip")
-        # here we fix the U0 magnitude and allows the aoa to change
+        self.dvs.add_output("patchV", val=np.array([U0, aoa0]))
+        self.connect("patchV", "scenario1.patchV")
         self.add_design_var("patchV", lower=[U0, 0.0], upper=[U0, 10.0], scaler=0.1)
 
         # add objective and constraints to the top level
         self.add_objective("scenario1.aero_post.CD", scaler=1.0)
         self.add_constraint("scenario1.aero_post.CL", equals=CL_target, scaler=1.0)
 
-        self.add_constraint("thickness_constraint.val", equals=0.0, scaler=1.0, linear=True)
-        self.add_constraint("camber_constraint.val", equals=0.0, scaler=1.0, linear=True)
-        self.add_constraint("camber_loc_constraint.val", equals=0.0, scaler=1.0, linear=True)
+        # volume constraint
+        self.add_constraint("volume.volume_val", lower=1.0, scaler=1.0)
+
+        # 50% thickness
+        for j in range(1, n_cst_coeffs):
+            self.add_constraint(f"thickness_val_{j}", lower=0.5 * 2.0 * CST[j], scaler=1.0, linear=True)
+        # LE radius does not change
+        self.add_constraint("thickness_val_0", lower=2.0 * CST[0], scaler=1.0, linear=True)
+        # LE C1 continuous
+        self.add_constraint("le_c1_val_0", equals=0.0, scaler=1.0, linear=True)
 
 
 # OpenMDAO setup
