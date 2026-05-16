@@ -123,7 +123,7 @@ class Top(Multipoint):
         self.add_subsystem("dvs", om.IndepVarComp(), promotes=["*"])
 
         # add the mesh component
-        self.add_subsystem("mesh", dafoam_builder.get_mesh_coordinate_subsystem(), promotes=["*"])
+        self.add_subsystem("mesh", dafoam_builder.get_mesh_coordinate_subsystem())
 
         # add the geometry component (FFD)
         self.add_subsystem("geometry", OM_DVGEOCOMP(file="wing.vsp3", type="vsp"), promotes=["*"])
@@ -134,10 +134,10 @@ class Top(Multipoint):
 
         # need to manually connect the x_aero0 between the mesh and geometry components
         # here x_aero0 means the surface coordinates of structurally undeformed mesh
-        self.connect("mesh.x_aero0", "geometry.x_aero_in")
+        self.connect("mesh.x_aero0", "x_aero_in")
         # need to manually connect the x_aero0 between the geometry component and the scenario1
         # scenario group
-        self.connect("geometry.x_aero0", "scenario1.x_aero")
+        self.connect("x_aero0", "scenario1.x_aero")
 
         # thickness constraint
         varA = []
@@ -194,13 +194,14 @@ class Top(Multipoint):
         self.geometry.nom_add_discipline_coords("aero", points)
 
         # add shape var
+        # NACA0012 upper profile CST coeff, the lower profile is just -CST
         CST = np.array([0.17299, 0.15121, 0.16626, 0.13844, 0.14289, 0.13999, 0.14070])
         for i in range(2):
             for j in range(n_cst_coeffs):
                 self.geometry.nom_addVSPVariable("Wing", f"UpperCoeff_{i}", f"Au_{j}", scaledStep=False, dh=1e-3)
                 self.geometry.nom_addVSPVariable("Wing", f"LowerCoeff_{i}", f"Al_{j}", scaledStep=False, dh=1e-3)
                 self.dvs.add_output(f"Wing:UpperCoeff_{i}:Au_{j}", val=CST[j])
-                self.dvs.add_output(f"Wing:LowerCoeff_{i}:Al_{j}", val=CST[j])
+                self.dvs.add_output(f"Wing:LowerCoeff_{i}:Al_{j}", val=-CST[j])
                 self.add_design_var(f"Wing:UpperCoeff_{i}:Au_{j}", lower=-1.0, upper=1.0, scaler=1.0)
                 self.add_design_var(f"Wing:LowerCoeff_{i}:Al_{j}", lower=-1.0, upper=1.0, scaler=1.0)
 
@@ -221,10 +222,13 @@ class Top(Multipoint):
         self.add_constraint("volume_val", lower=1.0, scaler=1.0)
 
         # 50% thickness
-        for j in range(1, n_cst_coeffs):
-            self.add_constraint(f"thickness_val_{j}", lower=0.5 * 2.0 * CST[j], scaler=1.0, linear=True)
+        for i in range(2):
+            for j in range(1, n_cst_coeffs):
+                indexI = i * n_cst_coeffs + j
+                self.add_constraint(f"thickness_val_{indexI}", lower=0.5 * 2.0 * CST[j], scaler=1.0, linear=True)
         # LE radius does not change
-        self.add_constraint("thickness_val_0", lower=2.0 * CST[0], scaler=1.0, linear=True)
+        for i in [0, n_cst_coeffs]:
+            self.add_constraint(f"thickness_val_{i}", lower=2.0 * CST[0], scaler=1.0, linear=True)
         # LE C1 continuous
         for i in range(2):
             self.add_constraint(f"le_c1_val_{i}", equals=0.0, scaler=1.0, linear=True)
