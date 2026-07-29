@@ -8,9 +8,10 @@ import numpy as np
 import json, copy
 from mpi4py import MPI
 import openmdao.api as om
-from mphys.multipoint import Multipoint
+from mphys.core import Multipoint
+from mphys import MPhysVariables
 from dafoam.mphys import DAFoamBuilder
-from mphys.scenario_aerodynamic import ScenarioAerodynamic
+from mphys.scenarios import ScenarioAerodynamic
 
 # =============================================================================
 # Input Parameters

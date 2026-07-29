@@ -4,18 +4,19 @@ import argparse
 import numpy as np
 from mpi4py import MPI
 import openmdao.api as om
-from mphys.multipoint import Multipoint
+from mphys.core import Multipoint
+from mphys import MPhysVariables
 from dafoam.mphys import DAFoamBuilder, OptFuncs
 from tacs.mphys import TacsBuilder
 from funtofem.mphys import MeldBuilder
-from mphys.scenario_aerostructural import ScenarioAeroStructural
+from mphys.scenarios import ScenarioAeroStructural
 from pygeo.mphys import OM_DVGEOCOMP
 from pygeo import geo_utils
 import json
 
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
-parser.add_argument("-optimizer", help="optimizer to use", type=str, default="SNOPT")
+parser.add_argument("-optimizer", help="optimizer to use", type=str, default="Uno")
 # which task to run. Options are: opt (default), runPrimal, runAdjoint, checkTotals
 parser.add_argument("-task", help="type of run to do", type=str, default="opt")
 # which case to opt. Options are: 1 - twist
@@ -239,13 +240,13 @@ class Top(Multipoint):
 
         # need to manually connect the vars in the geo component to hover
         for discipline in ["aero"]:
-            self.connect("geometry.x_%s0" % discipline, "hover.x_%s0_masked" % discipline)
+            self.connect("geometry.x_%s0_geometry_output" % discipline, "hover.x_%s0_masked" % discipline)
         for discipline in ["struct"]:
-            self.connect("geometry.x_%s0" % discipline, "hover.x_%s0" % discipline)
+            self.connect("geometry.x_%s0_geometry_output" % discipline, "hover.x_%s0" % discipline)
 
         # more manual connection
-        self.connect("mesh_aero.x_aero0", "geometry.x_aero_in")
-        self.connect("mesh_struct.x_struct0", "geometry.x_struct_in")
+        self.connect("mesh_aero.x_aero0", "geometry.x_aero0_geometry_input")
+        self.connect("mesh_struct.x_struct0_mesh", "geometry.x_struct0_geometry_input")
 
         self.add_subsystem("CT", om.ExecComp("value=T/1.178/((omega/2/3.14159)**2*(R*2)**4)"))
         self.add_subsystem("CP", om.ExecComp("value=P/1.178/((omega/2/3.14159)**3*(R*2)**5)"))
@@ -265,8 +266,8 @@ class Top(Multipoint):
         points = self.mesh_aero.mphys_get_surface_mesh()
 
         # add pointset to the geometry component
-        self.geometry.nom_add_discipline_coords("aero", points)
-        self.geometry.nom_add_discipline_coords("struct")
+        self.geometry.nom_add_discipline_coords(MPhysVariables.Aerodynamics.Surface.Geometry, points)
+        self.geometry.nom_add_discipline_coords(MPhysVariables.Structures.Geometry)
 
         # set the triangular points to the geometry component for geometric constraints
         tri_points = self.mesh_aero.mphys_get_triangulated_surface()
@@ -282,7 +283,7 @@ class Top(Multipoint):
         shapeStartIdx = 3
 
         # select the FFD points to move
-        pts = self.geometry.DVGeo.getLocalIndex(0)
+        pts = self.geometry.nom_getDVGeo().getLocalIndex(0)
         indexList = pts[:, :, shapeStartIdx:].flatten()
         PS = geo_utils.PointSelect("list", indexList)
         nShapes = self.geometry.nom_addLocalDV(dvName="shape", axis="x", pointSelect=PS)
@@ -434,18 +435,15 @@ if args.optimizer == "SNOPT":
         "Print file": "opt_SNOPT_print.txt",
         "Summary file": "opt_SNOPT_summary.txt",
     }
-elif args.optimizer == "IPOPT":
+elif args.optimizer == "Uno":
     prob.driver.opt_settings = {
-        "tol": 1.0e-5,
-        "constr_viol_tol": 1.0e-5,
-        "max_iter": 100,
-        "print_level": 5,
-        "output_file": "opt_IPOPT.txt",
-        "mu_strategy": "adaptive",
-        "limited_memory_max_history": 10,
-        "nlp_scaling_method": "none",
-        "alpha_for_y": "full",
-        "recalc_y": "yes",
+        "preset": "filtersqp",
+        "max_iterations": 100,
+        "primal_tolerance": 1e-5,
+        "dual_tolerance": 1e-5,
+        "quasi_newton_memory_size": 20,
+        "logger": "INFO",
+        "logger_stream": "opt_Uno.txt",
     }
 elif args.optimizer == "SLSQP":
     prob.driver.opt_settings = {

@@ -12,16 +12,16 @@ import numpy as np
 from mpi4py import MPI
 import openmdao.api as om
 from pyspline import Curve
-from mphys.multipoint import Multipoint
+from mphys.core import Multipoint
+from mphys import MPhysVariables
 from dafoam.mphys import DAFoamBuilder, OptFuncs
-from mphys.scenario_aerodynamic import ScenarioAerodynamic
+from mphys.scenarios import ScenarioAerodynamic
 from pygeo.mphys import OM_DVGEOCOMP
 from pygeo import geo_utils
 
-
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
-parser.add_argument("-optimizer", help="optimizer to use", type=str, default="SLSQP")
+parser.add_argument("-optimizer", help="optimizer to use", type=str, default="Uno")
 # which task to run. Options are: run_driver (default), run_model, compute_totals, check_totals
 parser.add_argument("-task", help="type of run to do", type=str, default="run_driver")
 args = parser.parse_args()
@@ -85,7 +85,14 @@ daOptions = {
         },
     },
     "adjStateOrdering": "cell",
-    "adjEqnOption": {"gmresMaxIters": 2000, "gmresRestart": 2000, "gmresTolDiff": 1e3, "gmresRelTol": 1.0e-6, "pcFillLevel": 1, "jacMatReOrdering": "natural"},
+    "adjEqnOption": {
+        "gmresMaxIters": 2000,
+        "gmresRestart": 2000,
+        "gmresTolDiff": 1e3,
+        "gmresRelTol": 1.0e-6,
+        "pcFillLevel": 1,
+        "jacMatReOrdering": "natural",
+    },
     "normalizeStates": {
         "U": U0,
         "p": p0,
@@ -93,7 +100,11 @@ daOptions = {
         "nuTilda": nuTilda0 * 10.0,
         "phi": 1.0,
     },
-    "checkMeshThreshold": {"maxAspectRatio": 2000.0, "maxNonOrth": 75.0, "maxSkewness": 8.0},
+    "checkMeshThreshold": {
+        "maxAspectRatio": 2000.0,
+        "maxNonOrth": 75.0,
+        "maxSkewness": 8.0,
+    },
     "inputInfo": {
         "aero_vol_coords": {"type": "volCoord", "components": ["solver", "function"]},
         "patchV": {
@@ -111,7 +122,10 @@ meshOptions = {
     "gridFile": os.getcwd(),
     "fileType": "OpenFOAM",
     # point and normal for the symmetry plane
-    "symmetryPlanes": [[[0.0, 0.0, 0.0], [0.0, 0.0, 1.0]], [[0.0, 0.0, 0.1], [0.0, 0.0, 1.0]]],
+    "symmetryPlanes": [
+        [[0.0, 0.0, 0.0], [0.0, 0.0, 1.0]],
+        [[0.0, 0.0, 0.1], [0.0, 0.0, 1.0]],
+    ],
 }
 
 
@@ -130,18 +144,22 @@ class Top(Multipoint):
         self.add_subsystem("mesh", dafoam_builder.get_mesh_coordinate_subsystem())
 
         # add the geometry component (FFD)
-        self.add_subsystem("geometry", OM_DVGEOCOMP(file="FFD/airfoilFFD.xyz", type="ffd"))
+        self.add_subsystem(
+            "geometry", OM_DVGEOCOMP(file="FFD/airfoilFFD.xyz", type="ffd")
+        )
 
         # add a scenario (flow condition) for optimization, we pass the builder
         # to the scenario to actually run the flow and adjoint
-        self.mphys_add_scenario("scenario1", ScenarioAerodynamic(aero_builder=dafoam_builder))
+        self.mphys_add_scenario(
+            "scenario1", ScenarioAerodynamic(aero_builder=dafoam_builder)
+        )
 
         # need to manually connect the x_aero0 between the mesh and geometry components
         # here x_aero0 means the surface coordinates of structurally undeformed mesh
-        self.connect("mesh.x_aero0", "geometry.x_aero_in")
+        self.connect("mesh.x_aero0", "geometry.x_aero0_geometry_input")
         # need to manually connect the x_aero0 between the geometry component and the scenario1
         # scenario group
-        self.connect("geometry.x_aero0", "scenario1.x_aero")
+        self.connect("geometry.x_aero0_geometry_output", "scenario1.x_aero")
 
     def configure(self):
 
@@ -149,7 +167,9 @@ class Top(Multipoint):
         points = self.mesh.mphys_get_surface_mesh()
 
         # add pointset to the geometry component
-        self.geometry.nom_add_discipline_coords("aero", points)
+        self.geometry.nom_add_discipline_coords(
+            MPhysVariables.Aerodynamics.Surface.Geometry, points
+        )
 
         # set the triangular points to the geometry component for geometric constraints
         tri_points = self.mesh.mphys_get_triangulated_surface()
@@ -162,13 +182,17 @@ class Top(Multipoint):
         cSlat = Curve(x=xSlat, y=ySlat, z=zSlat, k=2)
         # Note here we set raySize=5 to avoid the warning when having highly skewed FFDs
         # "ray might not have been longenough to intersect the nearest curve."
-        self.geometry.nom_addRefAxis(name="slatAxis", curve=cSlat, axis="z", volumes=[0], raySize=5)
+        self.geometry.nom_addRefAxis(
+            name="slatAxis", curve=cSlat, axis="z", volumes=[0], raySize=5
+        )
 
         xFlap = [0.875, 0.875]
         yFlap = [0.014, 0.014]
         zFlap = [0.0, 0.1]
         cFlap = Curve(x=xFlap, y=yFlap, z=zFlap, k=2)
-        self.geometry.nom_addRefAxis(name="flapAxis", curve=cFlap, axis="z", volumes=[2], raySize=5)
+        self.geometry.nom_addRefAxis(
+            name="flapAxis", curve=cFlap, axis="z", volumes=[2], raySize=5
+        )
 
         def twistslat(val, geo):
             for i in range(2):
@@ -200,12 +224,16 @@ class Top(Multipoint):
 
         # add the global shape variable
         self.geometry.nom_addGlobalDV(dvName="twistslat", value=[0.0], func=twistslat)
-        self.geometry.nom_addGlobalDV(dvName="translateslat", value=np.zeros(2), func=translateslat)
+        self.geometry.nom_addGlobalDV(
+            dvName="translateslat", value=np.zeros(2), func=translateslat
+        )
         self.geometry.nom_addGlobalDV(dvName="twistflap", value=[0.0], func=twistflap)
-        self.geometry.nom_addGlobalDV(dvName="translateflap", value=np.zeros(2), func=translateflap)
+        self.geometry.nom_addGlobalDV(
+            dvName="translateflap", value=np.zeros(2), func=translateflap
+        )
 
         # use the shape function to define shape variables for 2D airfoil
-        pts = self.geometry.DVGeo.getLocalIndex(1)
+        pts = self.geometry.nom_getDVGeo().getLocalIndex(1)
         dir_y = np.array([0.0, 1.0, 0.0])
         shapes = []
         for i in range(1, pts.shape[0] - 1):
@@ -215,19 +243,34 @@ class Top(Multipoint):
         # LE/TE shape, the j=0 and j=1 move in opposite directions so that
         # the LE/TE are fixed
         for i in [0, pts.shape[0] - 1]:
-            shapes.append({pts[i, 0, 0]: dir_y, pts[i, 0, 1]: dir_y, pts[i, 1, 0]: -dir_y, pts[i, 1, 1]: -dir_y})
+            shapes.append(
+                {
+                    pts[i, 0, 0]: dir_y,
+                    pts[i, 0, 1]: dir_y,
+                    pts[i, 1, 0]: -dir_y,
+                    pts[i, 1, 1]: -dir_y,
+                }
+            )
         self.geometry.nom_addShapeFunctionDV(dvName="shape", shapes=shapes)
 
         # setup the volume and thickness constraints
         leListMain = [[0.048, -0.014, 1e-6], [0.048, -0.014, 0.1 - 1e-6]]
         teListMain = [[0.698, -0.014, 1e-6], [0.698, -0.014, 0.1 - 1e-6]]
-        self.geometry.nom_addThicknessConstraints2D("thickcon_main", leListMain, teListMain, nSpan=2, nChord=10)
-        self.geometry.nom_addVolumeConstraint("volcon_main", leListMain, teListMain, nSpan=2, nChord=10)
+        self.geometry.nom_addThicknessConstraints2D(
+            "thickcon_main", leListMain, teListMain, nSpan=2, nChord=10
+        )
+        self.geometry.nom_addVolumeConstraint(
+            "volcon_main", leListMain, teListMain, nSpan=2, nChord=10
+        )
         # NOTE: we need to add thickness and vol constraints for the tailing of the main airfoil
         leListMainTrailing = [[0.702, 0.0328, 1e-6], [0.702, 0.0328, 0.1 - 1e-6]]
         teListMainTrailing = [[0.854, 0.0328, 1e-6], [0.854, 0.0328, 0.1 - 1e-6]]
         self.geometry.nom_addThicknessConstraints2D(
-            "thickcon_main_te", leListMainTrailing, teListMainTrailing, nSpan=2, nChord=10
+            "thickcon_main_te",
+            leListMainTrailing,
+            teListMainTrailing,
+            nSpan=2,
+            nChord=10,
         )
         self.geometry.nom_addVolumeConstraint(
             "volcon_main_te", leListMainTrailing, teListMainTrailing, nSpan=2, nChord=10
@@ -252,9 +295,13 @@ class Top(Multipoint):
         self.add_design_var("shape", lower=-1.0, upper=1.0, scaler=10.0)
         self.add_design_var("patchV", lower=[U0, 0.0], upper=[U0, 20.0], scaler=0.1)
         self.add_design_var("twistslat", lower=-10.0, upper=10.0, scaler=1.0)
-        self.add_design_var("translateslat", lower=[-0.1, 0.0], upper=[0.0, 0.1], scaler=1.0)
+        self.add_design_var(
+            "translateslat", lower=[-0.1, 0.0], upper=[0.0, 0.1], scaler=1.0
+        )
         self.add_design_var("twistflap", lower=-10.0, upper=10.0, scaler=1.0)
-        self.add_design_var("translateflap", lower=[0.0, -0.1], upper=[0.1, 0.0], scaler=1.0)
+        self.add_design_var(
+            "translateflap", lower=[0.0, -0.1], upper=[0.1, 0.0], scaler=1.0
+        )
 
         # add objective and constraints to the top level
         self.add_objective("scenario1.aero_post.CD", scaler=1.0)
@@ -263,7 +310,9 @@ class Top(Multipoint):
         self.add_constraint("scenario1.aero_post.nonOrtho", upper=70.0, scaler=1.0)
         self.add_constraint("geometry.thickcon_main", lower=0.5, upper=3.0, scaler=1.0)
         self.add_constraint("geometry.volcon_main", lower=1.0, scaler=1.0)
-        self.add_constraint("geometry.thickcon_main_te", lower=0.5, upper=3.0, scaler=1.0)
+        self.add_constraint(
+            "geometry.thickcon_main_te", lower=0.5, upper=3.0, scaler=1.0
+        )
         self.add_constraint("geometry.volcon_main_te", lower=1.0, scaler=1.0)
 
 
@@ -292,18 +341,15 @@ if args.optimizer == "SNOPT":
         "Print file": "opt_SNOPT_print.txt",
         "Summary file": "opt_SNOPT_summary.txt",
     }
-elif args.optimizer == "IPOPT":
+elif args.optimizer == "Uno":
     prob.driver.opt_settings = {
-        "tol": 1.0e-5,
-        "constr_viol_tol": 1.0e-5,
-        "max_iter": 100,
-        "print_level": 5,
-        "output_file": "opt_IPOPT.txt",
-        "mu_strategy": "adaptive",
-        "limited_memory_max_history": 10,
-        "nlp_scaling_method": "none",
-        "alpha_for_y": "full",
-        "recalc_y": "yes",
+        "preset": "filtersqp",
+        "max_iterations": 100,
+        "primal_tolerance": 1e-5,
+        "dual_tolerance": 1e-5,
+        "quasi_newton_memory_size": 20,
+        "logger": "INFO",
+        "logger_stream": "opt_Uno.txt",
     }
 elif args.optimizer == "SLSQP":
     prob.driver.opt_settings = {
@@ -321,7 +367,9 @@ prob.driver.hist_file = "OptView.hst"
 
 if args.task == "run_driver":
     # solve CL
-    optFuncs.findFeasibleDesign(["scenario1.aero_post.CL"], ["patchV"], targets=[CL_target], designVarsComp=[1])
+    optFuncs.findFeasibleDesign(
+        ["scenario1.aero_post.CL"], ["patchV"], targets=[CL_target], designVarsComp=[1]
+    )
     # run the optimization
     prob.run_driver()
 elif args.task == "run_model":

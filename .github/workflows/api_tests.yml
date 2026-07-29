@@ -4,7 +4,7 @@ on:
   push:
   pull_request:
   schedule:
-    - cron:  '59 23 * * *'
+    - cron: '59 23 * * *'
 
 env:
   REPO_NAME: 'tutorials'
@@ -16,17 +16,8 @@ env:
 jobs:
 
   reg_tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     name: Tests
-    strategy:
-      fail-fast: false
-      matrix: 
-        testConfig: [v2, v3]
-        include:
-          - testConfig: v2
-            args: 'v2'
-          - testConfig: v3
-            args: 'v3'
     steps:
     - uses: actions/checkout@v3
     - name: Create the docker container and run the tests
@@ -34,5 +25,4 @@ jobs:
         docker pull dafoam/opt-packages:${{env.DOCKER_TAG}}
         docker run -i -d -u dafoamuser --name apitest -v $GITHUB_WORKSPACE:${{env.DOCKER_MOUNT_DIR}} dafoam/opt-packages:${{env.DOCKER_TAG}} /bin/bash
         docker exec -i apitest /bin/bash -c "rm -rf ${{env.DOCKER_WORKING_DIR}} && cp -r ${{env.DOCKER_MOUNT_DIR}} ${{env.DOCKER_WORKING_DIR}}"
-        docker exec -i apitest /bin/bash -c ". ${{env.DOCKER_ENV_FILE}} && cd ${{env.DOCKER_WORKING_DIR}} && . .testAPI.sh ${{matrix.args}}"
-
+        docker exec -i apitest /bin/bash -c ". ${{env.DOCKER_ENV_FILE}} && cd ${{env.DOCKER_WORKING_DIR}} && . .testAPI.sh"

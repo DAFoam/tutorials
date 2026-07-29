@@ -11,10 +11,11 @@ import numpy as np
 from mpi4py import MPI
 import json
 import openmdao.api as om
-from mphys.multipoint import Multipoint
+from mphys.core import Multipoint
+from mphys import MPhysVariables
 from dafoam.mphys.mphys_dafoam import DAFoamBuilderUnsteady, DAFoamBuilder
 from pygeo.mphys import OM_DVGEOCOMP
-from mphys.scenario_aerodynamic import ScenarioAerodynamic
+from mphys.scenarios import ScenarioAerodynamic
 
 np.set_printoptions(precision=8, threshold=10000)
 
@@ -23,7 +24,7 @@ np.set_printoptions(precision=8, threshold=10000)
 # =============================================================================
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
-parser.add_argument("-optimizer", help="optimizer to use", type=str, default="IPOPT")
+parser.add_argument("-optimizer", help="optimizer to use", type=str, default="Uno")
 # which task to run. Options are: run_driver (default), run_model, compute_totals, check_totals
 parser.add_argument("-task", help="type of run to do", type=str, default="run_driver")
 args = parser.parse_args()
@@ -178,7 +179,7 @@ class Top(Multipoint):
             "scenario_max_lift",
             DAFoamBuilderUnsteady(solver_options=daOptionsMaxLift, mesh_options=meshOptions, run_directory="maxLift"),
         )
-        self.connect("geometry_max_lift.x_aero0", "scenario_max_lift.x_aero")
+        self.connect("geometry_max_lift.x_aero0_geometry_output", "scenario_max_lift.x_aero")
 
         # add the cruise scenario (steady)
         cruise_builder = DAFoamBuilder(daOptionsCruise, meshOptions, scenario="aerodynamic", run_directory="cruise")
@@ -187,8 +188,8 @@ class Top(Multipoint):
         self.add_subsystem("mesh_cruise", cruise_builder.get_mesh_coordinate_subsystem())
         self.add_subsystem("geometry_cruise", OM_DVGEOCOMP(file="cruise/FFD/wingFFD.xyz", type="ffd"))
         self.mphys_add_scenario("scenario_cruise", ScenarioAerodynamic(aero_builder=cruise_builder))
-        self.connect("mesh_cruise.x_aero0", "geometry_cruise.x_aero_in")
-        self.connect("geometry_cruise.x_aero0", "scenario_cruise.x_aero")
+        self.connect("mesh_cruise.x_aero0", "geometry_cruise.x_aero0_geometry_input")
+        self.connect("geometry_cruise.x_aero0_geometry_output", "scenario_cruise.x_aero")
 
     def configure(self):
 
@@ -197,8 +198,8 @@ class Top(Multipoint):
         points_cruise = self.mesh_cruise.mphys_get_surface_mesh()
 
         # add pointset
-        self.geometry_max_lift.nom_add_discipline_coords("aero", points_max_lift)
-        self.geometry_cruise.nom_add_discipline_coords("aero", points_cruise)
+        self.geometry_max_lift.nom_add_discipline_coords(MPhysVariables.Aerodynamics.Surface.Geometry, points_max_lift)
+        self.geometry_cruise.nom_add_discipline_coords(MPhysVariables.Aerodynamics.Surface.Geometry, points_cruise)
 
         # set the triangular points to the geometry component for geometric constraints
         tri_points = self.scenario_max_lift.DASolver.getTriangulatedMeshSurface()
@@ -230,10 +231,10 @@ class Top(Multipoint):
         # because these constraints are defined in the above shape function
 
         self.dvs.add_output("shape", val=np.zeros(len(shapes)))
-        self.dvs.add_output("x_aero_in", val=points_max_lift, distributed=True)
+        self.dvs.add_output("x_aero0_geometry_input", val=points_max_lift, distributed=True)
         self.dvs.add_output("patchV_cruise", val=np.array([U0Cruise, aoa0Cruise]))
         self.dvs.add_output("patchV_maxLift", val=np.array([U0MaxLift, aoa0MaxLift]))
-        self.connect("x_aero_in", "geometry_max_lift.x_aero_in")
+        self.connect("x_aero0_geometry_input", "geometry_max_lift.x_aero0_geometry_input")
         self.connect("shape", "geometry_max_lift.shape")
         self.connect("shape", "geometry_cruise.shape")
         self.connect("patchV_maxLift", "scenario_max_lift.patchV")
@@ -274,18 +275,15 @@ if args.optimizer == "SNOPT":
         "Print file": "opt_SNOPT_print.txt",
         "Summary file": "opt_SNOPT_summary.txt",
     }
-elif args.optimizer == "IPOPT":
+elif args.optimizer == "Uno":
     prob.driver.opt_settings = {
-        "tol": 1.0e-5,
-        "constr_viol_tol": 1.0e-5,
-        "max_iter": 50,
-        "print_level": 5,
-        "output_file": "opt_IPOPT.txt",
-        "mu_strategy": "adaptive",
-        "limited_memory_max_history": 10,
-        "nlp_scaling_method": "none",
-        "alpha_for_y": "full",
-        "recalc_y": "yes",
+        "preset": "filtersqp",
+        "max_iterations": 100,
+        "primal_tolerance": 1e-5,
+        "dual_tolerance": 1e-5,
+        "quasi_newton_memory_size": 20,
+        "logger": "INFO",
+        "logger_stream": "opt_Uno.txt",
     }
 elif args.optimizer == "SLSQP":
     prob.driver.opt_settings = {

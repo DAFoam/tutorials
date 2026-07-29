@@ -11,7 +11,8 @@ import os
 import numpy as np
 from mpi4py import MPI
 import openmdao.api as om
-from mphys.multipoint import Multipoint
+from mphys.core import Multipoint
+from mphys import MPhysVariables
 from dafoam.mphys.mphys_dafoam import DAFoamBuilderUnsteady
 from pygeo.mphys import OM_DVGEOCOMP
 
@@ -20,7 +21,7 @@ from pygeo.mphys import OM_DVGEOCOMP
 # =============================================================================
 parser = argparse.ArgumentParser()
 # which optimizer to use. Options are: IPOPT (default), SLSQP, and SNOPT
-parser.add_argument("-optimizer", help="optimizer to use", type=str, default="IPOPT")
+parser.add_argument("-optimizer", help="optimizer to use", type=str, default="Uno")
 # which task to run. Options are: run_driver (default), run_model, compute_totals, check_totals
 parser.add_argument("-task", help="type of run to do", type=str, default="run_driver")
 args = parser.parse_args()
@@ -119,7 +120,7 @@ class Top(Multipoint):
             promotes=["*"],
         )
 
-        self.connect("x_aero0", "x_aero")
+        self.connect("x_aero0_geometry_output", "x_aero")
 
     def configure(self):
 
@@ -127,14 +128,14 @@ class Top(Multipoint):
         points = self.scenario1.get_surface_mesh()
 
         # add pointset to the geometry component
-        self.geometry.nom_add_discipline_coords("aero", points)
+        self.geometry.nom_add_discipline_coords(MPhysVariables.Aerodynamics.Surface.Geometry, points)
 
         # set the triangular points to the geometry component for geometric constraints
         tri_points = self.scenario1.DASolver.getTriangulatedMeshSurface()
         self.geometry.nom_setConstraintSurface(tri_points)
 
         # use the shape function to define shape variables for 2D
-        pts = self.geometry.DVGeo.getLocalIndex(0)
+        pts = self.geometry.nom_getDVGeo().getLocalIndex(0)
         dir_x = np.array([1.0, 0.0, 0.0])
         shapes = []
         for j in [0, 1]:
@@ -152,7 +153,7 @@ class Top(Multipoint):
 
         # add the design variables to the dvs component's output
         self.dvs.add_output("shape", val=np.array([0] * len(shapes)))
-        self.dvs.add_output("x_aero_in", val=points, distributed=True)
+        self.dvs.add_output("x_aero0_geometry_input", val=points, distributed=True)
 
         # define the design variables
         self.add_design_var("shape", lower=-1.0, upper=1.0, scaler=10.0)
@@ -187,18 +188,15 @@ if args.optimizer == "SNOPT":
         "Print file": "opt_SNOPT_print.txt",
         "Summary file": "opt_SNOPT_summary.txt",
     }
-elif args.optimizer == "IPOPT":
+elif args.optimizer == "Uno":
     prob.driver.opt_settings = {
-        "tol": 1.0e-5,
-        "constr_viol_tol": 1.0e-5,
-        "max_iter": 50,
-        "print_level": 5,
-        "output_file": "opt_IPOPT.txt",
-        "mu_strategy": "adaptive",
-        "limited_memory_max_history": 10,
-        "nlp_scaling_method": "none",
-        "alpha_for_y": "full",
-        "recalc_y": "yes",
+        "preset": "filtersqp",
+        "max_iterations": 100,
+        "primal_tolerance": 1e-5,
+        "dual_tolerance": 1e-5,
+        "quasi_newton_memory_size": 20,
+        "logger": "INFO",
+        "logger_stream": "opt_Uno.txt",
     }
 elif args.optimizer == "SLSQP":
     prob.driver.opt_settings = {

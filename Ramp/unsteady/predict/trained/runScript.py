@@ -10,7 +10,8 @@ import numpy as np
 from mpi4py import MPI
 import json
 import openmdao.api as om
-from mphys.multipoint import Multipoint
+from mphys.core import Multipoint
+from mphys import MPhysVariables
 from dafoam.mphys.mphys_dafoam import DAFoamBuilderUnsteady
 
 np.set_printoptions(precision=8, threshold=10000)

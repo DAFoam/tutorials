@@ -12,18 +12,19 @@ from mpi4py import MPI
 import os
 import numpy as np
 import openmdao.api as om
-from mphys.multipoint import Multipoint
+from mphys.core import Multipoint
+from mphys import MPhysVariables
 from dafoam.mphys import DAFoamBuilder
 from funtofem.mphys import MeldThermalBuilder
 from pygeo import geo_utils
-from mphys.scenario_aerothermal import ScenarioAeroThermal
+from mphys.scenarios import ScenarioAeroThermal
 from pygeo.mphys import OM_DVGEOCOMP
 
 # =============================================================================
 # Input Parameters
 # =============================================================================
 parser = argparse.ArgumentParser()
-parser.add_argument("-optimizer" , help = "optimizer to use" , type = str , default = "IPOPT")
+parser.add_argument("-optimizer" , help = "optimizer to use" , type = str , default = "Uno")
 parser.add_argument("-task" , help = "type of run to do" , type = str , default = "run_driver")
 args = parser.parse_args()
 gcomm = MPI.COMM_WORLD
@@ -252,11 +253,11 @@ class Top(Multipoint):
         )
 
         #---------- Manually Connect Aero & Thermal Between The Mesh & Geometry Components ----------
-        self.connect("mesh_aero.x_aero0" , "geometry_aero.x_aero_in")
-        self.connect("geometry_aero.x_aero0" , "scenario.x_aero")
+        self.connect("mesh_aero.x_aero0" , "geometry_aero.x_aero0_geometry_input")
+        self.connect("geometry_aero.x_aero0_geometry_output" , "scenario.x_aero")
 
-        self.connect("mesh_thermal.x_thermal0" , "geometry_thermal.x_thermal_in")
-        self.connect("geometry_thermal.x_thermal0" , "scenario.x_thermal")
+        self.connect("mesh_thermal.x_thermal0_mesh" , "geometry_thermal.x_thermal0_geometry_input")
+        self.connect("geometry_thermal.x_thermal0_geometry_output" , "scenario.x_thermal0")
 
         #---------- Add Objective Function Component ----------
         self.add_subsystem("OBJ" , om.ExecComp("val = scalePL * (TP1 - TP2) + (scaleTM * Tmean)" , scalePL = {'val' : scalePL , 'constant' : True} , scaleTM = {'val' : scaleTM , 'constant' : True}))
@@ -271,8 +272,8 @@ class Top(Multipoint):
         points_thermal = self.mesh_thermal.mphys_get_surface_mesh()
 
         #---------- Add Pointset To The Geometry Component ----------
-        self.geometry_aero.nom_add_discipline_coords("aero" , points_aero)
-        self.geometry_thermal.nom_add_discipline_coords("thermal" , points_thermal)
+        self.geometry_aero.nom_add_discipline_coords(MPhysVariables.Aerodynamics.Surface.Geometry, points_aero)
+        self.geometry_thermal.nom_add_discipline_coords(MPhysVariables.Thermal.Geometry, points_thermal)
 
         #---------- Create Design Variables And Assign Them To FFD Points ----------
         # get FFD points
@@ -385,18 +386,15 @@ if args.optimizer == "SNOPT":
         "Summary file"                : "opt_SNOPT_summary.txt",
     }
 
-elif args.optimizer == "IPOPT":
+elif args.optimizer == "Uno":
     prob.driver.opt_settings = {
-        "tol"                        : 1.0e-5,
-        "constr_viol_tol"            : 1.0e-5,
-        "max_iter"                   : 100,
-        "print_level"                : 5,
-        "output_file"                : "opt_IPOPT.txt",
-        "mu_strategy"                : "adaptive",
-        "limited_memory_max_history" : 10,
-        "nlp_scaling_method"         : "none",
-        "alpha_for_y"                : "full",
-        "recalc_y"                   : "yes",
+        "preset": "filtersqp",
+        "max_iterations": 100,
+        "primal_tolerance": 1e-5,
+        "dual_tolerance": 1e-5,
+        "quasi_newton_memory_size": 20,
+        "logger": "INFO",
+        "logger_stream": "opt_Uno.txt",
     }
 
 elif args.optimizer == "SLSQP":
