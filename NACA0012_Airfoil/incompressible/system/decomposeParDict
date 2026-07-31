@@ -19,6 +19,11 @@ numberOfSubdomains     4;
 
 method                 scotch;
 
+kahipCoeffs 
+{ 
+    config                  fast;
+    imbalance              0.01;
+} 
 simpleCoeffs 
 { 
     n                  (2 2 1);

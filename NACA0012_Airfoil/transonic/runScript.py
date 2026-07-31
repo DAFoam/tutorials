@@ -210,12 +210,31 @@ if args.optimizer == "SNOPT":
 elif args.optimizer == "Uno":
     prob.driver.opt_settings = {
         "preset": "filtersqp",
+        "globalization_mechanism": "LS",
+        "LS_backtracking_ratio": 0.5,
+        "globalization_strategy": "merit_function",
+        "hessian_model": "LBFGS",
         "max_iterations": 100,
-        "primal_tolerance": 1e-5,
-        "dual_tolerance": 1e-5,
-        "quasi_newton_memory_size": 20,
+        "primal_tolerance": 1e-4,
+        "loose_primal_tolerance": 1e-3,
+        "dual_tolerance": 1e-4,
+        "loose_dual_tolerance": 1e-3,
+        "quasi_newton_memory_size": 50,
         "logger": "INFO",
         "logger_stream": "opt_Uno.txt",
+    }
+elif args.optimizer == "IPOPT":
+    prob.driver.opt_settings = {
+        "tol": 1.0e-5,
+        "constr_viol_tol": 1.0e-5,
+        "max_iter": 100,
+        "print_level": 5,
+        "output_file": "opt_IPOPT.txt",
+        "mu_strategy": "adaptive",
+        "limited_memory_max_history": 10,
+        "nlp_scaling_method": "none",
+        "alpha_for_y": "full",
+        "recalc_y": "yes",
     }
 elif args.optimizer == "SLSQP":
     prob.driver.opt_settings = {
