@@ -7,8 +7,8 @@ fi
 
 echo "Running API tests"
 
-# Make the primal run fast for every discovered Python run script.
-find . -type f -name 'run*.py' -exec sed -i '/"primalMinResTol":/c\    "primalMinResTol": 0.9,' {} \;
+# Make the primal run fast only in the main Python driver, leaving preprocessing solvers unchanged.
+find . -type f -name 'runScript.py' -exec sed -i '/"primalMinResTol":/c\    "primalMinResTol": 0.9,' {} \;
 
 # Discover case directories that contain both the exact preprocessing script
 # and at least one Python run script in the same folder.
